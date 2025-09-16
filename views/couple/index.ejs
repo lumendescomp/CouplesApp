@@ -1,13 +1,24 @@
-<div class="bg-white p-6 rounded shadow">
-  <h1 class="text-xl font-semibold mb-2">Seu casal</h1>
+<div>
+  <h1 class="text-2xl font-semibold text-violet-200 mb-2">Seu casal</h1>
   <% if (partner) { %>
-  <p class="text-gray-700">
-    Você está pareado com <span class="font-medium"><%= partner.email %></span>.
-  </p>
-  <% } else { %>
-  <p class="text-gray-700">Aguardando o parceiro(a) aceitar o convite.</p>
-  <% } %>
-  <div class="mt-4">
-    <a class="text-indigo-600" href="/invite">Gerar novo convite</a>
+  <div
+    class="flex items-center gap-3 border border-violet-700/40 rounded-xl p-3 bg-white/5"
+  >
+    <% if (partner.avatar_path) { %>
+    <img
+      src="<%= partner.avatar_path %>"
+      alt="Avatar"
+      class="h-10 w-10 rounded-full object-cover border"
+    />
+    <% } %>
+    <p class="text-violet-100">
+      Você está pareado com
+      <span class="font-medium text-violet-200"
+        ><%= partner.display_name || partner.email %></span
+      >.
+    </p>
   </div>
+  <% } else { %>
+  <p class="text-violet-200/80">Aguardando o parceiro(a) aceitar o convite.</p>
+  <% } %>
 </div>

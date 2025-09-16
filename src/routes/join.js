@@ -86,7 +86,7 @@ router.post("/", (req, res) => {
     }
 
     db.prepare(
-      'UPDATE invites SET used_at = datetime("now"), used_by_user_id = ?, created_couple_id = ? WHERE id = ?'
+      "UPDATE invites SET used_at = datetime('now'), used_by_user_id = ?, created_couple_id = ? WHERE id = ?"
     ).run(meId, coupleId, invite.id);
 
     return coupleId;

@@ -26,5 +26,19 @@ export async function initDb() {
   );
   db.exec(initSql);
 
+  // Migrações condicionais simples para bases existentes
+  try {
+    const cols = db.prepare("PRAGMA table_info(users)").all();
+    const names = new Set(cols.map((c) => c.name));
+    if (!names.has("display_name")) {
+      db.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
+    }
+    if (!names.has("avatar_path")) {
+      db.exec("ALTER TABLE users ADD COLUMN avatar_path TEXT");
+    }
+  } catch (e) {
+    console.warn("Migration note:", e.message);
+  }
+
   return db;
 }

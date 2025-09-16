@@ -8,7 +8,7 @@ router.get("/", (req, res) => {
   const db = getDb();
   const invites = db
     .prepare(
-      'SELECT * FROM invites WHERE issuer_user_id = ? AND used_at IS NULL AND datetime(expires_at) > datetime("now") ORDER BY created_at DESC'
+      "SELECT * FROM invites WHERE issuer_user_id = ? AND used_at IS NULL AND datetime(expires_at) > datetime('now') ORDER BY created_at DESC"
     )
     .all(req.session.user.id);
   res.render("invite/index", { invites });
@@ -36,15 +36,17 @@ router.post("/create", (req, res) => {
   const invite = db.prepare("SELECT * FROM invites WHERE code = ?").get(code);
   // Render fragment row
   res.set("HX-Trigger", "invite-created");
-  res.render("invite/_code_row", { invite });
+  res.render("invite/_code_row", { invite, layout: false });
 });
 
-  // Opcional: detalhar um convite por ID (para futuro revoke/sharing expandido)
-  router.get("/:code", (req, res) => {
-    const db = getDb();
-    const invite = db.prepare('SELECT * FROM invites WHERE code = ? AND issuer_user_id = ?').get(req.params.code, req.session.user.id);
-    if (!invite) return res.status(404).send('Convite não encontrado');
-    res.render('invite/_code_row', { invite });
-  });
+// Opcional: detalhar um convite por ID (para futuro revoke/sharing expandido)
+router.get("/:code", (req, res) => {
+  const db = getDb();
+  const invite = db
+    .prepare("SELECT * FROM invites WHERE code = ? AND issuer_user_id = ?")
+    .get(req.params.code, req.session.user.id);
+  if (!invite) return res.status(404).send("Convite não encontrado");
+  res.render("invite/_code_row", { invite, layout: false });
+});
 
 export default router;

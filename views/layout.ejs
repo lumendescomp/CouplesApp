@@ -4,35 +4,346 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HeartSync</title>
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <!-- Removido Google Fonts para manter fonte única e evitar variações/CLS -->
+    <style>
+      :root {
+        /* Paleta púrpura profunda (sensual) */
+        --heart-pink: #4c1d95; /* violet-900 */
+        --heart-rose: #7c3aed; /* violet-600 */
+        --heart-red: #e879f9; /* fuchsia-400 para destaque */
+        --glass-bg: rgba(255, 255, 255, 0.55);
+        --glass-border: rgba(255, 255, 255, 0.45);
+      }
+      [x-cloak] {
+        display: none !important;
+      }
+      .romance-bg {
+        background: radial-gradient(
+            900px 500px at 10% -10%,
+            rgba(124, 58, 237, 0.25) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            1000px 600px at 110% 10%,
+            rgba(192, 38, 211, 0.22) 0%,
+            transparent 60%
+          ),
+          linear-gradient(
+            135deg,
+            #0b0713 0%,
+            #120a1f 40%,
+            #1a102b 65%,
+            #0b0713 100%
+          );
+      }
+      .brand-script {
+        /* Usa a mesma família sans do site para manter consistência visual */
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+          Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .brand-sans {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+          Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Inter", sans-serif;
+        font-size-adjust: 0.52;
+      }
+      .brand-logo {
+        min-height: 40px;
+      }
+      .glass {
+        backdrop-filter: saturate(160%) blur(10px);
+        -webkit-backdrop-filter: saturate(160%) blur(10px);
+        border: 1px solid var(--glass-border);
+        color: #e9e5ff; /* texto claro por padrão nos blocos glass */
+      }
+      .btn-heart {
+        background: linear-gradient(
+          135deg,
+          var(--heart-pink),
+          var(--heart-rose)
+        );
+        color: white;
+        box-shadow: 0 2px 20px rgba(255, 105, 145, 0.3);
+      }
+      .btn-heart:hover {
+        filter: brightness(0.98);
+      }
+      .heart-divider::before,
+      .heart-divider::after {
+        content: "";
+        flex: 1 1 0%;
+        border-top: 1px dashed #7c3aed; /* violeta 600 */
+        margin: 0 12px;
+      }
+      .heart-icon {
+        color: var(--heart-red);
+      }
+    </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script
       defer
       src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
+    <script>
+      // Utilitário global de cópia com fallback
+      window.copyHelpers = {
+        async copy(text) {
+          // 1) Tenta fallback síncrono primeiro (preserva gesto do usuário)
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            if (ok) return true;
+          } catch (_) {}
+          // 2) Tenta Clipboard API (pode exigir contexto seguro)
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(text);
+              return true;
+            }
+          } catch (_) {}
+          return false;
+        },
+      };
+
+      // UI helpers
+      window.showFor = function (el, ms = 2000) {
+        if (!el) return;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), ms);
+      };
+      window.copyAndFlash = async function (ev, text, targetClass) {
+        ev && ev.preventDefault && ev.preventDefault();
+        const container =
+          ev && ev.currentTarget
+            ? ev.currentTarget.closest(".invite-row")
+            : null;
+        const el = container
+          ? container.querySelector("." + targetClass)
+          : null;
+        const ok = await window.copyHelpers.copy(text);
+        if (ok) {
+          window.showFor(el);
+          const toastMsg =
+            ev.currentTarget.getAttribute("data-toast") || "Copiado!";
+          if (window.showToast) window.showToast(toastMsg);
+        }
+        return ok;
+      };
+
+      // Anexa o token CSRF em todos os requests do htmx
+      document.addEventListener("htmx:configRequest", (evt) => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+          evt.detail.headers["X-CSRF-Token"] = meta.getAttribute("content");
+        }
+      });
+      // Re-inicializa Alpine em conteúdo inserido pelo htmx
+      document.addEventListener("htmx:afterSwap", (e) => {
+        if (window.Alpine && e && e.detail && e.detail.target) {
+          window.Alpine.initTree(e.detail.target);
+        }
+      });
+      // Delegação de eventos para botões de copiar (compatível com CSP)
+      document.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest("[data-copy-text]");
+        if (!btn) return;
+        ev.preventDefault();
+        const text = btn.getAttribute("data-copy-text");
+        const container = btn.closest(".invite-row");
+        const targetSel = btn.getAttribute("data-flash-target");
+        const flashEl =
+          container && targetSel ? container.querySelector(targetSel) : null;
+        const ok = await window.copyHelpers.copy(text);
+        if (ok) {
+          window.showFor(flashEl);
+          const toastMsg = btn.getAttribute("data-toast") || "Copiado!";
+          if (window.showToast) window.showToast(toastMsg);
+        }
+      });
+
+      // Toast simples reutilizável
+      window.showToast = (msg) => {
+        const wrap = document.getElementById("hs-toast");
+        const box = document.getElementById("hs-toast-msg");
+        if (!wrap || !box) return;
+        box.textContent = msg;
+        wrap.classList.remove("hidden");
+        clearTimeout(window.__hsToastTimer);
+        window.__hsToastTimer = setTimeout(
+          () => wrap.classList.add("hidden"),
+          1800
+        );
+      };
+
+      // Atualiza rótulo do input[file] (perfil) sem inline JS
+      document.addEventListener("change", (ev) => {
+        const input = ev.target.closest('input[type="file"][data-file-input]');
+        if (!input) return;
+        const sel = input.getAttribute("data-file-display");
+        const out = sel ? document.querySelector(sel) : null;
+        if (!out) return;
+        const name =
+          input.files && input.files[0]
+            ? input.files[0].name
+            : "Nenhum arquivo escolhido";
+        out.textContent = name;
+      });
+    </script>
   </head>
-  <body class="min-h-screen bg-gray-50">
-    <nav class="bg-white border-b">
-      <div
-        class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center"
-      >
-        <a href="/" class="font-semibold">HeartSync</a>
-        <div class="space-x-3">
-          <% if (currentUser) { %>
-          <a class="text-sm text-gray-700" href="/invite">Convites</a>
-          <a class="text-sm text-gray-700" href="/join">Entrar via código</a>
-          <a class="text-sm text-gray-700" href="/couple">Meu casal</a>
-          <form class="inline" method="post" action="/auth/logout">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <button class="text-sm text-red-600">Sair</button>
-          </form>
-          <% } else { %>
-          <a class="text-sm text-gray-700" href="/auth/login">Entrar</a>
-          <a class="text-sm text-gray-700" href="/auth/register">Criar conta</a>
-          <% } %>
+  <body class="min-h-screen romance-bg brand-sans">
+    <nav class="sticky top-0 z-40">
+      <div class="glass border-b">
+  <div class="max-w-5xl mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center">
+          <!-- Logo à esquerda -->
+          <div class="justify-self-start">
+            <a href="/" class="flex items-center gap-2 brand-logo">
+              <span class="brand-script text-2xl md:text-3xl text-violet-200"
+                >HeartSync</span
+              >
+            </a>
+          </div>
+
+          <!-- Menu central -->
+          <div class="justify-self-center">
+            <% if (currentUser) { %>
+            <div class="flex items-center gap-3 md:gap-6">
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/invite') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                <%= currentPath.startsWith('/invite') ? 'aria-current="page"' : '' %>
+                href="/invite"
+                >Convites</a
+              >
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/join') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                <%= currentPath.startsWith('/join') ? 'aria-current="page"' : '' %>
+                href="/join"
+                >Encontrar meu par</a
+              >
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/couple') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                <%= currentPath.startsWith('/couple') ? 'aria-current="page"' : '' %>
+                href="/couple"
+                >Nosso cantinho</a
+              >
+            </div>
+            <% } %>
+          </div>
+
+          <!-- Ações à direita -->
+          <div class="justify-self-end">
+            <div class="flex items-center gap-2 md:gap-3">
+              <% if (currentUser) { %>
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2 <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                <%= currentPath.startsWith('/profile') ? 'aria-current="page"' : '' %>
+                href="/profile"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  class="w-4 h-4"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4.5 19.5a8.999 8.999 0 0115 0"
+                  />
+                </svg>
+                <span>Perfil</span>
+              </a>
+              <form class="inline" method="post" action="/auth/logout">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button
+                  class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    class="w-4 h-4"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M18 12l3-3m0 0l-3-3m3 3H9"
+                    />
+                  </svg>
+                  <span>Sair</span>
+                </button>
+              </form>
+              <% } else { %>
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition"
+                href="/auth/login"
+                >Entrar</a
+              >
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition"
+                href="/auth/register"
+                >Criar conta</a
+              >
+              <% } %>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
-    <main class="max-w-4xl mx-auto p-4"><%- body %></main>
+
+    <main class="max-w-5xl mx-auto p-4">
+      <div class="glass rounded-2xl shadow-sm border p-4 md:p-6">
+        <%- body %>
+      </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="hs-toast" class="fixed bottom-4 right-4 z-50 hidden">
+      <div
+        class="glass rounded-full px-4 py-2 border text-sm flex items-center gap-2 text-violet-100"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="w-4 h-4 text-emerald-300"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M4.5 12.75l6 6 9-13.5"
+          />
+        </svg>
+        <span id="hs-toast-msg">Copiado!</span>
+      </div>
+    </div>
   </body>
 </html>

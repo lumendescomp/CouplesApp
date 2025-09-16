@@ -1,0 +1,57 @@
+<div class="max-w-lg mx-auto">
+  <h1 class="text-2xl font-semibold text-violet-200 mb-1">Seu perfil</h1>
+  <p class="text-sm text-violet-200/80 mb-4">
+    Ajuste as informações exibidas no menu Meu par ✨
+  </p>
+  <form
+    method="post"
+    action="/profile"
+    enctype="multipart/form-data"
+    class="space-y-4"
+    hx-post="/profile"
+    hx-encoding="multipart/form-data"
+    hx-swap="none"
+  >
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <div>
+      <label class="block text-sm text-violet-200 mb-1">Nome a exibir</label>
+      <input
+        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 border-violet-700/40 bg-white/5 text-violet-100 placeholder-violet-300/60"
+        type="text"
+        name="display_name"
+        value="<%= me?.display_name || '' %>"
+        placeholder="Ex.: Ana"
+        maxlength="60"
+      />
+    </div>
+    <div>
+      <label class="block text-sm text-violet-200 mb-1"
+        >Foto (PNG/JPG/GIF/WebP) até 2MB</label
+      >
+      <div class="flex items-center gap-3">
+        <label class="btn-heart px-4 py-2 rounded-full cursor-pointer">
+          <span>Escolher arquivo</span>
+          <input
+            type="file"
+            name="avatar"
+            accept="image/*"
+            class="hidden"
+            data-file-input
+            data-file-display="#avatar-file-name"
+          />
+        </label>
+        <span id="avatar-file-name" class="text-sm text-violet-200/80"
+          >Nenhum arquivo escolhido</span
+        >
+      </div>
+      <% if (me?.avatar_path) { %>
+      <img
+        src="<%= me.avatar_path %>"
+        alt="Avatar"
+        class="mt-3 h-20 w-20 rounded-full object-cover border border-violet-700/40"
+      />
+      <% } %>
+    </div>
+    <button class="btn-heart px-4 py-2 rounded-full">Salvar</button>
+  </form>
+</div>

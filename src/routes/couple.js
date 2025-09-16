@@ -13,7 +13,11 @@ router.get("/", (req, res) => {
   const partnerId =
     cpl.partner1_id === meId ? cpl.partner2_id : cpl.partner1_id;
   const partner = partnerId
-    ? db.prepare("SELECT email FROM users WHERE id = ?").get(partnerId)
+    ? db
+        .prepare(
+          "SELECT email, display_name, avatar_path FROM users WHERE id = ?"
+        )
+        .get(partnerId)
     : null;
   res.render("couple/index", { couple: cpl, partner });
 });

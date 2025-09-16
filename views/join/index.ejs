@@ -1,20 +1,18 @@
-<div class="max-w-md mx-auto bg-white p-6 rounded shadow">
-  <h1 class="text-xl font-semibold mb-4">Entrar em casal via código</h1>
-  <form
-    hx-post="/join"
-    hx-headers='{"_csrf":"<%= csrfToken %>"}'
-    hx-target="#join-feedback"
-    class="space-y-3"
-  >
-      <input
-        class="w-full border p-2 rounded font-mono tracking-widest uppercase"
-        maxlength="12"
-        name="code"
-        placeholder="CÓDIGO"
-        value="<%= typeof code !== 'undefined' ? code : '' %>"
-        required
-      />
-    <button class="w-full bg-indigo-600 text-white py-2 rounded">Entrar</button>
+<div class="max-w-md mx-auto">
+  <h1 class="text-2xl font-semibold text-violet-200 mb-1">Encontre seu par</h1>
+  <p class="text-sm text-violet-200/80 mb-4">
+    Cole abaixo o código que seu par te enviou.
+  </p>
+  <form hx-post="/join" hx-target="#join-feedback" class="space-y-3">
+    <input
+      class="w-full border rounded px-3 py-2 font-mono tracking-[0.35em] uppercase focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 border-violet-700/40 bg-white/5 text-violet-100 placeholder-violet-300/60"
+      maxlength="12"
+      name="code"
+      placeholder="CÓDIGO"
+      value="<%= typeof code !== 'undefined' ? code : '' %>"
+      required
+    />
+    <button class="w-full btn-heart py-2 rounded-full">Entrar</button>
   </form>
-  <div id="join-feedback" class="mt-3 text-sm"></div>
+  <div id="join-feedback" class="mt-3 text-sm text-violet-200/80"></div>
 </div>

@@ -12,6 +12,7 @@ import authRoutes from "./routes/auth.js";
 import inviteRoutes from "./routes/invite.js";
 import joinRoutes from "./routes/join.js";
 import coupleRoutes from "./routes/couple.js";
+import profileRoutes from "./routes/profile.js";
 import { initDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +33,14 @@ app.use(
           "https://cdn.tailwindcss.com",
           "https://unpkg.com",
         ],
-        "style-src": ["'self'", "'unsafe-inline'"],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+        ],
+        "font-src": ["'self'", "https://fonts.gstatic.com"],
+        // Permite imagens locais e data: para ícones/toasts
+        "img-src": ["'self'", "data:"],
       },
     },
   })
@@ -61,9 +69,17 @@ app.use(
   })
 );
 
-// CSRF (skip for htmx with header? we'll include the token in forms)
+// CSRF: aplicar globalmente, exceto para POST multipart em /profile,
+// onde validaremos após o multer (pois o corpo ainda não foi processado aqui)
 const csrfProtection = csrf();
-app.use(csrfProtection);
+app.use((req, res, next) => {
+  const ct = req.headers["content-type"] || "";
+  const isMultipart = ct.startsWith("multipart/form-data");
+  if (isMultipart && req.method === "POST" && req.path.startsWith("/profile")) {
+    return next();
+  }
+  return csrfProtection(req, res, next);
+});
 
 // View engine
 app.set("view engine", "ejs");
@@ -76,10 +92,13 @@ app.use("/public", express.static(path.join(__dirname, "../public")));
 
 // Locals used in all templates
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
+  const token = typeof req.csrfToken === "function" ? req.csrfToken() : "";
+  res.locals.csrfToken = token;
   res.locals.currentUser = req.session.user || null;
-  const host = req.get('host');
+  const host = req.get("host");
   res.locals.baseUrl = `${req.protocol}://${host}`;
+  // Caminho atual para destacar links ativos no layout
+  res.locals.currentPath = req.path || "/";
   next();
 });
 
@@ -93,6 +112,7 @@ app.use("/auth", authRoutes);
 app.use("/invite", ensureAuthed, inviteRoutes);
 app.use("/join", ensureAuthed, joinRoutes);
 app.use("/couple", ensureAuthed, coupleRoutes);
+app.use("/profile", ensureAuthed, profileRoutes);
 
 // 404
 app.use((req, res) => {
