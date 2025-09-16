@@ -1,0 +1,19 @@
+<div class="border rounded p-3 flex items-center justify-between">
+  <div>
+    <div class="font-mono text-lg tracking-widest"><%= invite.code %></div>
+    <div class="text-xs text-gray-500">Expira em <%= invite.expires_at %></div>
+  </div>
+  <div x-data="{ copied: false, copiedLink: false }" class="text-right space-x-2">
+    <button
+      class="text-sm px-3 py-1 border rounded"
+      @click="navigator.clipboard.writeText('<%= invite.code %>'); copied=true; setTimeout(()=>copied=false, 2000)"
+    >Copiar código</button>
+    <button
+      class="text-sm px-3 py-1 border rounded"
+      @click="navigator.clipboard.writeText('<%= baseUrl %>/join?code=<%= invite.code %>'); copiedLink=true; setTimeout(()=>copiedLink=false, 2000)"
+    >Copiar link</button>
+    <a class="text-sm px-3 py-1 border rounded text-indigo-700" href="/join?code=<%= invite.code %>">Abrir link</a>
+    <div class="text-xs text-green-700" x-show="copied">Código copiado!</div>
+    <div class="text-xs text-green-700" x-show="copiedLink">Link copiado!</div>
+  </div>
+</div>

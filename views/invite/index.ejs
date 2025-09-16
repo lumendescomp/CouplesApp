@@ -1,0 +1,29 @@
+<div class="max-w-xl mx-auto bg-white p-6 rounded shadow space-y-6">
+  <div>
+    <h1 class="text-xl font-semibold mb-2">Convidar parceiro(a)</h1>
+    <button
+      class="bg-indigo-600 text-white px-4 py-2 rounded"
+      hx-post="/invite/create"
+      hx-headers='{"_csrf":"<%= csrfToken %>"}'
+      hx-target="#invites-list"
+      hx-swap="afterbegin"
+    >
+      Gerar novo código
+    </button>
+    <p class="text-sm text-gray-600 mt-2">
+      Códigos expiram em 24h e são de uso único.
+    </p>
+  </div>
+
+  <div>
+    <h2 class="font-semibold mb-2">Seus convites ativos</h2>
+    <div id="invites-list" class="space-y-2">
+      <% if (invites.length === 0) { %>
+      <div class="text-gray-600">
+        Nenhum convite ativo. Gere um novo código.
+      </div>
+      <% } %> <% invites.forEach(invite => { %> <%- include('invite/_code_row',
+      { invite }) %> <% }) %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+<div class="bg-white p-6 rounded shadow">
+  <h1 class="text-xl font-semibold mb-2">Seu casal</h1>
+  <% if (partner) { %>
+  <p class="text-gray-700">
+    Você está pareado com <span class="font-medium"><%= partner.email %></span>.
+  </p>
+  <% } else { %>
+  <p class="text-gray-700">Aguardando o parceiro(a) aceitar o convite.</p>
+  <% } %>
+  <div class="mt-4">
+    <a class="text-indigo-600" href="/invite">Gerar novo convite</a>
+  </div>
+</div>

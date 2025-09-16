@@ -1,0 +1,28 @@
+<div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+  <h1 class="text-xl font-semibold mb-4">Entrar</h1>
+  <% if (typeof error !== 'undefined') { %>
+  <div class="mb-3 text-red-600"><%= error %></div>
+  <% } %>
+  <form method="post" action="/auth/login" class="space-y-3">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input
+      class="w-full border p-2 rounded"
+      type="email"
+      name="email"
+      placeholder="E-mail"
+      required
+    />
+    <input
+      class="w-full border p-2 rounded"
+      type="password"
+      name="password"
+      placeholder="Senha"
+      required
+    />
+    <button class="w-full bg-indigo-600 text-white py-2 rounded">Entrar</button>
+  </form>
+  <p class="mt-3 text-sm text-gray-600">
+    Não tem conta?
+    <a class="text-indigo-600" href="/auth/register">Crie aqui</a>.
+  </p>
+</div>

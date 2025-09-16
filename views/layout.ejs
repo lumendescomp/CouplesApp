@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HeartSync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body class="min-h-screen bg-gray-50">
+    <nav class="bg-white border-b">
+      <div
+        class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center"
+      >
+        <a href="/" class="font-semibold">HeartSync</a>
+        <div class="space-x-3">
+          <% if (currentUser) { %>
+          <a class="text-sm text-gray-700" href="/invite">Convites</a>
+          <a class="text-sm text-gray-700" href="/join">Entrar via código</a>
+          <a class="text-sm text-gray-700" href="/couple">Meu casal</a>
+          <form class="inline" method="post" action="/auth/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="text-sm text-red-600">Sair</button>
+          </form>
+          <% } else { %>
+          <a class="text-sm text-gray-700" href="/auth/login">Entrar</a>
+          <a class="text-sm text-gray-700" href="/auth/register">Criar conta</a>
+          <% } %>
+        </div>
+      </div>
+    </nav>
+    <main class="max-w-4xl mx-auto p-4"><%- body %></main>
+  </body>
+</html>

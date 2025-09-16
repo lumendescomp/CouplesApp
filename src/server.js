@@ -1,0 +1,119 @@
+import express from "express";
+import path from "path";
+import morgan from "morgan";
+import helmet from "helmet";
+import session from "express-session";
+import SQLiteStoreFactory from "connect-sqlite3";
+import csrf from "csurf";
+import { fileURLToPath } from "url";
+import { ensureAuthed } from "./middleware/auth.js";
+import expressLayouts from "express-ejs-layouts";
+import authRoutes from "./routes/auth.js";
+import inviteRoutes from "./routes/invite.js";
+import joinRoutes from "./routes/join.js";
+import coupleRoutes from "./routes/couple.js";
+import { initDb } from "./db.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const SQLiteStore = SQLiteStoreFactory(session);
+
+// Basic security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "script-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdn.tailwindcss.com",
+          "https://unpkg.com",
+        ],
+        "style-src": ["'self'", "'unsafe-inline'"],
+      },
+    },
+  })
+);
+
+app.use(morgan("dev"));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Sessions
+app.use(
+  session({
+    store: new SQLiteStore({
+      db: "sessions.sqlite",
+      dir: path.join(__dirname, "../data"),
+    }),
+    secret: process.env.SESSION_SECRET || "dev-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
+  })
+);
+
+// CSRF (skip for htmx with header? we'll include the token in forms)
+const csrfProtection = csrf();
+app.use(csrfProtection);
+
+// View engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "../views"));
+app.use(expressLayouts);
+app.set("layout", "layout");
+
+// Static (if needed later)
+app.use("/public", express.static(path.join(__dirname, "../public")));
+
+// Locals used in all templates
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  res.locals.currentUser = req.session.user || null;
+  const host = req.get('host');
+  res.locals.baseUrl = `${req.protocol}://${host}`;
+  next();
+});
+
+// Routes
+app.get("/", (req, res) => {
+  if (req.session.user) return res.redirect("/couple");
+  res.redirect("/auth/login");
+});
+
+app.use("/auth", authRoutes);
+app.use("/invite", ensureAuthed, inviteRoutes);
+app.use("/join", ensureAuthed, joinRoutes);
+app.use("/couple", ensureAuthed, coupleRoutes);
+
+// 404
+app.use((req, res) => {
+  res.status(404).render("errors/404");
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  const status = err.status || 500;
+  res.status(status);
+  try {
+    res.render("errors/generic", { error: err });
+  } catch (_) {
+    res.send(`Error ${status}`);
+  }
+});
+
+// Start
+const PORT = process.env.PORT || 3000;
+await initDb();
+app.listen(PORT, () =>
+  console.log(`Server listening on http://localhost:${PORT}`)
+);
