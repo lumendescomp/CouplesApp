@@ -80,6 +80,10 @@
       .heart-icon {
         color: var(--heart-red);
       }
+      /* Exibe a barra de carregamento quando htmx estiver requisitando */
+      #hs-indicator.htmx-request {
+        display: block !important;
+      }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
@@ -198,10 +202,28 @@
             : "Nenhum arquivo escolhido";
         out.textContent = name;
       });
+
+      // Atualização do destaque do link ativo no nav (cliente) para navegações htmx
+      function updateActiveNav() {
+        try {
+          const path = window.location.pathname || "/";
+          const links = document.querySelectorAll('nav a[data-nav]');
+          links.forEach((a) => {
+            const href = a.getAttribute('href') || '';
+            const isActive = href !== '/' && (path === href || path.startsWith(href + '/'));
+            a.classList.toggle('bg-white/10', isActive);
+            a.classList.toggle('text-fuchsia-200', isActive);
+            if (isActive) a.setAttribute('aria-current', 'page');
+            else a.removeAttribute('aria-current');
+          });
+        } catch (_) {}
+      }
+      document.addEventListener('DOMContentLoaded', updateActiveNav);
+      document.addEventListener('htmx:afterSwap', updateActiveNav);
     </script>
   </head>
   <body class="min-h-screen romance-bg brand-sans">
-    <nav class="sticky top-0 z-40">
+  <nav class="sticky top-0 z-40" hx-boost="true" hx-target="#hs-main" hx-select="#hs-main > *" hx-swap="innerHTML" hx-push-url="true" hx-indicator="#hs-indicator">
       <div class="glass border-b">
   <div class="max-w-5xl mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center">
           <!-- Logo à esquerda -->
@@ -219,18 +241,21 @@
             <div class="flex items-center gap-3 md:gap-6">
               <a
                 class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/invite') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                data-nav
                 <%= currentPath.startsWith('/invite') ? 'aria-current="page"' : '' %>
                 href="/invite"
                 >Convites</a
               >
               <a
                 class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/join') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                data-nav
                 <%= currentPath.startsWith('/join') ? 'aria-current="page"' : '' %>
                 href="/join"
                 >Encontrar meu par</a
               >
               <a
                 class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/couple') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                data-nav
                 <%= currentPath.startsWith('/couple') ? 'aria-current="page"' : '' %>
                 href="/couple"
                 >Nosso cantinho</a
@@ -245,6 +270,7 @@
               <% if (currentUser) { %>
               <a
                 class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2 <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                data-nav
                 <%= currentPath.startsWith('/profile') ? 'aria-current="page"' : '' %>
                 href="/profile"
               >
@@ -270,7 +296,7 @@
                 </svg>
                 <span>Perfil</span>
               </a>
-              <form class="inline" method="post" action="/auth/logout">
+              <form class="inline" method="post" action="/auth/logout" hx-boost="false">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button
                   class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2"
@@ -315,9 +341,11 @@
         </div>
       </div>
     </nav>
+    <!-- Indicador de carregamento htmx -->
+    <div id="hs-indicator" class="hidden fixed top-0 left-0 right-0 h-0.5 bg-fuchsia-400/70 z-50"></div>
 
     <main class="max-w-5xl mx-auto p-4">
-      <div class="glass rounded-2xl shadow-sm border p-4 md:p-6">
+      <div id="hs-main" class="glass rounded-2xl shadow-sm border p-4 md:p-6">
         <%- body %>
       </div>
     </main>
