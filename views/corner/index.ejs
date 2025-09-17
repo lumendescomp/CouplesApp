@@ -25,20 +25,7 @@
       >
         Adicionar
       </button>
-      <label class="ml-2 text-violet-300/80 text-sm" for="add-rot"
-        >Ângulo</label
-      >
-      <input
-        id="add-rot"
-        name="rotation"
-        type="number"
-        min="0"
-        max="359"
-        step="15"
-        value="0"
-        class="w-20 bg-white/5 border border-violet-700/40 rounded px-2 py-1 text-violet-100 focus:outline-none"
-        title="Ângulo inicial (°)"
-      />
+
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     </form>
   </header>
@@ -49,6 +36,32 @@
       class="relative rounded-xl border border-violet-700/40 bg-white/5 overflow-hidden min-h-[420px]"
     >
       <div id="corner-canvas" class="absolute inset-0"></div>
+      <!-- Toolbar de Zoom -->
+      <div
+        class="absolute top-2 left-2 z-30 flex items-center gap-1 bg-black/40 text-violet-100 border border-violet-700/40 rounded-lg px-1.5 py-1 shadow-md"
+      >
+        <button
+          id="btn-zoom-out"
+          class="px-2 py-1 hover:bg-white/10 rounded"
+          title="Zoom out"
+        >
+          −
+        </button>
+        <button
+          id="btn-zoom-reset"
+          class="px-2 py-1 hover:bg-white/10 rounded text-xs"
+          title="Resetar para 100%"
+        >
+          100%
+        </button>
+        <button
+          id="btn-zoom-in"
+          class="px-2 py-1 hover:bg-white/10 rounded"
+          title="Zoom in"
+        >
+          +
+        </button>
+      </div>
       <!-- Overlay de ações do item selecionado -->
       <div
         id="corner-overlay"
@@ -59,42 +72,59 @@
           class="flex items-center gap-1 bg-black/40 text-violet-100 border border-violet-700/40 rounded-lg px-1.5 py-1 shadow-md"
         >
           <button
-            id="btn-rotate-left"
+            id="btn-layer-down"
             class="px-2 py-1 hover:bg-white/10 rounded"
-            title="Girar -15°"
+            title="Enviar para trás"
           >
-            ↺
+            ⤺
           </button>
           <button
-            id="btn-rotate-right"
+            id="btn-layer-up"
             class="px-2 py-1 hover:bg-white/10 rounded"
-            title="Girar +15°"
+            title="Trazer para frente"
           >
-            ↻
-          </button>
-          <span class="mx-1 text-white/30">|</span>
-          <button
-            id="btn-height-up"
-            class="px-2 py-1 hover:bg-white/10 rounded"
-            title="Subir"
-          >
-            ⤴
+            ⤻
           </button>
           <button
-            id="btn-height-down"
+            id="btn-layer-bottom"
             class="px-2 py-1 hover:bg-white/10 rounded"
-            title="Descer"
+            title="Enviar para o fundo"
           >
-            ⤵
+            ⤓
+          </button>
+          <button
+            id="btn-layer-top"
+            class="px-2 py-1 hover:bg-white/10 rounded"
+            title="Trazer para o topo"
+          >
+            ⤒
           </button>
           <span class="mx-1 text-white/30">|</span>
-          <span
-            id="overlay-rot"
-            class="px-2 py-1 text-xs text-violet-200/90 select-none"
-            title="Ângulo atual"
-            >0°</span
+          <label for="overlay-scale" class="sr-only">Escala</label>
+          <input
+            id="overlay-scale"
+            type="number"
+            step="0.05"
+            min="0.25"
+            max="2"
+            value="1.0"
+            class="w-20 bg-white/10 border border-violet-700/40 rounded px-1 py-0.5 text-violet-100 text-xs"
+            title="Escala (0.25—2.0)"
+          />
+          <button
+            id="btn-scale-dec"
+            class="px-2 py-1 hover:bg-white/10 rounded text-xs"
+            title="Escala -0.05"
           >
-          <span class="mx-1 text-white/30">|</span>
+            −
+          </button>
+          <button
+            id="btn-scale-inc"
+            class="px-2 py-1 hover:bg-white/10 rounded text-xs"
+            title="Escala +0.05"
+          >
+            +
+          </button>
           <button
             id="btn-delete"
             class="px-2 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded"
@@ -168,6 +198,9 @@
       gridN: 10,
       tileW: 72,
       tileH: 36,
+      // origem fixa no espaço do "world" (não depende do container após inicializar)
+      originX: 0,
+      originY: 0,
       sizes: {
         table: { w: 2, h: 1 },
         chair: { w: 1, h: 1 },
@@ -176,35 +209,58 @@
         sofa: { w: 2, h: 1 },
         tv: { w: 2, h: 1 },
       },
-      project(container, gx, gy) {
-        const { tileW, tileH, gridN } = this;
+      // Define a origem no espaço do world, centralizando a grade inicialmente
+      computeOrigin(container) {
+        const { tileH, gridN } = this;
         const cw = container.clientWidth || 800;
         const ch = container.clientHeight || 420;
         const gridPixelH = gridN * tileH;
-        const x0 = cw / 2;
-        const y0 = Math.max(24, (ch - gridPixelH) / 2) + tileH;
-        const sx = x0 + (gx - gy) * (tileW / 2);
-        const sy = y0 + (gx + gy) * (tileH / 2);
+        this.originX = cw / 2;
+        this.originY = Math.max(24, (ch - gridPixelH) / 2) + tileH;
+      },
+      // Projeta coordenadas de grade para coordenadas locais do world
+      projectWorld(gx, gy) {
+        const { tileW, tileH, originX, originY } = this;
+        const sx = originX + (gx - gy) * (tileW / 2);
+        const sy = originY + (gx + gy) * (tileH / 2);
         return { sx, sy };
       },
     };
 
     // ===== Implementação Pixi =====
     let PIXI_APP = null;
-    const SCENE = { items: new Map(), selectedId: null };
-    const BOUND = { resize: null, keydown: null, htmx: null };
+    const SCENE = {
+      items: new Map(),
+      selectedId: null,
+      world: null,
+      zoom: 1,
+      spaceDown: false,
+      pan: { active: false },
+      floor: null,
+    };
+    const BOUND = {
+      resize: null,
+      keydown: null,
+      keyup: null,
+      htmx: null,
+      click: null,
+      pan: null,
+    };
 
     function pctToGrid(p) {
-      return Math.max(
-        0,
-        Math.min(HS_ISO.gridN - 1, Math.round(p / (100 / (HS_ISO.gridN - 1))))
-      );
+      // Converte porcentagem para índice de grade com resolução de 0.25
+      const step = 100 / (HS_ISO.gridN - 1);
+      const gi = (Number(p) || 0) / step; // pode ser fracionário
+      // arredonda para o múltiplo de 0.25 mais próximo
+      const g025 = Math.round(gi * 4) / 4;
+      return Math.max(0, Math.min(HS_ISO.gridN - 1, g025));
     }
     function gridToPct(g) {
-      return Math.max(
-        0,
-        Math.min(100, Math.round(g * (100 / (HS_ISO.gridN - 1))))
-      );
+      // Converte índice de grade (pode ter .5) para porcentagem sem arredondar
+      const step = 100 / (HS_ISO.gridN - 1);
+      const val = (Number(g) || 0) * step;
+      // limita a duas casas decimais para estabilidade de rede/render
+      return Math.max(0, Math.min(100, Number(val.toFixed(2))));
     }
     function domItemToData(node) {
       return {
@@ -214,6 +270,8 @@
         y: Number(node.getAttribute("data-y") || 50),
         z: Number(node.getAttribute("data-z") || 0),
         rotation: Number(node.getAttribute("data-rot") || 0),
+        scale: Number(node.getAttribute("data-scale") || 1.0),
+        layer: Number(node.getAttribute("data-layer") || 0),
       };
     }
 
@@ -320,23 +378,84 @@
       container.innerHTML = "";
       container.appendChild(PIXI_APP.view);
 
-      drawFloor(PIXI_APP.stage);
+      // container raiz do mundo para permitir zoom/pan
+      SCENE.world = new PIXI.Container();
+      SCENE.world.sortableChildren = true;
+      PIXI_APP.stage.addChild(SCENE.world);
+
+      // origem fixa do mundo para projeção estável
+      HS_ISO.computeOrigin(container);
+      drawFloor(SCENE.world);
       SCENE.items.clear();
       SCENE.atlas = await loadAtlasIfAny();
       (window.__cornerItems || []).forEach(addOrUpdateItem);
 
-      // teclado
-      BOUND.keydown = (ev) => onKey(ev);
+      // teclado (inclui Space para pan)
+      const containerEl = document.getElementById("corner-canvas");
+      BOUND.keydown = (ev) => {
+        // ignora quando digitando em inputs
+        const t = ev.target;
+        const tag = (t && t.tagName) || "";
+        const editing =
+          tag === "INPUT" || tag === "TEXTAREA" || (t && t.isContentEditable);
+        if (ev.code === "Space" && !editing) {
+          if (!SCENE.spaceDown) {
+            SCENE.spaceDown = true;
+            if (containerEl) containerEl.style.cursor = "grab";
+          }
+          ev.preventDefault();
+          return;
+        }
+        onKey(ev);
+      };
+      BOUND.keyup = (ev) => {
+        if (ev.code === "Space") {
+          SCENE.spaceDown = false;
+          const el = document.getElementById("corner-canvas");
+          // mantém 'grabbing' caso ainda esteja arrastando; senão limpa
+          if (el && !(SCENE.pan && SCENE.pan.active)) el.style.cursor = "";
+        }
+      };
       window.addEventListener("keydown", BOUND.keydown);
+      window.addEventListener("keyup", BOUND.keyup);
+
+      // zoom toolbar
+      const btnIn = document.getElementById("btn-zoom-in");
+      const btnOut = document.getElementById("btn-zoom-out");
+      const btnReset = document.getElementById("btn-zoom-reset");
+      if (btnIn) btnIn.onclick = () => setZoom((SCENE.zoom || 1) + 0.1);
+      if (btnOut) btnOut.onclick = () => setZoom((SCENE.zoom || 1) - 0.1);
+      if (btnReset) btnReset.onclick = () => setZoom(1);
+    }
+
+    function setZoom(value) {
+      const container = document.getElementById("corner-canvas");
+      if (!SCENE.world || !container) return;
+      const rect = container.getBoundingClientRect();
+      const mx = rect.width / 2;
+      const my = rect.height / 2;
+      const next = Math.max(0.6, Math.min(2.0, Number(value) || 1));
+      const local = SCENE.world.toLocal(new PIXI.Point(mx, my));
+      SCENE.world.pivot.set(local.x, local.y);
+      SCENE.world.position.set(mx, my);
+      SCENE.world.scale.set(next);
+      SCENE.zoom = next;
+      if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
     }
 
     function drawFloor(stage) {
-      const container = document.getElementById("corner-canvas");
-      const g = new PIXI.Graphics();
+      // limpa floor anterior
+      if (SCENE.floor) {
+        try {
+          SCENE.floor.destroy({ children: true });
+        } catch (_) {}
+      }
+      SCENE.floor = new PIXI.Container();
+      const g = new PIXI.Container();
       const { gridN, tileW, tileH } = HS_ISO;
       for (let i = 0; i < gridN; i++) {
         for (let j = 0; j < gridN; j++) {
-          const { sx, sy } = HS_ISO.project(container, i, j);
+          const { sx, sy } = HS_ISO.projectWorld(i, j);
           const diamond = new PIXI.Graphics();
           diamond.lineStyle(1, 0x7c3aed, 0.18);
           diamond.beginFill(0x7c3aed, 0.1);
@@ -356,7 +475,8 @@
           g.addChild(diamond);
         }
       }
-      stage.addChild(g);
+      SCENE.floor.addChild(g);
+      stage.addChild(SCENE.floor);
     }
 
     function textureFromUrl(url) {
@@ -400,15 +520,17 @@
       }
       const spr = new PIXI.Sprite(tex);
       spr.anchor.set(0.5);
-      const scale =
+      const baseScale =
         item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
-      spr.scale.set(scale);
+      const userScale = Number(item.scale || 1.0);
+      spr.scale.set(baseScale * userScale);
       const shadow = new PIXI.Graphics();
       shadow.beginFill(0x000000, 0.18);
       shadow.drawEllipse(0, 18, 14, 4);
       shadow.endFill();
       shadow.zIndex = -1;
       c.addChild(shadow, spr);
+      c.hsSpr = spr; // referência ao sprite principal
       c.eventMode = "static";
       c.cursor = "pointer";
       return c;
@@ -416,8 +538,7 @@
 
     function addOrUpdateItem(item) {
       const container = document.getElementById("corner-canvas");
-      const { sx, sy } = HS_ISO.project(
-        container,
+      const { sx, sy } = HS_ISO.projectWorld(
         pctToGrid(item.x),
         pctToGrid(item.y)
       );
@@ -429,9 +550,19 @@
         sprite.y = sy3d;
         sprite.rotation = ((item.rotation || 0) * Math.PI) / 180;
         sprite.alpha = 0.98;
-        sprite.on("pointerdown", (e) => startDrag(item.id, e));
+        // aplica escala do usuário
+        const base =
+          item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
+        const scl = Number(item.scale || 1.0);
+        if (sprite.hsSpr) sprite.hsSpr.scale.set(base * scl);
+        sprite.on("pointerdown", (e) => {
+          // Evita que o clique no sprite limpe a seleção via handler global
+          SCENE.justClickedSprite = true;
+          setTimeout(() => (SCENE.justClickedSprite = false), 0);
+          startDrag(item.id, e);
+        });
         sprite.on("pointertap", () => selectItem(item.id));
-        PIXI_APP.stage.addChild(sprite);
+        SCENE.world.addChild(sprite);
         entry = { item: { ...item }, sprite };
         SCENE.items.set(item.id, entry);
       } else {
@@ -439,15 +570,24 @@
         entry.sprite.x = sx;
         entry.sprite.y = sy3d;
         entry.sprite.rotation = ((item.rotation || 0) * Math.PI) / 180;
+        const base =
+          item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
+        const scl = Number(item.scale || 1.0);
+        if (entry.sprite.hsSpr) entry.sprite.hsSpr.scale.set(base * scl);
       }
       sortByDepth();
     }
 
     function sortByDepth() {
       const arr = Array.from(SCENE.items.values());
-      arr.sort((a, b) => a.sprite.y - b.sprite.y);
+      arr.sort((a, b) => {
+        const la = Number(a.item.layer || 0);
+        const lb = Number(b.item.layer || 0);
+        if (la !== lb) return la - lb; // layer menor fica atrás
+        return a.sprite.y - b.sprite.y; // empate: usa profundidade isométrica
+      });
       arr.forEach((e, i) => (e.sprite.zIndex = 100 + i));
-      PIXI_APP.stage.sortChildren();
+      if (SCENE.world) SCENE.world.sortChildren();
     }
 
     let DRAG = null;
@@ -472,13 +612,17 @@
       const rect = container.getBoundingClientRect();
       const px = ev.clientX - rect.left;
       const py = ev.clientY - rect.top;
+      // converte para coordenadas do mundo (compensa zoom/pan)
+      const ptLocal = SCENE.world
+        ? SCENE.world.toLocal(new PIXI.Point(px, py))
+        : new PIXI.Point(px, py);
       let best = { d: Infinity, gx: 0, gy: 0, sx: 0, sy: 0 };
-      for (let i = 0; i < HS_ISO.gridN; i++) {
-        for (let j = 0; j < HS_ISO.gridN; j++) {
-          const { sx, sy } = HS_ISO.project(container, i, j);
+      for (let i = 0; i < HS_ISO.gridN; i += 0.25) {
+        for (let j = 0; j < HS_ISO.gridN; j += 0.25) {
+          const { sx, sy } = HS_ISO.projectWorld(i, j);
           const sy3d = sy - (entry.item.z || 0) * (HS_ISO.tileH / 2);
-          const dx = sx - px,
-            dy = sy3d - py;
+          const dx = sx - ptLocal.x,
+            dy = sy3d - ptLocal.y;
           const d = dx * dx + dy * dy;
           if (d < best.d) best = { d, gx: i, gy: j, sx, sy: sy3d };
         }
@@ -487,7 +631,7 @@
       const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
       const gx = clamp(best.gx, 0, HS_ISO.gridN - size.w);
       const gy = clamp(best.gy, 0, HS_ISO.gridN - size.h);
-      const p = HS_ISO.project(container, gx, gy);
+      const p = HS_ISO.projectWorld(gx, gy);
       const sy3d = p.sy - (entry.item.z || 0) * (HS_ISO.tileH / 2);
       entry.sprite.x = p.sx;
       entry.sprite.y = sy3d;
@@ -527,12 +671,34 @@
       const container = document.getElementById("corner-canvas");
       if (!entry || !overlay || !container) return;
       overlay.classList.remove("hidden");
-      overlay.style.left = Math.round(entry.sprite.x) + "px";
-      overlay.style.top = Math.round(entry.sprite.y) + "px";
       const gap = 8;
+      // posição global do sprite (considera zoom/pan)
+      const gp = entry.sprite.getGlobalPosition();
+      const px = Math.round(gp.x);
+      const py = Math.round(gp.y);
+      // remover transform para medir corretamente
+      overlay.style.transform = "none";
+      // força cálculo de dimensões
+      const w = overlay.offsetWidth || 160;
       const h = overlay.offsetHeight || 32;
-      overlay.style.transform = `translate(-50%, -${h + gap}px)`;
+      const cw = container.clientWidth || 0;
+      const ch = container.clientHeight || 0;
+      // preferir acima
+      let left = Math.round(px - w / 2);
+      let top = Math.round(py - (h + gap));
+      // se não couber acima, coloca abaixo
+      if (top < 4) top = Math.round(py + gap);
+      // clamp para dentro do canvas
+      const minX = 4;
+      const minY = 4;
+      const maxX = Math.max(minX, cw - w - 4);
+      const maxY = Math.max(minY, ch - h - 4);
+      left = Math.max(minX, Math.min(maxX, left));
+      top = Math.max(minY, Math.min(maxY, top));
+      overlay.style.left = left + "px";
+      overlay.style.top = top + "px";
       updateOverlayRotationDisplay(id);
+      updateOverlayScaleDisplay(id);
     }
 
     function updateOverlayRotationDisplay(id) {
@@ -545,47 +711,195 @@
       } catch (_) {}
     }
 
+    function updateOverlayScaleDisplay(id) {
+      try {
+        const entry = SCENE.items.get(id);
+        const input = document.getElementById("overlay-scale");
+        if (!entry || !input) return;
+        input.value = Number(entry.item.scale || 1.0).toFixed(2);
+      } catch (_) {}
+    }
+
     function bindOverlayActions(id) {
       const overlay = document.getElementById("corner-overlay");
       if (!overlay) return;
       const idSel = id;
       const btnDel = document.getElementById("btn-delete");
-      const btnRL = document.getElementById("btn-rotate-left");
-      const btnRR = document.getElementById("btn-rotate-right");
-      const btnHU = document.getElementById("btn-height-up");
-      const btnHD = document.getElementById("btn-height-down");
+      const btnLU = document.getElementById("btn-layer-up");
+      const btnLD = document.getElementById("btn-layer-down");
+      const btnLT = document.getElementById("btn-layer-top");
+      const btnLB = document.getElementById("btn-layer-bottom");
       if (btnDel)
         btnDel.onclick = async (e) => {
           e.stopPropagation();
           await deleteItem(idSel);
           overlay.classList.add("hidden");
         };
-      if (btnRL)
-        btnRL.onclick = async (e) => {
+      // botões de rotação e altura removidos do overlay
+
+      function layerBounds() {
+        let min = 0,
+          max = 0;
+        SCENE.items.forEach(({ item }) => {
+          const l = Number(item.layer || 0);
+          if (l < min) min = l;
+          if (l > max) max = l;
+        });
+        return { min, max };
+      }
+      if (btnLU)
+        btnLU.onclick = async (e) => {
           e.stopPropagation();
-          await saveNudge(idSel, 0, 0, -15);
-          updateOverlayPosition(idSel);
-          updateOverlayRotationDisplay(idSel);
+          if (e.shiftKey) {
+            const { max } = layerBounds();
+            await saveLayer(idSel, max + 1);
+          } else {
+            await saveStack(idSel, +1);
+          }
         };
-      if (btnRR)
-        btnRR.onclick = async (e) => {
+      if (btnLD)
+        btnLD.onclick = async (e) => {
           e.stopPropagation();
-          await saveNudge(idSel, 0, 0, 15);
-          updateOverlayPosition(idSel);
-          updateOverlayRotationDisplay(idSel);
+          if (e.shiftKey) {
+            const { min } = layerBounds();
+            await saveLayer(idSel, min - 1);
+          } else {
+            await saveStack(idSel, -1);
+          }
         };
-      if (btnHU)
-        btnHU.onclick = async (e) => {
+      if (btnLT)
+        btnLT.onclick = async (e) => {
           e.stopPropagation();
-          await saveHeight(idSel, 1);
-          updateOverlayPosition(idSel);
+          const { max } = layerBounds();
+          await saveLayer(idSel, max + 1);
         };
-      if (btnHD)
-        btnHD.onclick = async (e) => {
+      if (btnLB)
+        btnLB.onclick = async (e) => {
           e.stopPropagation();
-          await saveHeight(idSel, -1);
-          updateOverlayPosition(idSel);
+          const { min } = layerBounds();
+          await saveLayer(idSel, min - 1);
         };
+
+      const inputScale = document.getElementById("overlay-scale");
+      const btnInc = document.getElementById("btn-scale-inc");
+      const btnDec = document.getElementById("btn-scale-dec");
+      async function setScale(val) {
+        const scl = Math.max(0.25, Math.min(2.0, Number(val) || 1.0));
+        await saveScale(idSel, scl);
+        updateOverlayScaleDisplay(idSel);
+      }
+      if (inputScale) {
+        inputScale.onchange = async (e) => {
+          e.stopPropagation();
+          await setScale(inputScale.value);
+        };
+      }
+      if (btnInc)
+        btnInc.onclick = async (e) => {
+          e.stopPropagation();
+          const v = Number((Number(inputScale.value || 1) + 0.05).toFixed(2));
+          await setScale(v);
+        };
+      if (btnDec)
+        btnDec.onclick = async (e) => {
+          e.stopPropagation();
+          const v = Number((Number(inputScale.value || 1) - 0.05).toFixed(2));
+          await setScale(v);
+        };
+    }
+
+    function clearSelection() {
+      SCENE.selectedId = null;
+      const overlay = document.getElementById("corner-overlay");
+      if (overlay) overlay.classList.add("hidden");
+      SCENE.items.forEach(({ sprite }) => sprite.scale.set(1.0));
+    }
+
+    function bindOutsideClicks() {
+      const container = document.getElementById("corner-canvas");
+      if (!container) return;
+      const onCanvasDown = (ev) => {
+        if (SCENE.justClickedSprite) return;
+        // não limpar seleção quando iniciar pan (botão do meio ou Space+esquerdo)
+        if (ev && (ev.button === 1 || (ev.button === 0 && SCENE.spaceDown)))
+          return;
+        clearSelection();
+      };
+      container.addEventListener("pointerdown", onCanvasDown);
+
+      const onDocDown = (ev) => {
+        const overlay = document.getElementById("corner-overlay");
+        if (overlay && overlay.contains(ev.target)) return;
+        const insideCanvas =
+          ev.target.closest && ev.target.closest("#corner-canvas");
+        if (!insideCanvas) clearSelection();
+      };
+      document.addEventListener("pointerdown", onDocDown);
+      BOUND.click = { onCanvasDown, onDocDown };
+    }
+
+    // Pan do canvas (botão do meio ou Space + arrastar com esquerdo)
+    function bindPan() {
+      const container = document.getElementById("corner-canvas");
+      if (!container) return;
+      const onDown = (ev) => {
+        const wantPan = ev.button === 1 || (ev.button === 0 && SCENE.spaceDown);
+        if (!wantPan) return;
+        ev.preventDefault();
+        SCENE.pan = SCENE.pan || {};
+        SCENE.pan.active = true;
+        SCENE.pan.startX = ev.clientX;
+        SCENE.pan.startY = ev.clientY;
+        SCENE.pan.worldX = SCENE.world ? SCENE.world.position.x : 0;
+        SCENE.pan.worldY = SCENE.world ? SCENE.world.position.y : 0;
+        container.style.cursor = "grabbing";
+        const onMove = (e) => {
+          if (!SCENE.pan.active || !SCENE.world) return;
+          const dx = e.clientX - SCENE.pan.startX;
+          const dy = e.clientY - SCENE.pan.startY;
+          SCENE.world.position.set(
+            SCENE.pan.worldX + dx,
+            SCENE.pan.worldY + dy
+          );
+          if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
+        };
+        const onUp = () => {
+          SCENE.pan.active = false;
+          // se Space ainda está segurado, volta para 'grab'; senão limpa
+          container.style.cursor = SCENE.spaceDown ? "grab" : "";
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      };
+      container.addEventListener("pointerdown", onDown);
+      BOUND.pan = { onDown };
+    }
+
+    async function saveStack(id, dir) {
+      const CSRF =
+        (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+      try {
+        const res = await fetch(`/corner/items/${id}/stack`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": CSRF,
+            "HX-Request": "true",
+          },
+          body: JSON.stringify({ dir }),
+        });
+        if (!res.ok) return false;
+        const html = await res.text();
+        const node = htmlToNode(html);
+        const data = domItemToData(node);
+        addOrUpdateItem(data);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
     }
 
     async function savePosition(id, x, y) {
@@ -655,6 +969,55 @@
         return false;
       }
     }
+
+    async function saveScale(id, scale) {
+      const CSRF =
+        (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+      try {
+        const res = await fetch(`/corner/items/${id}/scale`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": CSRF,
+            "HX-Request": "true",
+          },
+          body: JSON.stringify({ scale }),
+        });
+        if (!res.ok) return false;
+        const html = await res.text();
+        const node = htmlToNode(html);
+        const data = domItemToData(node);
+        addOrUpdateItem(data);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
+    async function saveLayer(id, layer) {
+      const CSRF =
+        (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+      try {
+        const res = await fetch(`/corner/items/${id}/layer`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": CSRF,
+            "HX-Request": "true",
+          },
+          body: JSON.stringify({ layer }),
+        });
+        if (!res.ok) return false;
+        const html = await res.text();
+        const node = htmlToNode(html);
+        const data = domItemToData(node);
+        addOrUpdateItem(data);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
     async function deleteItem(id) {
       const CSRF =
         (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
@@ -688,6 +1051,9 @@
     function bindResize() {
       BOUND.resize = () => {
         if (!PIXI_APP) return;
+        const container = document.getElementById("corner-canvas");
+        if (container) HS_ISO.computeOrigin(container);
+        drawFloor(SCENE.world);
         SCENE.items.forEach(({ item }) => addOrUpdateItem(item));
         if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
       };
@@ -719,20 +1085,17 @@
 
     // Teclado
     async function onKey(ev) {
+      // não interferir quando digitando em inputs
+      const t = ev.target;
+      const tag = (t && t.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || (t && t.isContentEditable))
+        return;
       if (!SCENE.selectedId) return;
       const id = SCENE.selectedId;
       const entry = SCENE.items.get(id);
       if (!entry) return;
-      if (
-        ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(ev.key)
-      ) {
-        ev.preventDefault();
-        const delta = (k) =>
-          k === "ArrowLeft" ? -2 : k === "ArrowRight" ? 2 : 0;
-        const dx = delta(ev.key);
-        const dy = ev.key === "ArrowUp" ? -2 : ev.key === "ArrowDown" ? 2 : 0;
-        if (dx || dy) await saveNudge(id, dx, dy, 0);
-      } else if (ev.key.toLowerCase() === "q") {
+      // Removido: movimentação por setas
+      if (ev.key.toLowerCase() === "q") {
         ev.preventDefault();
         await saveNudge(id, 0, 0, -15);
         updateOverlayRotationDisplay(id);
@@ -740,12 +1103,31 @@
         ev.preventDefault();
         await saveNudge(id, 0, 0, 15);
         updateOverlayRotationDisplay(id);
+      } else if (
+        (ev.ctrlKey || ev.metaKey) &&
+        (ev.key === "=" || ev.key === "+")
+      ) {
+        // Prioriza escala com Ctrl/Cmd +
+        ev.preventDefault();
+        const cur = Number(entry.item.scale || 1.0);
+        await saveScale(id, Math.min(2.0, Number((cur + 0.05).toFixed(2))));
+      } else if ((ev.ctrlKey || ev.metaKey) && ev.key === "-") {
+        // Prioriza escala com Ctrl/Cmd -
+        ev.preventDefault();
+        const cur = Number(entry.item.scale || 1.0);
+        await saveScale(id, Math.max(0.25, Number((cur - 0.05).toFixed(2))));
       } else if (ev.key === "PageUp" || ev.key === "+") {
         ev.preventDefault();
         await saveHeight(id, 1);
       } else if (ev.key === "PageDown" || ev.key === "-") {
         ev.preventDefault();
         await saveHeight(id, -1);
+      } else if (ev.key === "]") {
+        ev.preventDefault();
+        await saveStack(id, +1);
+      } else if (ev.key === "[") {
+        ev.preventDefault();
+        await saveStack(id, -1);
       } else if (ev.key === "Delete") {
         ev.preventDefault();
         await deleteItem(id);
@@ -759,7 +1141,40 @@
       container.addEventListener(
         "wheel",
         async (ev) => {
+          // Zoom do canvas quando sem modificadores
+          if (!ev.ctrlKey && !ev.altKey && !ev.shiftKey) {
+            ev.preventDefault();
+            const rect = container.getBoundingClientRect();
+            const mx = ev.clientX - rect.left;
+            const my = ev.clientY - rect.top;
+            const dir = ev.deltaY < 0 ? 1 : -1; // roda pra cima = zoom in
+            const next = Math.max(0.6, Math.min(2.0, SCENE.zoom + dir * 0.1));
+            if (SCENE.world) {
+              // ancora o zoom no cursor
+              const local = SCENE.world.toLocal(new PIXI.Point(mx, my));
+              SCENE.world.pivot.set(local.x, local.y);
+              SCENE.world.position.set(mx, my);
+              SCENE.world.scale.set(next);
+              SCENE.zoom = next;
+              if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
+            }
+            return;
+          }
           if (!SCENE.selectedId) return;
+          // Shift: escala; Ctrl/Alt: rotação
+          if (ev.shiftKey) {
+            ev.preventDefault();
+            const id = SCENE.selectedId;
+            const entry = SCENE.items.get(id);
+            const cur = Number(entry?.item?.scale || 1.0);
+            const next = ev.deltaY > 0 ? cur - 0.05 : cur + 0.05;
+            await saveScale(
+              id,
+              Math.max(0.25, Math.min(2.0, Number(next.toFixed(2))))
+            );
+            updateOverlayScaleDisplay(id);
+            return;
+          }
           if (!ev.ctrlKey && !ev.altKey) return; // somente com modificador
           ev.preventDefault();
           const id = SCENE.selectedId;
@@ -775,9 +1190,25 @@
     function destroy() {
       try {
         if (BOUND.keydown) window.removeEventListener("keydown", BOUND.keydown);
+        if (BOUND.keyup) window.removeEventListener("keyup", BOUND.keyup);
         if (BOUND.resize) window.removeEventListener("resize", BOUND.resize);
         if (BOUND.htmx)
           document.removeEventListener("htmx:afterSwap", BOUND.htmx);
+        if (BOUND.click) {
+          const container = document.getElementById("corner-canvas");
+          if (container && BOUND.click.onCanvasDown)
+            container.removeEventListener(
+              "pointerdown",
+              BOUND.click.onCanvasDown
+            );
+          if (BOUND.click.onDocDown)
+            document.removeEventListener("pointerdown", BOUND.click.onDocDown);
+        }
+        if (BOUND.pan) {
+          const container = document.getElementById("corner-canvas");
+          if (container && BOUND.pan.onDown)
+            container.removeEventListener("pointerdown", BOUND.pan.onDown);
+        }
       } catch (_) {}
       try {
         const container = document.getElementById("corner-canvas");
@@ -799,6 +1230,8 @@
     bindResize();
     bindHtmx();
     bindWheelRotate();
+    bindPan();
+    bindOutsideClicks();
 
     // filtro de inventário
     const search = document.getElementById("inventory-search");

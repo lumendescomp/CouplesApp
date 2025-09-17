@@ -46,9 +46,11 @@ export async function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       couple_id INTEGER NOT NULL,
       item_key TEXT NOT NULL,
-      x INTEGER NOT NULL DEFAULT 50, -- porcentagem 0..100
-      y INTEGER NOT NULL DEFAULT 50, -- porcentagem 0..100
+  x INTEGER NOT NULL DEFAULT 50, -- porcentagem 0..100 (aceita decimais nas atualizações)
+  y INTEGER NOT NULL DEFAULT 50, -- porcentagem 0..100 (aceita decimais nas atualizações)
       z INTEGER NOT NULL DEFAULT 0,  -- altura (camadas)
+  scale REAL NOT NULL DEFAULT 1.0, -- escala do sprite
+  layer INTEGER NOT NULL DEFAULT 0, -- ordem manual de sobreposição
       rotation INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (couple_id) REFERENCES couples(id)
@@ -56,13 +58,23 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_couple_items_couple ON couple_items(couple_id);
   `);
 
-  // Migração condicional: adiciona coluna z se ausente
+  // Migração condicional: adiciona colunas z/scale/layer se ausentes
   try {
     const cols = db.prepare("PRAGMA table_info(couple_items)").all();
     const names = new Set(cols.map((c) => c.name));
     if (!names.has("z")) {
       db.exec(
         "ALTER TABLE couple_items ADD COLUMN z INTEGER NOT NULL DEFAULT 0"
+      );
+    }
+    if (!names.has("scale")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN scale REAL NOT NULL DEFAULT 1.0"
+      );
+    }
+    if (!names.has("layer")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN layer INTEGER NOT NULL DEFAULT 0"
       );
     }
   } catch (e) {
