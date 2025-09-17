@@ -13,6 +13,8 @@
   data-scale="<%= (item.scale == null ? 1.0 : item.scale) %>"
   data-layer="<%= (item.layer == null ? 0 : item.layer) %>"
   data-color="<%= (item.color == null ? '' : item.color) %>"
+  data-stretch-x="<%= (item.stretch_x == null ? 1.0 : item.stretch_x) %>"
+  data-stretch-y="<%= (item.stretch_y == null ? 1.0 : item.stretch_y) %>"
 >
   <!-- token csrf para incluir nos nudges via hx-include -->
   <input

@@ -122,6 +122,16 @@ export async function initDb() {
     if (!names.has("color")) {
       db.exec("ALTER TABLE couple_items ADD COLUMN color INTEGER");
     }
+    if (!names.has("stretch_x")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN stretch_x REAL NOT NULL DEFAULT 1.0"
+      );
+    }
+    if (!names.has("stretch_y")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN stretch_y REAL NOT NULL DEFAULT 1.0"
+      );
+    }
   } catch (e) {
     console.warn("Migration (couple_items.z) note:", e.message);
   }
