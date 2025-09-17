@@ -40,5 +40,34 @@ export async function initDb() {
     console.warn("Migration note:", e.message);
   }
 
+  // Tabela para itens do "Nosso cantinho"
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS couple_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      couple_id INTEGER NOT NULL,
+      item_key TEXT NOT NULL,
+      x INTEGER NOT NULL DEFAULT 50, -- porcentagem 0..100
+      y INTEGER NOT NULL DEFAULT 50, -- porcentagem 0..100
+      z INTEGER NOT NULL DEFAULT 0,  -- altura (camadas)
+      rotation INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (couple_id) REFERENCES couples(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_couple_items_couple ON couple_items(couple_id);
+  `);
+
+  // Migração condicional: adiciona coluna z se ausente
+  try {
+    const cols = db.prepare("PRAGMA table_info(couple_items)").all();
+    const names = new Set(cols.map((c) => c.name));
+    if (!names.has("z")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN z INTEGER NOT NULL DEFAULT 0"
+      );
+    }
+  } catch (e) {
+    console.warn("Migration (couple_items.z) note:", e.message);
+  }
+
   return db;
 }

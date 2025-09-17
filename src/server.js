@@ -13,6 +13,7 @@ import inviteRoutes from "./routes/invite.js";
 import joinRoutes from "./routes/join.js";
 import coupleRoutes from "./routes/couple.js";
 import profileRoutes from "./routes/profile.js";
+import cornerRoutes from "./routes/corner.js";
 import { initDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +34,7 @@ app.use(
           "https://cdn.tailwindcss.com",
           "https://unpkg.com",
         ],
+        "connect-src": ["'self'", "https://unpkg.com"],
         "style-src": [
           "'self'",
           "'unsafe-inline'",
@@ -113,6 +115,7 @@ app.use("/invite", ensureAuthed, inviteRoutes);
 app.use("/join", ensureAuthed, joinRoutes);
 app.use("/couple", ensureAuthed, coupleRoutes);
 app.use("/profile", ensureAuthed, profileRoutes);
+app.use("/corner", ensureAuthed, cornerRoutes);
 
 // 404
 app.use((req, res) => {
