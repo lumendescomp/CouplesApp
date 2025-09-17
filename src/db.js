@@ -52,6 +52,10 @@ export async function initDb() {
   scale REAL NOT NULL DEFAULT 1.0, -- escala do sprite
   layer INTEGER NOT NULL DEFAULT 0, -- ordem manual de sobreposição
       rotation INTEGER NOT NULL DEFAULT 0,
+  tilt_x REAL NOT NULL DEFAULT 0, -- inclinação no eixo X (skew Y) em graus
+  tilt_y REAL NOT NULL DEFAULT 0, -- inclinação no eixo Y (skew X) em graus
+  flip_x INTEGER NOT NULL DEFAULT 0, -- espelhar horizontal
+  flip_y INTEGER NOT NULL DEFAULT 0, -- espelhar vertical
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (couple_id) REFERENCES couples(id)
     );
@@ -75,6 +79,26 @@ export async function initDb() {
     if (!names.has("layer")) {
       db.exec(
         "ALTER TABLE couple_items ADD COLUMN layer INTEGER NOT NULL DEFAULT 0"
+      );
+    }
+    if (!names.has("tilt_x")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN tilt_x REAL NOT NULL DEFAULT 0"
+      );
+    }
+    if (!names.has("tilt_y")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN tilt_y REAL NOT NULL DEFAULT 0"
+      );
+    }
+    if (!names.has("flip_x")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN flip_x INTEGER NOT NULL DEFAULT 0"
+      );
+    }
+    if (!names.has("flip_y")) {
+      db.exec(
+        "ALTER TABLE couple_items ADD COLUMN flip_y INTEGER NOT NULL DEFAULT 0"
       );
     }
   } catch (e) {

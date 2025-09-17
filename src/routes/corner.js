@@ -16,7 +16,7 @@ router.get("/", (req, res) => {
   if (!cpl) return res.redirect("/invite");
   const items = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE couple_id = ? ORDER BY id"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE couple_id = ? ORDER BY id"
     )
     .all(cpl.id);
   res.render("corner/index", { couple: cpl, items });
@@ -51,7 +51,7 @@ router.post("/items", (req, res) => {
   );
   const row = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(info.lastInsertRowid);
   if (req.get("hx-request")) {
@@ -88,7 +88,7 @@ router.post("/items/:id/nudge", (req, res) => {
   const id = Number(req.params.id);
   const current = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ? AND couple_id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ? AND couple_id = ?"
     )
     .get(id, cpl.id);
   if (!current) return res.status(404).send("not found");
@@ -110,7 +110,7 @@ router.post("/items/:id/nudge", (req, res) => {
 
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(id);
 
@@ -129,7 +129,7 @@ router.post("/items/:id/height", (req, res) => {
   const id = Number(req.params.id);
   const current = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ? AND couple_id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ? AND couple_id = ?"
     )
     .get(id, cpl.id);
   if (!current) return res.status(404).send("not found");
@@ -138,7 +138,7 @@ router.post("/items/:id/height", (req, res) => {
   db.prepare("UPDATE couple_items SET z = ? WHERE id = ?").run(nz, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -147,7 +147,6 @@ router.post("/items/:id/height", (req, res) => {
   res.redirect("/corner");
 });
 
-export default router;
 // Atualiza posição absoluta (x,y em %)
 router.post("/items/:id/position", (req, res) => {
   const db = getDb();
@@ -164,7 +163,7 @@ router.post("/items/:id/position", (req, res) => {
   db.prepare("UPDATE couple_items SET x = ?, y = ? WHERE id = ?").run(x, y, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -190,7 +189,7 @@ router.post("/items/:id/scale", (req, res) => {
   db.prepare("UPDATE couple_items SET scale = ? WHERE id = ?").run(scl, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -215,7 +214,7 @@ router.post("/items/:id/layer", (req, res) => {
   db.prepare("UPDATE couple_items SET layer = ? WHERE id = ?").run(layer, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -242,7 +241,7 @@ router.post("/items/:id/stack", (req, res) => {
   db.prepare("UPDATE couple_items SET layer = ? WHERE id = ?").run(next, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -250,3 +249,60 @@ router.post("/items/:id/stack", (req, res) => {
   }
   res.render("corner/_item", { item: updated, layout: false });
 });
+
+// inclinação (tilt/skew) absoluta
+router.post("/items/:id/tilt", (req, res) => {
+  const db = getDb();
+  const meId = req.session.user.id;
+  const cpl = getCoupleForUser(db, meId);
+  if (!cpl) return res.status(400).send("not paired");
+  const id = Number(req.params.id);
+  const row = db
+    .prepare("SELECT id FROM couple_items WHERE id = ? AND couple_id = ?")
+    .get(id, cpl.id);
+  if (!row) return res.status(404).send("not found");
+  const tx = Number(req.body.tilt_x);
+  const ty = Number(req.body.tilt_y);
+  const clamp = (v) => Math.max(-60, Math.min(60, isFinite(v) ? v : 0));
+  const tilt_x = clamp(tx);
+  const tilt_y = clamp(ty);
+  db.prepare("UPDATE couple_items SET tilt_x = ?, tilt_y = ? WHERE id = ?").run(
+    tilt_x,
+    tilt_y,
+    id
+  );
+  const updated = db
+    .prepare(
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+    )
+    .get(id);
+  return res.render("corner/_item", { item: updated, layout: false });
+});
+
+// flip (espelhar) absoluto
+router.post("/items/:id/flip", (req, res) => {
+  const db = getDb();
+  const meId = req.session.user.id;
+  const cpl = getCoupleForUser(db, meId);
+  if (!cpl) return res.status(400).send("not paired");
+  const id = Number(req.params.id);
+  const row = db
+    .prepare("SELECT id FROM couple_items WHERE id = ? AND couple_id = ?")
+    .get(id, cpl.id);
+  if (!row) return res.status(404).send("not found");
+  const fx = Number(req.body.flip_x) ? 1 : 0;
+  const fy = Number(req.body.flip_y) ? 1 : 0;
+  db.prepare("UPDATE couple_items SET flip_x = ?, flip_y = ? WHERE id = ?").run(
+    fx,
+    fy,
+    id
+  );
+  const updated = db
+    .prepare(
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+    )
+    .get(id);
+  return res.render("corner/_item", { item: updated, layout: false });
+});
+
+export default router;

@@ -12,12 +12,24 @@
         name="item_key"
         class="bg-white/5 border border-violet-700/40 rounded px-3 py-2 text-violet-100"
       >
-        <option value="table">Mesa</option>
-        <option value="chair">Cadeira</option>
-        <option value="plant">Planta</option>
-        <option value="lamp">Luminária</option>
-        <option value="sofa">Sofá</option>
-        <option value="tv">TV</option>
+        <optgroup label="Sofás">
+          <option value="sofa">Sofá</option>
+        </optgroup>
+        <optgroup label="Cadeiras">
+          <option value="chair">Cadeira</option>
+        </optgroup>
+        <optgroup label="Mesas">
+          <option value="table">Mesa</option>
+        </optgroup>
+        <optgroup label="Plantas">
+          <option value="plant">Planta</option>
+        </optgroup>
+        <optgroup label="Iluminação">
+          <option value="lamp">Luminária</option>
+        </optgroup>
+        <optgroup label="Eletrônicos">
+          <option value="tv">TV</option>
+        </optgroup>
       </select>
       <button
         class="px-3 py-2 rounded bg-white/10 text-violet-100 hover:bg-white/20"
@@ -149,16 +161,13 @@
           autocomplete="off"
         />
       </div>
-      <ul id="inventory-list" class="space-y-2 text-violet-200 text-sm">
-        <li>Mesa</li>
-        <li>Cadeira</li>
-        <li>Planta</li>
-        <li>Luminária</li>
-        <li>Sofá</li>
-        <li>TV</li>
-      </ul>
+      <div
+        id="inventory-groups"
+        class="space-y-2 text-violet-200 text-sm"
+      ></div>
       <p class="mt-4 text-xs text-violet-300/80">
-        Arraste itens no canvas (versões futuras).
+        Dica: clique em um item para selecioná-lo; dê duplo clique para
+        adicionar imediatamente.
       </p>
     </aside>
   </div>
@@ -208,6 +217,79 @@
         lamp: { w: 1, h: 1 },
         sofa: { w: 2, h: 1 },
         tv: { w: 2, h: 1 },
+        // --- Isometric (Banheiro) ---
+        "/public/furniture2/Isometric/bathroomCabinet_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/bathroomCabinetDrawer_SE.png": {
+          w: 1,
+          h: 1,
+        },
+        "/public/furniture2/Isometric/bathroomMirror_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/bathroomSink_SE.png": { w: 1, h: 1 },
+        // --- Isometric (Sofás) ---
+        "/public/furniture2/Isometric/loungeSofa_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/loungeSofaLong_SE.png": { w: 3, h: 1 },
+        "/public/furniture2/Isometric/loungeSofaCorner_SE.png": { w: 2, h: 2 },
+        "/public/furniture2/Isometric/loungeDesignSofa_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/loungeSofaOttoman_SE.png": { w: 1, h: 1 },
+        // --- Isometric (Mesas) ---
+        "/public/furniture2/Isometric/table_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/tableGlass_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/tableRound_SE.png": { w: 2, h: 2 },
+        "/public/furniture2/Isometric/tableCoffee_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/tableCoffeeSquare_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/tableCoffeeGlass_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/sideTable_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/sideTableDrawers_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/desk_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/deskCorner_SE.png": { w: 2, h: 2 },
+        "/public/furniture2/Isometric/bathroomSinkSquare_SE.png": {
+          w: 1,
+          h: 1,
+        },
+        "/public/furniture2/Isometric/bathtub_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/shower_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/showerRound_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/toilet_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/toiletSquare_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/trashcan_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/washer_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/dryer_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/washerDryerStacked_SE.png": {
+          w: 1,
+          h: 1,
+        },
+        // --- Isometric (Cadeiras/Bancos/Poltronas) ---
+        "/public/furniture2/Isometric/chair_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/chairRounded_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/chairDesk_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/loungeChair_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/loungeChairRelax_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/loungeDesignChair_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/stoolBar_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/stoolBarSquare_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/bench_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/benchCushion_SE.png": { w: 2, h: 1 },
+        // --- Isometric (Plantas) ---
+        "/public/furniture2/Isometric/plantSmall1_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/plantSmall2_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/plantSmall3_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/pottedPlant_SE.png": { w: 1, h: 1 },
+        // --- Isometric (Iluminação) ---
+        "/public/furniture2/Isometric/lampRoundFloor_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/lampRoundTable_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/lampSquareFloor_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/lampSquareTable_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/lampWall_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/lampSquareCeiling_SE.png": { w: 1, h: 1 },
+        // --- Isometric (Eletrônicos) ---
+        "/public/furniture2/Isometric/televisionModern_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/televisionVintage_SE.png": { w: 2, h: 1 },
+        "/public/furniture2/Isometric/televisionAntenna_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/computerScreen_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/laptop_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/speaker_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/speakerSmall_SE.png": { w: 1, h: 1 },
+        "/public/furniture2/Isometric/radio_SE.png": { w: 1, h: 1 },
       },
       // Define a origem no espaço do world, centralizando a grade inicialmente
       computeOrigin(container) {
@@ -237,7 +319,10 @@
       spaceDown: false,
       pan: { active: false },
       floor: null,
+      ghost: null,
     };
+    // estado de drag global para inventário -> canvas
+    const DRAG_STATE = { key: null };
     const BOUND = {
       resize: null,
       keydown: null,
@@ -270,6 +355,10 @@
         y: Number(node.getAttribute("data-y") || 50),
         z: Number(node.getAttribute("data-z") || 0),
         rotation: Number(node.getAttribute("data-rot") || 0),
+        tilt_x: Number(node.getAttribute("data-tilt-x") || 0),
+        tilt_y: Number(node.getAttribute("data-tilt-y") || 0),
+        flip_x: Number(node.getAttribute("data-flip-x") || 0) ? 1 : 0,
+        flip_y: Number(node.getAttribute("data-flip-y") || 0) ? 1 : 0,
         scale: Number(node.getAttribute("data-scale") || 1.0),
         layer: Number(node.getAttribute("data-layer") || 0),
       };
@@ -513,9 +602,14 @@
         }
       }
       if (!tex) {
-        const url =
-          textures[item.item_key] ||
-          `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='10' fill='%23a78bfa'/></svg>`;
+        // suportar item_key como caminho/URL de imagem
+        const key = String(item.item_key || "");
+        const looksLikeImg =
+          /\.(png|jpg|jpeg|webp|gif)$/i.test(key) || key.startsWith("/public/");
+        const url = looksLikeImg
+          ? key
+          : textures[item.item_key] ||
+            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='10' fill='%23a78bfa'/></svg>`;
         tex = textureFromUrl(url);
       }
       const spr = new PIXI.Sprite(tex);
@@ -536,6 +630,68 @@
       return c;
     }
 
+    // ===== Ghost (preview durante drag) =====
+    function hideGhost() {
+      if (SCENE.ghost && SCENE.ghost.container) {
+        try {
+          SCENE.ghost.container.destroy({ children: true });
+        } catch (_) {}
+      }
+      SCENE.ghost = null;
+    }
+    function ensureGhost(key) {
+      if (SCENE.ghost && SCENE.ghost.key === key && SCENE.ghost.container)
+        return SCENE.ghost.container;
+      // recria ghost
+      hideGhost();
+      const item = {
+        item_key: key,
+        scale: 1.0,
+        rotation: 0,
+        z: 0,
+        tilt_x: 0,
+        tilt_y: 0,
+        flip_x: 0,
+        flip_y: 0,
+      };
+      const cont = spriteFor(item);
+      cont.alpha = 0.6;
+      cont.eventMode = "none";
+      // esconder sombra do ghost
+      cont.children.forEach((ch) => {
+        if (ch && ch.constructor && ch.constructor.name === "Graphics")
+          ch.visible = false;
+      });
+      cont.zIndex = 100000;
+      if (SCENE.world) {
+        SCENE.world.addChild(cont);
+        SCENE.world.sortChildren();
+      }
+      SCENE.ghost = { key, container: cont };
+      return cont;
+    }
+    function updateGhostPosition(px, py) {
+      if (!SCENE.world || !SCENE.ghost || !SCENE.ghost.container) return;
+      const ptLocal = SCENE.world.toLocal(new PIXI.Point(px, py));
+      let best = { d: Infinity, gx: 0, gy: 0 };
+      for (let i = 0; i < HS_ISO.gridN; i += 0.25) {
+        for (let j = 0; j < HS_ISO.gridN; j += 0.25) {
+          const { sx, sy } = HS_ISO.projectWorld(i, j);
+          const dx = sx - ptLocal.x,
+            dy = sy - ptLocal.y;
+          const d = dx * dx + dy * dy;
+          if (d < best.d) best = { d, gx: i, gy: j };
+        }
+      }
+      // clamp até as bordas da grade (permitir borda do canvas)
+      const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+      const gx = clamp(best.gx, 0, HS_ISO.gridN - 1);
+      const gy = clamp(best.gy, 0, HS_ISO.gridN - 1);
+      const { sx, sy } = HS_ISO.projectWorld(gx, gy);
+      SCENE.ghost.container.x = sx;
+      SCENE.ghost.container.y = sy;
+    }
+
     function addOrUpdateItem(item) {
       const container = document.getElementById("corner-canvas");
       const { sx, sy } = HS_ISO.projectWorld(
@@ -554,7 +710,14 @@
         const base =
           item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
         const scl = Number(item.scale || 1.0);
-        if (sprite.hsSpr) sprite.hsSpr.scale.set(base * scl);
+        if (sprite.hsSpr) {
+          const sx = (item.flip_x ? -1 : 1) * base * scl;
+          const sy = (item.flip_y ? -1 : 1) * base * scl;
+          sprite.hsSpr.scale.set(sx, sy);
+          const kx = Number(item.tilt_x || 0) * (Math.PI / 180);
+          const ky = Number(item.tilt_y || 0) * (Math.PI / 180);
+          sprite.hsSpr.skew.set(kx, ky);
+        }
         sprite.on("pointerdown", (e) => {
           // Evita que o clique no sprite limpe a seleção via handler global
           SCENE.justClickedSprite = true;
@@ -573,7 +736,14 @@
         const base =
           item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
         const scl = Number(item.scale || 1.0);
-        if (entry.sprite.hsSpr) entry.sprite.hsSpr.scale.set(base * scl);
+        if (entry.sprite.hsSpr) {
+          const sx = (item.flip_x ? -1 : 1) * base * scl;
+          const sy = (item.flip_y ? -1 : 1) * base * scl;
+          entry.sprite.hsSpr.scale.set(sx, sy);
+          const kx = Number(item.tilt_x || 0) * (Math.PI / 180);
+          const ky = Number(item.tilt_y || 0) * (Math.PI / 180);
+          entry.sprite.hsSpr.skew.set(kx, ky);
+        }
       }
       sortByDepth();
     }
@@ -627,10 +797,9 @@
           if (d < best.d) best = { d, gx: i, gy: j, sx, sy: sy3d };
         }
       }
-      const size = HS_ISO.sizes[entry.item.item_key] || { w: 1, h: 1 };
       const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
-      const gx = clamp(best.gx, 0, HS_ISO.gridN - size.w);
-      const gy = clamp(best.gy, 0, HS_ISO.gridN - size.h);
+      const gx = clamp(best.gx, 0, HS_ISO.gridN - 1);
+      const gy = clamp(best.gy, 0, HS_ISO.gridN - 1);
       const p = HS_ISO.projectWorld(gx, gy);
       const sy3d = p.sy - (entry.item.z || 0) * (HS_ISO.tileH / 2);
       entry.sprite.x = p.sx;
@@ -994,6 +1163,54 @@
         return false;
       }
     }
+    async function saveTilt(id, tilt_x, tilt_y) {
+      const CSRF =
+        (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+      try {
+        const res = await fetch(`/corner/items/${id}/tilt`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": CSRF,
+            "HX-Request": "true",
+          },
+          body: JSON.stringify({ tilt_x, tilt_y }),
+        });
+        if (!res.ok) return false;
+        const html = await res.text();
+        const node = htmlToNode(html);
+        const data = domItemToData(node);
+        addOrUpdateItem(data);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
+    async function saveFlip(id, flip_x, flip_y) {
+      const CSRF =
+        (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+      try {
+        const res = await fetch(`/corner/items/${id}/flip`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": CSRF,
+            "HX-Request": "true",
+          },
+          body: JSON.stringify({ flip_x, flip_y }),
+        });
+        if (!res.ok) return false;
+        const html = await res.text();
+        const node = htmlToNode(html);
+        const data = domItemToData(node);
+        addOrUpdateItem(data);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
     async function saveLayer(id, layer) {
       const CSRF =
         (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
@@ -1028,6 +1245,17 @@
         });
         if (!res.ok) return false;
         removeSprite(id);
+        // remove do cache local e atualiza contadores
+        try {
+          if (Array.isArray(window.__cornerItems)) {
+            window.__cornerItems = window.__cornerItems.filter(
+              (it) => it.id !== id
+            );
+          }
+        } catch {}
+        try {
+          refreshGroupCounts && refreshGroupCounts();
+        } catch {}
         return true;
       } catch (e) {
         console.error(e);
@@ -1103,6 +1331,34 @@
         ev.preventDefault();
         await saveNudge(id, 0, 0, 15);
         updateOverlayRotationDisplay(id);
+      } else if (ev.key.toLowerCase() === "t") {
+        // tilt X - inclinação no eixo X (skew Y)
+        ev.preventDefault();
+        const tx = Number(entry.item.tilt_x || 0) - 2;
+        await saveTilt(id, tx, entry.item.tilt_y || 0);
+      } else if (ev.key.toLowerCase() === "g") {
+        ev.preventDefault();
+        const tx = Number(entry.item.tilt_x || 0) + 2;
+        await saveTilt(id, tx, entry.item.tilt_y || 0);
+      } else if (ev.key.toLowerCase() === "y") {
+        // tilt Y - inclinação no eixo Y (skew X)
+        ev.preventDefault();
+        const ty = Number(entry.item.tilt_y || 0) - 2;
+        await saveTilt(id, entry.item.tilt_x || 0, ty);
+      } else if (ev.key.toLowerCase() === "h") {
+        ev.preventDefault();
+        const ty = Number(entry.item.tilt_y || 0) + 2;
+        await saveTilt(id, entry.item.tilt_x || 0, ty);
+      } else if (ev.key.toLowerCase() === "f") {
+        // flip horizontal
+        ev.preventDefault();
+        const fx = entry.item.flip_x ? 0 : 1;
+        await saveFlip(id, fx, entry.item.flip_y || 0);
+      } else if (ev.key.toLowerCase() === "v") {
+        // flip vertical
+        ev.preventDefault();
+        const fy = entry.item.flip_y ? 0 : 1;
+        await saveFlip(id, entry.item.flip_x || 0, fy);
       } else if (
         (ev.ctrlKey || ev.metaKey) &&
         (ev.key === "=" || ev.key === "+")
@@ -1232,19 +1488,406 @@
     bindWheelRotate();
     bindPan();
     bindOutsideClicks();
+    // carregar itens do furniture2 (manifest)
+    try {
+      loadInventoryFromManifest();
+    } catch {}
 
-    // filtro de inventário
+    // Inventário dinâmico (carrega manifest furniture2 e liga interações)
     const search = document.getElementById("inventory-search");
-    const list = document.getElementById("inventory-list");
-    if (search && list) {
+    const groups = document.getElementById("inventory-groups");
+
+    function renderInventoryGroups(data) {
+      if (!groups) return;
+      groups.innerHTML = "";
+      const categories = Object.keys(data || {});
+      categories.forEach((cat) => {
+        const section = document.createElement("section");
+        section.className =
+          "inv-group border border-violet-700/30 rounded-lg overflow-hidden";
+        section.innerHTML = `
+          <button type="button" class="inv-toggle w-full flex items-center justify-between px-3 py-2 bg-white/5 hover:bg-white/10 text-left">
+            <span class="font-medium text-violet-100">${cat}</span>
+            <span class="inv-count text-xs text-violet-300 ml-2"></span>
+            <span class="inv-chevron">▾</span>
+          </button>
+          <ul class="inv-items divide-y divide-violet-700/20"></ul>
+        `;
+        const ul = section.querySelector(".inv-items");
+        (data[cat] || []).forEach((item) => {
+          const li = document.createElement("li");
+          li.className = "px-3 py-2 hover:bg-white/10 cursor-pointer";
+          li.setAttribute("draggable", "true");
+          li.setAttribute("data-key", item.key);
+          li.textContent = item.label || item.key;
+          ul.appendChild(li);
+        });
+        groups.appendChild(section);
+      });
+      bindInventoryInteractions();
+      refreshGroupCounts();
+    }
+
+    async function loadInventoryFromManifest() {
+      try {
+        const res = await fetch("/public/furniture2/manifest.json", {
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderInventoryGroups(data);
+      } catch (e) {
+        console.warn(
+          "[corner] manifest furniture2 não encontrado, mantendo inventário padrão."
+        );
+      }
+    }
+
+    function bindInventoryInteractions() {
+      if (!groups) return;
+      // toggle de grupos
+      groups.querySelectorAll(".inv-group").forEach((grp) => {
+        const btn = grp.querySelector(".inv-toggle");
+        const ul = grp.querySelector(".inv-items");
+        const chevron = grp.querySelector(".inv-chevron");
+        // id estável do grupo baseado no título
+        const titleEl = btn && btn.querySelector("span.font-medium");
+        const groupId =
+          (titleEl &&
+            (titleEl.textContent || "").toLowerCase().replace(/\s+/g, "-")) ||
+          Math.random().toString(36).slice(2);
+        grp.dataset.groupId = groupId;
+
+        const storageKey = (id) => `inv_open_${id}`;
+        const loadOpen = () => {
+          try {
+            const v = localStorage.getItem(storageKey(groupId));
+            if (v === null) return true; // padrão: aberto
+            return v === "1";
+          } catch {
+            return true;
+          }
+        };
+        const saveOpen = (open) => {
+          try {
+            localStorage.setItem(storageKey(groupId), open ? "1" : "0");
+          } catch {}
+        };
+
+        const setOpen = (open, persist = false) => {
+          ul.style.display = open ? "" : "none";
+          if (chevron) chevron.textContent = open ? "▾" : "▸";
+          grp.dataset.open = open ? "1" : "0";
+          if (persist) saveOpen(open);
+        };
+        // estado inicial (persistido)
+        setOpen(loadOpen());
+        if (btn)
+          btn.addEventListener("click", () => {
+            const open = grp.dataset.open !== "0";
+            setOpen(!open, true);
+          });
+      });
+      // clique/drag/dblclick
+      groups.querySelectorAll("[data-key]").forEach((li) => {
+        // DRAG: iniciar arraste com dataTransfer
+        li.addEventListener("dragstart", (ev) => {
+          const key = li.getAttribute("data-key");
+          try {
+            ev.dataTransfer.setData("application/x-corner-item", key);
+            ev.dataTransfer.setData("text/plain", key);
+            ev.dataTransfer.effectAllowed = "copy";
+          } catch {}
+          DRAG_STATE.key = key;
+        });
+        li.addEventListener("dragend", () => {
+          DRAG_STATE.key = null;
+          hideGhost();
+        });
+        li.addEventListener("click", () => {
+          const key = li.getAttribute("data-key");
+          const sel = document.querySelector(
+            '#add-item-form select[name="item_key"]'
+          );
+          if (sel) {
+            sel.value = key;
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          // destaque visual no inventário
+          groups.querySelectorAll("[data-key]").forEach((el) => {
+            el.classList.toggle(
+              "bg-white/10",
+              el.getAttribute("data-key") === key
+            );
+          });
+          // garantir grupo aberto
+          const grp = li.closest(".inv-group");
+          if (grp) {
+            grp.style.display = "";
+            const chevron = grp.querySelector(".inv-chevron");
+            const ul = grp.querySelector(".inv-items");
+            if (ul) ul.style.display = "";
+            if (chevron) chevron.textContent = "▾";
+            grp.dataset.open = "1";
+            try {
+              const gid = grp.dataset.groupId;
+              if (gid) localStorage.setItem(`inv_open_${gid}`, "1");
+            } catch {}
+          }
+        });
+        // duplo clique: cria item no centro do canvas
+        li.addEventListener("dblclick", async () => {
+          const key = li.getAttribute("data-key");
+          const container = document.getElementById("corner-canvas");
+          if (!container) return;
+          const rect = container.getBoundingClientRect();
+          const px = rect.width / 2;
+          const py = rect.height / 2;
+          const local = SCENE.world
+            ? SCENE.world.toLocal(new PIXI.Point(px, py))
+            : new PIXI.Point(px, py);
+          let best = { d: Infinity, gx: 0, gy: 0 };
+          for (let i = 0; i < HS_ISO.gridN; i += 0.25) {
+            for (let j = 0; j < HS_ISO.gridN; j += 0.25) {
+              const { sx, sy } = HS_ISO.projectWorld(i, j);
+              const dx = sx - local.x,
+                dy = sy - local.y;
+              const d = dx * dx + dy * dy;
+              if (d < best.d) best = { d, gx: i, gy: j };
+            }
+          }
+          // permitir posicionar nas bordas do canvas
+          const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+          const gx = clamp(best.gx, 0, HS_ISO.gridN - 1);
+          const gy = clamp(best.gy, 0, HS_ISO.gridN - 1);
+          const xPct = gridToPct(gx);
+          const yPct = gridToPct(gy);
+          const CSRF =
+            (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+            "";
+          try {
+            const res = await fetch("/corner/items", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": CSRF,
+                "HX-Request": "true",
+              },
+              body: JSON.stringify({ item_key: key, x: xPct, y: yPct }),
+            });
+            if (!res.ok) return;
+            const html = await res.text();
+            const node = htmlToNode(html);
+            const data = domItemToData(node);
+            data.x = xPct;
+            data.y = yPct;
+            try {
+              window.__cornerItems = Array.isArray(window.__cornerItems)
+                ? window.__cornerItems
+                : [];
+              window.__cornerItems.push(data);
+            } catch {}
+            addOrUpdateItem(data);
+            selectItem(data.id);
+            refreshGroupCounts();
+          } catch (e) {
+            console.error(e);
+          }
+        });
+      });
+    }
+    if (search && groups) {
       const onInput = () => {
         const q = (search.value || "").trim().toLowerCase();
-        list.querySelectorAll("li").forEach((li) => {
-          const txt = (li.textContent || "").toLowerCase();
-          li.style.display = !q || txt.includes(q) ? "" : "none";
+        groups.querySelectorAll(".inv-group").forEach((grp) => {
+          const items = Array.from(grp.querySelectorAll("[data-key]"));
+          let any = false;
+          items.forEach((li) => {
+            const txt = (li.textContent || "").toLowerCase();
+            const show = !q || txt.includes(q);
+            li.style.display = show ? "" : "none";
+            if (show) any = true;
+          });
+          // esconde grupo sem matches
+          grp.style.display = any ? "" : "none";
+          // com busca ativa, abre grupos com resultados; sem busca, restaura estado salvo
+          const btn = grp.querySelector(".inv-toggle");
+          const ul = grp.querySelector(".inv-items");
+          const chevron = grp.querySelector(".inv-chevron");
+          const groupId = grp.dataset.groupId;
+          const storageKey = (id) => `inv_open_${id}`;
+          const setOpen = (open) => {
+            ul.style.display = open ? "" : "none";
+            if (chevron) chevron.textContent = open ? "▾" : "▸";
+            grp.dataset.open = open ? "1" : "0";
+          };
+          if (q) {
+            setOpen(any); // abrir quando há resultado
+          } else {
+            try {
+              const v = localStorage.getItem(storageKey(groupId));
+              setOpen(v === null ? true : v === "1");
+            } catch {
+              setOpen(true);
+            }
+          }
         });
       };
       search.addEventListener("input", onInput);
     }
+
+    // Atualiza contadores por grupo (quantidade de itens no canvas por categoria)
+    function refreshGroupCounts() {
+      if (!groups) return;
+      const all = Array.isArray(window.__cornerItems)
+        ? window.__cornerItems
+        : [];
+      groups.querySelectorAll(".inv-group").forEach((grp) => {
+        const cnt = grp.querySelector(".inv-count");
+        if (!cnt) return;
+        const keys = Array.from(grp.querySelectorAll("[data-key]")).map((n) =>
+          n.getAttribute("data-key")
+        );
+        let total = 0;
+        all.forEach((it) => {
+          if (keys.includes(String(it.item_key))) total += 1;
+        });
+        cnt.textContent = total > 0 ? `(${total})` : "";
+      });
+    }
+    refreshGroupCounts();
+
+    // Ouvir eventos de inserção/remoção para atualizar contadores
+    document.addEventListener("htmx:afterSwap", (e) => {
+      const target = e && e.detail && e.detail.target;
+      if (target && target.id === "corner-outbox") {
+        // addOrUpdateItem já atualiza __cornerItems; só atualizar contadores
+        setTimeout(refreshGroupCounts, 0);
+      }
+    });
+    document.addEventListener("itemRemoved", () =>
+      setTimeout(refreshGroupCounts, 0)
+    );
+
+    // Drag & Drop no canvas: permitir soltar para criar item na posição
+    (function enableCanvasDrop() {
+      const container = document.getElementById("corner-canvas");
+      if (!container) return;
+      container.addEventListener("dragover", (ev) => {
+        // aceita cópia
+        try {
+          ev.dataTransfer.dropEffect = "copy";
+          const rect = container.getBoundingClientRect();
+          let key = "";
+          try {
+            key =
+              DRAG_STATE.key ||
+              ev.dataTransfer.getData("application/x-corner-item") ||
+              ev.dataTransfer.getData("text/plain") ||
+              "";
+          } catch {}
+          if (key) {
+            ensureGhost(key);
+            updateGhostPosition(ev.clientX - rect.left, ev.clientY - rect.top);
+          }
+        } catch {}
+        container.addEventListener("dragenter", (ev) => {
+          const rect = container.getBoundingClientRect();
+          let key = "";
+          try {
+            key =
+              DRAG_STATE.key ||
+              ev.dataTransfer.getData("application/x-corner-item") ||
+              ev.dataTransfer.getData("text/plain") ||
+              "";
+          } catch {}
+          if (key) {
+            ensureGhost(key);
+            updateGhostPosition(ev.clientX - rect.left, ev.clientY - rect.top);
+          }
+        });
+        container.addEventListener("dragleave", (ev) => {
+          // se saiu do canvas, esconder ghost
+          const to = ev.relatedTarget;
+          const leftCanvas = !(
+            to &&
+            (to === container || (to.closest && to.closest("#corner-canvas")))
+          );
+          if (leftCanvas) hideGhost();
+        });
+        ev.preventDefault();
+      });
+      container.addEventListener("drop", async (ev) => {
+        ev.preventDefault();
+        let key = "";
+        try {
+          key =
+            ev.dataTransfer.getData("application/x-corner-item") ||
+            ev.dataTransfer.getData("text/plain") ||
+            "";
+        } catch {}
+        if (!key) return;
+        // calcular posição em grid a partir do ponto solto
+        const rect = container.getBoundingClientRect();
+        const px = ev.clientX - rect.left;
+        const py = ev.clientY - rect.top;
+        // converter para coordenadas do mundo (compensa zoom/pan)
+        const local = SCENE.world
+          ? SCENE.world.toLocal(new PIXI.Point(px, py))
+          : new PIXI.Point(px, py);
+        // buscar o ponto de grade mais próximo (com resolução 0.25)
+        let best = { d: Infinity, gx: 0, gy: 0 };
+        for (let i = 0; i < HS_ISO.gridN; i += 0.25) {
+          for (let j = 0; j < HS_ISO.gridN; j += 0.25) {
+            const { sx, sy } = HS_ISO.projectWorld(i, j);
+            const dx = sx - local.x,
+              dy = sy - local.y;
+            const d = dx * dx + dy * dy;
+            if (d < best.d) best = { d, gx: i, gy: j };
+          }
+        }
+        // permitir posicionar nas bordas do canvas
+        const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
+        const gx = clamp(best.gx, 0, HS_ISO.gridN - 1);
+        const gy = clamp(best.gy, 0, HS_ISO.gridN - 1);
+        const xPct = gridToPct(gx);
+        const yPct = gridToPct(gy);
+        // criar item via POST /corner/items (hx-like)
+        const CSRF =
+          (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+          "";
+        try {
+          const res = await fetch("/corner/items", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRF-Token": CSRF,
+              "HX-Request": "true",
+            },
+            body: JSON.stringify({ item_key: key, x: xPct, y: yPct }),
+          });
+          if (!res.ok) return;
+          const html = await res.text();
+          const node = htmlToNode(html);
+          const data = domItemToData(node);
+          // manter x,y que acabamos de definir (o parcial já deve conter), mas garantimos
+          data.x = xPct;
+          data.y = yPct;
+          // atualizar internamente
+          try {
+            window.__cornerItems = Array.isArray(window.__cornerItems)
+              ? window.__cornerItems
+              : [];
+            window.__cornerItems.push(data);
+          } catch {}
+          addOrUpdateItem(data);
+          selectItem(data.id);
+          refreshGroupCounts();
+        } catch (e) {
+          console.error(e);
+        }
+        hideGhost();
+      });
+    })();
   })();
 </script>

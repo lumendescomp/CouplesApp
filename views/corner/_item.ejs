@@ -6,6 +6,10 @@
   data-y="<%= item.y %>"
   data-z="<%= item.z || 0 %>"
   data-rot="<%= item.rotation %>"
+  data-tilt-x="<%= (item.tilt_x == null ? 0 : item.tilt_x) %>"
+  data-tilt-y="<%= (item.tilt_y == null ? 0 : item.tilt_y) %>"
+  data-flip-x="<%= (item.flip_x ? 1 : 0) %>"
+  data-flip-y="<%= (item.flip_y ? 1 : 0) %>"
   data-scale="<%= (item.scale == null ? 1.0 : item.scale) %>"
   data-layer="<%= (item.layer == null ? 0 : item.layer) %>"
 >

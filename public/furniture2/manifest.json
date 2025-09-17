@@ -1,0 +1,235 @@
+{
+  "Sofás": [
+    { "label": "Sofá (básico)", "key": "sofa" },
+    {
+      "label": "Sofá (reto)",
+      "key": "/public/furniture2/Isometric/loungeSofa_SE.png"
+    },
+    {
+      "label": "Sofá de canto",
+      "key": "/public/furniture2/Isometric/loungeSofaCorner_SE.png"
+    },
+    {
+      "label": "Sofá longo",
+      "key": "/public/furniture2/Isometric/loungeSofaLong_SE.png"
+    },
+    {
+      "label": "Sofá design",
+      "key": "/public/furniture2/Isometric/loungeDesignSofa_SE.png"
+    },
+    {
+      "label": "Pufe / Ottoman",
+      "key": "/public/furniture2/Isometric/loungeSofaOttoman_SE.png"
+    }
+  ],
+  "Cadeiras": [
+    { "label": "Cadeira (básica)", "key": "chair" },
+    { "label": "Cadeira", "key": "/public/furniture2/Isometric/chair_SE.png" },
+    {
+      "label": "Cadeira arredondada",
+      "key": "/public/furniture2/Isometric/chairRounded_SE.png"
+    },
+    {
+      "label": "Cadeira de escritório",
+      "key": "/public/furniture2/Isometric/chairDesk_SE.png"
+    },
+    {
+      "label": "Poltrona lounge",
+      "key": "/public/furniture2/Isometric/loungeChair_SE.png"
+    },
+    {
+      "label": "Poltrona lounge relax",
+      "key": "/public/furniture2/Isometric/loungeChairRelax_SE.png"
+    },
+    {
+      "label": "Cadeira design",
+      "key": "/public/furniture2/Isometric/loungeDesignChair_SE.png"
+    },
+    {
+      "label": "Banqueta",
+      "key": "/public/furniture2/Isometric/stoolBar_SE.png"
+    },
+    {
+      "label": "Banqueta quadrada",
+      "key": "/public/furniture2/Isometric/stoolBarSquare_SE.png"
+    },
+    { "label": "Banco", "key": "/public/furniture2/Isometric/bench_SE.png" },
+    {
+      "label": "Banco c/ almofada",
+      "key": "/public/furniture2/Isometric/benchCushion_SE.png"
+    }
+  ],
+  "Mesas": [
+    { "label": "Mesa (básica)", "key": "table" },
+    { "label": "Mesa", "key": "/public/furniture2/Isometric/table_SE.png" },
+    {
+      "label": "Mesa redonda",
+      "key": "/public/furniture2/Isometric/tableRound_SE.png"
+    },
+    {
+      "label": "Mesa de vidro",
+      "key": "/public/furniture2/Isometric/tableGlass_SE.png"
+    },
+    {
+      "label": "Mesa de centro",
+      "key": "/public/furniture2/Isometric/tableCoffee_SE.png"
+    },
+    {
+      "label": "Mesa de centro quadrada",
+      "key": "/public/furniture2/Isometric/tableCoffeeSquare_SE.png"
+    },
+    {
+      "label": "Mesa de centro vidro",
+      "key": "/public/furniture2/Isometric/tableCoffeeGlass_SE.png"
+    },
+    {
+      "label": "Mesa lateral",
+      "key": "/public/furniture2/Isometric/sideTable_SE.png"
+    },
+    {
+      "label": "Mesa lateral c/ gaveta",
+      "key": "/public/furniture2/Isometric/sideTableDrawers_SE.png"
+    },
+    {
+      "label": "Escrivaninha",
+      "key": "/public/furniture2/Isometric/desk_SE.png"
+    },
+    {
+      "label": "Mesa canto (L)",
+      "key": "/public/furniture2/Isometric/deskCorner_SE.png"
+    }
+  ],
+  "Plantas": [
+    { "label": "Planta (básica)", "key": "plant" },
+    {
+      "label": "Planta pequena 1",
+      "key": "/public/furniture2/Isometric/plantSmall1_SE.png"
+    },
+    {
+      "label": "Planta pequena 2",
+      "key": "/public/furniture2/Isometric/plantSmall2_SE.png"
+    },
+    {
+      "label": "Planta pequena 3",
+      "key": "/public/furniture2/Isometric/plantSmall3_SE.png"
+    },
+    {
+      "label": "Planta em vaso",
+      "key": "/public/furniture2/Isometric/pottedPlant_SE.png"
+    }
+  ],
+  "Iluminação": [
+    { "label": "Luminária (básica)", "key": "lamp" },
+    {
+      "label": "Luminária de chão (redonda)",
+      "key": "/public/furniture2/Isometric/lampRoundFloor_SE.png"
+    },
+    {
+      "label": "Luminária de mesa (redonda)",
+      "key": "/public/furniture2/Isometric/lampRoundTable_SE.png"
+    },
+    {
+      "label": "Luminária de chão (quadrada)",
+      "key": "/public/furniture2/Isometric/lampSquareFloor_SE.png"
+    },
+    {
+      "label": "Luminária de mesa (quadrada)",
+      "key": "/public/furniture2/Isometric/lampSquareTable_SE.png"
+    },
+    {
+      "label": "Arandela",
+      "key": "/public/furniture2/Isometric/lampWall_SE.png"
+    },
+    {
+      "label": "Luminária de teto",
+      "key": "/public/furniture2/Isometric/lampSquareCeiling_SE.png"
+    }
+  ],
+  "Eletrônicos": [
+    { "label": "TV (básica)", "key": "tv" },
+    {
+      "label": "TV moderna",
+      "key": "/public/furniture2/Isometric/televisionModern_SE.png"
+    },
+    {
+      "label": "TV vintage",
+      "key": "/public/furniture2/Isometric/televisionVintage_SE.png"
+    },
+    {
+      "label": "Antena de TV",
+      "key": "/public/furniture2/Isometric/televisionAntenna_SE.png"
+    },
+    {
+      "label": "Monitor",
+      "key": "/public/furniture2/Isometric/computerScreen_SE.png"
+    },
+    {
+      "label": "Notebook",
+      "key": "/public/furniture2/Isometric/laptop_SE.png"
+    },
+    {
+      "label": "Alto-falante",
+      "key": "/public/furniture2/Isometric/speaker_SE.png"
+    },
+    {
+      "label": "Alto-falante pequeno",
+      "key": "/public/furniture2/Isometric/speakerSmall_SE.png"
+    },
+    { "label": "Rádio", "key": "/public/furniture2/Isometric/radio_SE.png" }
+  ],
+  "Banheiro": [
+    {
+      "label": "Armário de banheiro",
+      "key": "/public/furniture2/Isometric/bathroomCabinet_SE.png"
+    },
+    {
+      "label": "Armário c/ gaveta",
+      "key": "/public/furniture2/Isometric/bathroomCabinetDrawer_SE.png"
+    },
+    {
+      "label": "Espelho",
+      "key": "/public/furniture2/Isometric/bathroomMirror_SE.png"
+    },
+    {
+      "label": "Pia redonda",
+      "key": "/public/furniture2/Isometric/bathroomSink_SE.png"
+    },
+    {
+      "label": "Pia quadrada",
+      "key": "/public/furniture2/Isometric/bathroomSinkSquare_SE.png"
+    },
+    {
+      "label": "Banheira",
+      "key": "/public/furniture2/Isometric/bathtub_SE.png"
+    },
+    {
+      "label": "Chuveiro",
+      "key": "/public/furniture2/Isometric/shower_SE.png"
+    },
+    {
+      "label": "Chuveiro redondo",
+      "key": "/public/furniture2/Isometric/showerRound_SE.png"
+    },
+    {
+      "label": "Vaso sanitário",
+      "key": "/public/furniture2/Isometric/toilet_SE.png"
+    },
+    {
+      "label": "Vaso quadrado",
+      "key": "/public/furniture2/Isometric/toiletSquare_SE.png"
+    },
+    {
+      "label": "Lixeira",
+      "key": "/public/furniture2/Isometric/trashcan_SE.png"
+    },
+    {
+      "label": "Máquina de lavar",
+      "key": "/public/furniture2/Isometric/washer_SE.png"
+    },
+    { "label": "Secadora", "key": "/public/furniture2/Isometric/dryer_SE.png" },
+    {
+      "label": "Lava e seca empilhada",
+      "key": "/public/furniture2/Isometric/washerDryerStacked_SE.png"
+    }
+  ]
+}
