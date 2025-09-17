@@ -1,74 +1,35 @@
 <div class="space-y-6">
   <header class="flex items-center justify-between">
     <h1 class="text-2xl font-semibold text-violet-100">Nosso cantinho</h1>
-    <form
-      id="add-item-form"
-      hx-post="/corner/items"
-      hx-target="#corner-outbox"
-      hx-swap="innerHTML"
-      class="flex items-center gap-2"
-    >
-      <select
-        name="item_key"
-        class="bg-white/5 border border-violet-700/40 rounded px-3 py-2 text-violet-100"
-      >
-        <optgroup label="Sofás">
-          <option value="sofa">Sofá</option>
-        </optgroup>
-        <optgroup label="Cadeiras">
-          <option value="chair">Cadeira</option>
-        </optgroup>
-        <optgroup label="Mesas">
-          <option value="table">Mesa</option>
-        </optgroup>
-        <optgroup label="Plantas">
-          <option value="plant">Planta</option>
-        </optgroup>
-        <optgroup label="Iluminação">
-          <option value="lamp">Luminária</option>
-        </optgroup>
-        <optgroup label="Eletrônicos">
-          <option value="tv">TV</option>
-        </optgroup>
-      </select>
-      <button
-        class="px-3 py-2 rounded bg-white/10 text-violet-100 hover:bg-white/20"
-        type="submit"
-      >
-        Adicionar
-      </button>
-
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    </form>
   </header>
 
   <div class="grid grid-cols-[1fr_280px] gap-6">
     <!-- Canvas do cantinho -->
     <section
-      class="relative rounded-xl border border-violet-700/40 bg-white/5 overflow-hidden min-h-[420px]"
+      class="relative rounded-xl border border-violet-700/40 bg-white/5 overflow-hidden h-[420px]"
     >
       <div id="corner-canvas" class="absolute inset-0"></div>
       <!-- Toolbar de Zoom -->
       <div
-        class="absolute top-2 left-2 z-30 flex items-center gap-1 bg-black/40 text-violet-100 border border-violet-700/40 rounded-lg px-1.5 py-1 shadow-md"
+        class="absolute top-2 left-2 z-30 flex items-center gap-1 bg-black/40 text-violet-100 border border-violet-700/40 rounded-lg px-1.5 py-1 shadow-md pointer-events-none"
       >
         <button
           id="btn-zoom-out"
-          class="px-2 py-1 hover:bg-white/10 rounded"
+          class="px-2 py-1 hover:bg-white/10 rounded pointer-events-auto"
           title="Zoom out"
         >
           −
         </button>
         <button
           id="btn-zoom-reset"
-          class="px-2 py-1 hover:bg-white/10 rounded text-xs"
+          class="px-2 py-1 hover:bg-white/10 rounded text-xs pointer-events-auto"
           title="Resetar para 100%"
         >
-          100%
+          <span id="zoom-label">100%</span>
         </button>
         <button
           id="btn-zoom-in"
-          class="px-2 py-1 hover:bg-white/10 rounded"
+          class="px-2 py-1 hover:bg-white/10 rounded pointer-events-auto"
           title="Zoom in"
         >
           +
@@ -146,11 +107,12 @@
           </button>
         </div>
       </div>
-      <div id="corner-outbox" class="hidden" aria-hidden="true"></div>
     </section>
 
     <!-- Inventário -->
-    <aside class="rounded-xl border border-violet-700/40 bg-white/5 p-3">
+    <aside
+      class="rounded-xl border border-violet-700/40 bg-white/5 p-3 max-h-[420px] overflow-y-auto overflow-x-hidden inventory-scroll"
+    >
       <h2 class="text-lg text-violet-100 mb-3">Inventário</h2>
       <div class="mb-3">
         <input
@@ -178,6 +140,37 @@
   <%- JSON.stringify(items || []) %>
 </script>
 
+<style>
+  /* Scrollbar custom para o inventário */
+  .inventory-scroll {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #7c3aed #1f1033; /* thumb track */
+  }
+  .inventory-scroll::-webkit-scrollbar {
+    width: 10px;
+  }
+  .inventory-scroll::-webkit-scrollbar-track {
+    background: linear-gradient(
+      180deg,
+      rgba(124, 58, 237, 0.15),
+      rgba(17, 10, 27, 0.2)
+    );
+    border-radius: 8px;
+  }
+  .inventory-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(124, 58, 237, 0.7);
+    border-radius: 8px;
+    border: 2px solid rgba(17, 10, 27, 0.6);
+  }
+  .inventory-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(167, 139, 250, 0.9);
+  }
+  /* Melhorar inércia no macOS/iOS */
+  .inventory-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+</style>
+
 <script src="https://unpkg.com/pixi.js@7.x/dist/pixi.min.js"></script>
 <script src="https://unpkg.com/@pixi/unsafe-eval@7.x/dist/unsafe-eval.min.js"></script>
 <script>
@@ -204,7 +197,7 @@
 
     // Projeção isométrica simples (escopo local)
     const HS_ISO = {
-      gridN: 10,
+      gridN: 20,
       tileW: 72,
       tileH: 36,
       // origem fixa no espaço do "world" (não depende do container após inicializar)
@@ -298,7 +291,8 @@
         const ch = container.clientHeight || 420;
         const gridPixelH = gridN * tileH;
         this.originX = cw / 2;
-        this.originY = Math.max(24, (ch - gridPixelH) / 2) + tileH;
+        // encostar a primeira fileira no topo, sem cortar o losango
+        this.originY = this.tileH / 2;
       },
       // Projeta coordenadas de grade para coordenadas locais do world
       projectWorld(gx, gy) {
@@ -319,6 +313,7 @@
       spaceDown: false,
       pan: { active: false },
       floor: null,
+      walls: null,
       ghost: null,
     };
     // estado de drag global para inventário -> canvas
@@ -327,7 +322,6 @@
       resize: null,
       keydown: null,
       keyup: null,
-      htmx: null,
       click: null,
       pan: null,
     };
@@ -475,6 +469,7 @@
       // origem fixa do mundo para projeção estável
       HS_ISO.computeOrigin(container);
       drawFloor(SCENE.world);
+      drawWalls(SCENE.world);
       SCENE.items.clear();
       SCENE.atlas = await loadAtlasIfAny();
       (window.__cornerItems || []).forEach(addOrUpdateItem);
@@ -515,6 +510,7 @@
       if (btnIn) btnIn.onclick = () => setZoom((SCENE.zoom || 1) + 0.1);
       if (btnOut) btnOut.onclick = () => setZoom((SCENE.zoom || 1) - 0.1);
       if (btnReset) btnReset.onclick = () => setZoom(1);
+      updateZoomLabel(SCENE.zoom || 1);
     }
 
     function setZoom(value) {
@@ -523,13 +519,21 @@
       const rect = container.getBoundingClientRect();
       const mx = rect.width / 2;
       const my = rect.height / 2;
-      const next = Math.max(0.6, Math.min(2.0, Number(value) || 1));
+      const next = Math.max(0.25, Math.min(2.0, Number(value) || 1));
       const local = SCENE.world.toLocal(new PIXI.Point(mx, my));
       SCENE.world.pivot.set(local.x, local.y);
       SCENE.world.position.set(mx, my);
       SCENE.world.scale.set(next);
       SCENE.zoom = next;
+      updateZoomLabel(next);
       if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
+    }
+
+    function updateZoomLabel(val) {
+      const lab = document.getElementById("zoom-label");
+      if (!lab) return;
+      const pct = Math.round((Number(val) || 1) * 100);
+      lab.textContent = `${pct}%`;
     }
 
     function drawFloor(stage) {
@@ -566,6 +570,78 @@
       }
       SCENE.floor.addChild(g);
       stage.addChild(SCENE.floor);
+    }
+
+    // Desenha paredes nas bordas superiores (top-left e top-right)
+    function drawWalls(stage) {
+      // limpa paredes anteriores
+      if (SCENE.walls) {
+        try {
+          SCENE.walls.destroy({ children: true });
+        } catch (_) {}
+      }
+      SCENE.walls = new PIXI.Container();
+      SCENE.walls.zIndex = 20; // acima do piso, abaixo dos itens
+      const { gridN } = HS_ISO;
+      const wallH = Math.round(HS_ISO.tileH * 4); // altura visual da parede
+
+      function makeStrip(
+        points,
+        h,
+        color = 0x6b21a8,
+        alpha = 0.24,
+        edgeAlpha = 0.35
+      ) {
+        if (!points.length) return null;
+        const poly = [];
+        // borda base (ao longo do piso)
+        points.forEach((p) => poly.push(p.sx, p.sy));
+        // borda superior (offset para cima da tela)
+        for (let i = points.length - 1; i >= 0; i--) {
+          const p = points[i];
+          poly.push(p.sx, p.sy - h);
+        }
+        const g = new PIXI.Graphics();
+        g.beginFill(color, alpha);
+        g.drawPolygon(poly);
+        g.endFill();
+        // linha de contorno superior sutil
+        g.lineStyle(1, color, edgeAlpha);
+        for (let i = 0; i < points.length - 1; i++) {
+          const a = points[i];
+          const b = points[i + 1];
+          g.moveTo(a.sx, a.sy - h);
+          g.lineTo(b.sx, b.sy - h);
+        }
+        return g;
+      }
+
+      // Top-right edge (gy = 0, gx 0..N-1)
+      const { tileW, tileH } = HS_ISO;
+      const topCenter = HS_ISO.projectWorld(0, 0);
+      const topApex = { sx: topCenter.sx, sy: topCenter.sy - tileH / 2 };
+
+      // Top-right edge: do ápice superior até o ápice direito (vértices direitos da linha gy=0)
+      const edgeTR = [topApex];
+      for (let gx = 0; gx < gridN; gx++) {
+        const p = HS_ISO.projectWorld(gx, 0);
+        edgeTR.push({ sx: p.sx + tileW / 2, sy: p.sy });
+      }
+      const wallTR = makeStrip(edgeTR, wallH);
+      if (wallTR) SCENE.walls.addChild(wallTR);
+
+      // Top-left edge (gx = 0, gy 0..N-1)
+      // Top-left edge: do ápice superior até o ápice esquerdo (vértices esquerdos da coluna gx=0)
+      const edgeTL = [topApex];
+      for (let gy = 0; gy < gridN; gy++) {
+        const p = HS_ISO.projectWorld(0, gy);
+        edgeTL.push({ sx: p.sx - tileW / 2, sy: p.sy });
+      }
+      const wallTL = makeStrip(edgeTL, wallH);
+      if (wallTL) SCENE.walls.addChild(wallTL);
+
+      stage.addChild(SCENE.walls);
+      if (stage.sortChildren) stage.sortChildren();
     }
 
     function textureFromUrl(url) {
@@ -1282,34 +1358,14 @@
         const container = document.getElementById("corner-canvas");
         if (container) HS_ISO.computeOrigin(container);
         drawFloor(SCENE.world);
+        drawWalls(SCENE.world);
         SCENE.items.forEach(({ item }) => addOrUpdateItem(item));
         if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
       };
       window.addEventListener("resize", BOUND.resize);
     }
 
-    // Integração com htmx (listener removido no destroy)
-    function bindHtmx() {
-      BOUND.htmx = (e) => {
-        const target = e && e.detail && e.detail.target;
-        if (target && target.id === "corner-outbox") {
-          const node = target.querySelector(".corner-item");
-          if (node) {
-            const item = domItemToData(node);
-            try {
-              window.__cornerItems = Array.isArray(window.__cornerItems)
-                ? window.__cornerItems
-                : [];
-              window.__cornerItems.push(item);
-            } catch (_) {}
-            addOrUpdateItem(item);
-            selectItem(item.id);
-            target.innerHTML = "";
-          }
-        }
-      };
-      document.addEventListener("htmx:afterSwap", BOUND.htmx);
-    }
+    // (Removido) Integração com htmx
 
     // Teclado
     async function onKey(ev) {
@@ -1404,7 +1460,7 @@
             const mx = ev.clientX - rect.left;
             const my = ev.clientY - rect.top;
             const dir = ev.deltaY < 0 ? 1 : -1; // roda pra cima = zoom in
-            const next = Math.max(0.6, Math.min(2.0, SCENE.zoom + dir * 0.1));
+            const next = Math.max(0.25, Math.min(2.0, SCENE.zoom + dir * 0.1));
             if (SCENE.world) {
               // ancora o zoom no cursor
               const local = SCENE.world.toLocal(new PIXI.Point(mx, my));
@@ -1412,6 +1468,7 @@
               SCENE.world.position.set(mx, my);
               SCENE.world.scale.set(next);
               SCENE.zoom = next;
+              updateZoomLabel(next);
               if (SCENE.selectedId) updateOverlayPosition(SCENE.selectedId);
             }
             return;
@@ -1448,8 +1505,7 @@
         if (BOUND.keydown) window.removeEventListener("keydown", BOUND.keydown);
         if (BOUND.keyup) window.removeEventListener("keyup", BOUND.keyup);
         if (BOUND.resize) window.removeEventListener("resize", BOUND.resize);
-        if (BOUND.htmx)
-          document.removeEventListener("htmx:afterSwap", BOUND.htmx);
+        // htmx não é mais utilizado nesta página
         if (BOUND.click) {
           const container = document.getElementById("corner-canvas");
           if (container && BOUND.click.onCanvasDown)
@@ -1484,7 +1540,6 @@
     // init now (scripts de páginas htmx executam após inserção no DOM)
     ensurePixi();
     bindResize();
-    bindHtmx();
     bindWheelRotate();
     bindPan();
     bindOutsideClicks();
@@ -1507,8 +1562,10 @@
           "inv-group border border-violet-700/30 rounded-lg overflow-hidden";
         section.innerHTML = `
           <button type="button" class="inv-toggle w-full flex items-center justify-between px-3 py-2 bg-white/5 hover:bg-white/10 text-left">
-            <span class="font-medium text-violet-100">${cat}</span>
-            <span class="inv-count text-xs text-violet-300 ml-2"></span>
+            <span class="flex items-center gap-2">
+              <span class="font-medium text-violet-100">${cat}</span>
+              <span class="inv-count text-xs text-violet-300"></span>
+            </span>
             <span class="inv-chevron">▾</span>
           </button>
           <ul class="inv-items divide-y divide-violet-700/20"></ul>
@@ -1606,13 +1663,6 @@
         });
         li.addEventListener("click", () => {
           const key = li.getAttribute("data-key");
-          const sel = document.querySelector(
-            '#add-item-form select[name="item_key"]'
-          );
-          if (sel) {
-            sel.value = key;
-            sel.dispatchEvent(new Event("change", { bubbles: true }));
-          }
           // destaque visual no inventário
           groups.querySelectorAll("[data-key]").forEach((el) => {
             el.classList.toggle(
@@ -1757,17 +1807,7 @@
     }
     refreshGroupCounts();
 
-    // Ouvir eventos de inserção/remoção para atualizar contadores
-    document.addEventListener("htmx:afterSwap", (e) => {
-      const target = e && e.detail && e.detail.target;
-      if (target && target.id === "corner-outbox") {
-        // addOrUpdateItem já atualiza __cornerItems; só atualizar contadores
-        setTimeout(refreshGroupCounts, 0);
-      }
-    });
-    document.addEventListener("itemRemoved", () =>
-      setTimeout(refreshGroupCounts, 0)
-    );
+    // Atualização de contadores ocorre nas operações de criar/deletar
 
     // Drag & Drop no canvas: permitir soltar para criar item na posição
     (function enableCanvasDrop() {

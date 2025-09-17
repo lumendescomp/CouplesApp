@@ -61,7 +61,6 @@
   ],
   "Mesas": [
     { "label": "Mesa (básica)", "key": "table" },
-    { "label": "Mesa", "key": "/public/furniture2/Isometric/table_SE.png" },
     {
       "label": "Mesa redonda",
       "key": "/public/furniture2/Isometric/tableRound_SE.png"
