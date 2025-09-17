@@ -14,12 +14,59 @@ router.get("/", (req, res) => {
   const meId = req.session.user.id;
   const cpl = getCoupleForUser(db, meId);
   if (!cpl) return res.redirect("/invite");
+  const prefs = db
+    .prepare(
+      "SELECT canvas_color, floor_color, wall_color FROM couple_prefs WHERE couple_id = ?"
+    )
+    .get(cpl.id) || { canvas_color: null, floor_color: null, wall_color: null };
   const items = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE couple_id = ? ORDER BY id"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE couple_id = ? ORDER BY id"
     )
     .all(cpl.id);
-  res.render("corner/index", { couple: cpl, items });
+  res.render("corner/index", { couple: cpl, items, prefs });
+});
+
+// Salvar cores globais (canvas/floor/wall)
+router.post("/prefs/colors", (req, res) => {
+  const db = getDb();
+  const meId = req.session.user.id;
+  const cpl = getCoupleForUser(db, meId);
+  if (!cpl) return res.status(400).send("not paired");
+  // aceita hex string ou inteiro para cada campo
+  function toNum(v) {
+    if (v == null) return null;
+    if (typeof v === "string") {
+      const s = v.trim();
+      const h = s.startsWith("#") ? s.slice(1) : s;
+      const n = parseInt(h, 16);
+      return Number.isFinite(n) ? n : null;
+    }
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  const canvas = toNum(req.body?.canvas_color);
+  const floor = toNum(req.body?.floor_color);
+  const wall = toNum(req.body?.wall_color);
+  // upsert
+  const exists = db
+    .prepare("SELECT couple_id FROM couple_prefs WHERE couple_id = ?")
+    .get(cpl.id);
+  if (exists) {
+    db.prepare(
+      "UPDATE couple_prefs SET canvas_color = ?, floor_color = ?, wall_color = ? WHERE couple_id = ?"
+    ).run(canvas, floor, wall, cpl.id);
+  } else {
+    db.prepare(
+      "INSERT INTO couple_prefs (couple_id, canvas_color, floor_color, wall_color) VALUES (?, ?, ?, ?)"
+    ).run(cpl.id, canvas, floor, wall);
+  }
+  const prefs = db
+    .prepare(
+      "SELECT canvas_color, floor_color, wall_color FROM couple_prefs WHERE couple_id = ?"
+    )
+    .get(cpl.id);
+  return res.json(prefs);
 });
 
 router.post("/items", (req, res) => {
@@ -37,7 +84,7 @@ router.post("/items", (req, res) => {
   } = req.body || {};
   if (!item_key) return res.status(400).send("item_key required");
   const stmt = db.prepare(
-    "INSERT INTO couple_items (couple_id, item_key, x, y, z, rotation, scale, layer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO couple_items (couple_id, item_key, x, y, z, rotation, scale, layer, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
   const info = stmt.run(
     cpl.id,
@@ -47,11 +94,12 @@ router.post("/items", (req, res) => {
     Number(z),
     Number(rotation),
     Number(scale) || 1.0,
-    0
+    0,
+    null
   );
   const row = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(info.lastInsertRowid);
   if (req.get("hx-request")) {
@@ -88,7 +136,7 @@ router.post("/items/:id/nudge", (req, res) => {
   const id = Number(req.params.id);
   const current = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ? AND couple_id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ? AND couple_id = ?"
     )
     .get(id, cpl.id);
   if (!current) return res.status(404).send("not found");
@@ -110,7 +158,7 @@ router.post("/items/:id/nudge", (req, res) => {
 
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
 
@@ -138,7 +186,7 @@ router.post("/items/:id/height", (req, res) => {
   db.prepare("UPDATE couple_items SET z = ? WHERE id = ?").run(nz, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -163,7 +211,7 @@ router.post("/items/:id/position", (req, res) => {
   db.prepare("UPDATE couple_items SET x = ?, y = ? WHERE id = ?").run(x, y, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -189,7 +237,7 @@ router.post("/items/:id/scale", (req, res) => {
   db.prepare("UPDATE couple_items SET scale = ? WHERE id = ?").run(scl, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -214,7 +262,7 @@ router.post("/items/:id/layer", (req, res) => {
   db.prepare("UPDATE couple_items SET layer = ? WHERE id = ?").run(layer, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -241,7 +289,7 @@ router.post("/items/:id/stack", (req, res) => {
   db.prepare("UPDATE couple_items SET layer = ? WHERE id = ?").run(next, id);
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   if (req.get("hx-request")) {
@@ -273,7 +321,7 @@ router.post("/items/:id/tilt", (req, res) => {
   );
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   return res.render("corner/_item", { item: updated, layout: false });
@@ -299,7 +347,36 @@ router.post("/items/:id/flip", (req, res) => {
   );
   const updated = db
     .prepare(
-      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y FROM couple_items WHERE id = ?"
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
+    )
+    .get(id);
+  return res.render("corner/_item", { item: updated, layout: false });
+});
+
+// atualizar cor (parede/piso)
+router.post("/items/:id/color", (req, res) => {
+  const db = getDb();
+  const meId = req.session.user.id;
+  const cpl = getCoupleForUser(db, meId);
+  if (!cpl) return res.status(400).send("not paired");
+  const id = Number(req.params.id);
+  const row = db
+    .prepare("SELECT id FROM couple_items WHERE id = ? AND couple_id = ?")
+    .get(id, cpl.id);
+  if (!row) return res.status(404).send("not found");
+  let color = req.body && req.body.color;
+  // aceitar tanto string hex (#RRGGBB) quanto inteiro
+  if (typeof color === "string") {
+    const s = color.trim();
+    const h = s.startsWith("#") ? s.slice(1) : s;
+    color = parseInt(h, 16);
+  }
+  color = Number(color);
+  if (!Number.isFinite(color)) color = null; // limpar cor se inválido
+  db.prepare("UPDATE couple_items SET color = ? WHERE id = ?").run(color, id);
+  const updated = db
+    .prepare(
+      "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE id = ?"
     )
     .get(id);
   return res.render("corner/_item", { item: updated, layout: false });

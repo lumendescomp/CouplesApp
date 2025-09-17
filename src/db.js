@@ -56,10 +56,22 @@ export async function initDb() {
   tilt_y REAL NOT NULL DEFAULT 0, -- inclinação no eixo Y (skew X) em graus
   flip_x INTEGER NOT NULL DEFAULT 0, -- espelhar horizontal
   flip_y INTEGER NOT NULL DEFAULT 0, -- espelhar vertical
+  color INTEGER, -- cor opcional (0xRRGGBB) persistida para itens coloríveis
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (couple_id) REFERENCES couples(id)
     );
     CREATE INDEX IF NOT EXISTS idx_couple_items_couple ON couple_items(couple_id);
+  `);
+
+  // Preferências globais do "Nosso cantinho" (cores do canvas/chão/borda) por casal
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS couple_prefs (
+      couple_id INTEGER PRIMARY KEY,
+      canvas_color INTEGER,
+      floor_color INTEGER,
+      wall_color INTEGER,
+      FOREIGN KEY (couple_id) REFERENCES couples(id)
+    );
   `);
 
   // Migração condicional: adiciona colunas z/scale/layer se ausentes
@@ -100,6 +112,9 @@ export async function initDb() {
       db.exec(
         "ALTER TABLE couple_items ADD COLUMN flip_y INTEGER NOT NULL DEFAULT 0"
       );
+    }
+    if (!names.has("color")) {
+      db.exec("ALTER TABLE couple_items ADD COLUMN color INTEGER");
     }
   } catch (e) {
     console.warn("Migration (couple_items.z) note:", e.message);

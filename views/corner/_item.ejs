@@ -12,6 +12,7 @@
   data-flip-y="<%= (item.flip_y ? 1 : 0) %>"
   data-scale="<%= (item.scale == null ? 1.0 : item.scale) %>"
   data-layer="<%= (item.layer == null ? 0 : item.layer) %>"
+  data-color="<%= (item.color == null ? '' : item.color) %>"
 >
   <!-- token csrf para incluir nos nudges via hx-include -->
   <input
