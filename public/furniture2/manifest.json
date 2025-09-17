@@ -230,12 +230,21 @@
       "label": "Lava e seca empilhada",
       "key": "/public/furniture2/Isometric/washerDryerStacked_SE.png"
     }
-  ]
-  ,
-  "Paredes": [
-    { "label": "Parede (exemplo)", "key": "parede" }
   ],
-  "Pisos": [
-    { "label": "Piso (exemplo)", "key": "piso" }
-  ]
+  "Portas": [
+    { "label": "Porta (NE)", "key": "/public/furniture2/Isometric/doorway_NE.png" },
+    { "label": "Porta (NW)", "key": "/public/furniture2/Isometric/doorway_NW.png" },
+    { "label": "Porta (SE)", "key": "/public/furniture2/Isometric/doorway_SE.png" },
+    { "label": "Porta (SW)", "key": "/public/furniture2/Isometric/doorway_SW.png" },
+    { "label": "Porta aberta (NE)", "key": "/public/furniture2/Isometric/doorwayOpen_NE.png" },
+    { "label": "Porta aberta (NW)", "key": "/public/furniture2/Isometric/doorwayOpen_NW.png" },
+    { "label": "Porta aberta (SE)", "key": "/public/furniture2/Isometric/doorwayOpen_SE.png" },
+    { "label": "Porta aberta (SW)", "key": "/public/furniture2/Isometric/doorwayOpen_SW.png" },
+    { "label": "Porta frontal (NE)", "key": "/public/furniture2/Isometric/doorwayFront_NE.png" },
+    { "label": "Porta frontal (NW)", "key": "/public/furniture2/Isometric/doorwayFront_NW.png" },
+    { "label": "Porta frontal (SE)", "key": "/public/furniture2/Isometric/doorwayFront_SE.png" },
+    { "label": "Porta frontal (SW)", "key": "/public/furniture2/Isometric/doorwayFront_SW.png" }
+  ],
+  "Paredes": [{ "label": "Parede básica", "key": "parede" }],
+  "Pisos": [{ "label": "Piso básico", "key": "piso" }]
 }

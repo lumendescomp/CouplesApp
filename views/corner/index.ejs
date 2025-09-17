@@ -98,6 +98,22 @@
           >
             +
           </button>
+          <span class="mx-1 text-white/30">|</span>
+          <span
+            id="overlay-color-wrap"
+            class="inline-flex items-center gap-1 hidden"
+            title="Cor do piso/parede"
+          >
+            <label for="overlay-color" class="text-[10px] text-violet-200/80"
+              >Cor</label
+            >
+            <input
+              id="overlay-color"
+              type="color"
+              class="w-6 h-6 p-0 bg-transparent border-0 cursor-pointer"
+              value="#6b21a8"
+            />
+          </span>
           <button
             id="btn-delete"
             class="px-2 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded"
@@ -323,6 +339,7 @@
       floor: null,
       walls: null,
       ghost: null,
+      colorOverrides: new Map(), // id -> color (number, 0xRRGGBB)
     };
 
     // Altura visual padrão das paredes (unificada entre bordas e itens "parede")
@@ -614,13 +631,7 @@
       const { gridN } = HS_ISO;
       const wallH = getWallHeight(); // altura visual da parede (unificada)
 
-      function makeStrip(
-        points,
-        h,
-        color = 0x6b21a8,
-        alpha = 0.24,
-        edgeAlpha = 0.35
-      ) {
+      function makeStrip(points, h, color = 0x6b21a8, alpha = 0.24) {
         if (!points.length) return null;
         const poly = [];
         // borda base (ao longo do piso)
@@ -634,14 +645,6 @@
         g.beginFill(color, alpha);
         g.drawPolygon(poly);
         g.endFill();
-        // linha de contorno superior sutil
-        g.lineStyle(1, color, edgeAlpha);
-        for (let i = 0; i < points.length - 1; i++) {
-          const a = points[i];
-          const b = points[i + 1];
-          g.moveTo(a.sx, a.sy - h);
-          g.lineTo(b.sx, b.sy - h);
-        }
         return g;
       }
 
@@ -686,11 +689,36 @@
     }
 
     function spriteFor(item) {
+      // PISO: desenha como losango sólido (sem borda), cor customizável
+      if (item.item_key === "piso") {
+        const c = new PIXI.Container();
+        const g = new PIXI.Graphics();
+        const color = getItemColor(item);
+        const { tileW, tileH } = HS_ISO;
+        g.beginFill(color, 0.18);
+        g.drawPolygon([
+          0,
+          -tileH / 2,
+          tileW / 2,
+          0,
+          0,
+          tileH / 2,
+          -tileW / 2,
+          0,
+        ]);
+        g.endFill();
+        c.addChild(g);
+        c.hsSpr = g;
+        c.eventMode = "static";
+        c.cursor = "pointer";
+        return c;
+      }
       // PAREDE: desenha como faixa extrudada alinhada à malha, sem rotação
       if (item.item_key === "parede") {
         const c = new PIXI.Container();
         const g = new PIXI.Graphics();
         const wallH = getWallHeight();
+        const color = getItemColor(item);
         const length = Math.max(0.25, Math.min(2.0, Number(item.scale || 1.0)));
         // escolher direção a partir da rotação (quantizada)
         const q = quantizeWallRotation(Number(item.rotation || 0));
@@ -707,14 +735,9 @@
         const A2 = { x: A.x, y: A.y - wallH };
         const B2 = { x: B.x, y: B.y - wallH };
         // desenha paralelogramo
-        g.beginFill(0x6b21a8, 0.24);
-        g.lineStyle(1, 0x6b21a8, 0.35);
+        g.beginFill(color, 0.24);
         g.drawPolygon([A.x, A.y, B.x, B.y, B2.x, B2.y, A2.x, A2.y]);
         g.endFill();
-        // contorno superior
-        g.lineStyle(1, 0x6b21a8, 0.35);
-        g.moveTo(A2.x, A2.y);
-        g.lineTo(B2.x, B2.y);
         c.addChild(g);
         c.hsSpr = g;
         c.eventMode = "static";
@@ -730,8 +753,8 @@
         lamp: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><polygon points='20,18 44,18 38,8 26,8' fill='%23fde68a'/><rect x='30' y='18' width='4' height='26' fill='%239b87f5'/><rect x='24' y='44' width='16' height='6' rx='2' fill='%237c3aed'/></svg>`,
         sofa: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='64'><rect x='8' y='26' width='80' height='22' rx='6' fill='%23a78bfa'/><rect x='8' y='16' width='80' height='14' rx='6' fill='%23c4b5fd'/><rect x='12' y='48' width='10' height='6' fill='%239b87f5'/><rect x='74' y='48' width='10' height='6' fill='%239b87f5'/></svg>`,
         tv: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='64'><rect x='10' y='8' width='76' height='46' rx='6' fill='%230a0a0a'/><rect x='14' y='12' width='68' height='38' rx='4' fill='%23252525'/><rect x='40' y='54' width='16' height='4' fill='%237c3aed'/></svg>`,
-        piso: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23201533' stop-opacity='0.9'/><stop offset='100%' stop-color='%23110a1b' stop-opacity='0.9'/></linearGradient></defs><polygon points='36,0 72,18 36,36 0,18' fill='url(%23g)' stroke='%237c3aed' stroke-width='1' stroke-opacity='0.35'/><line x1='0' y1='18' x2='36' y2='0' stroke='%237c3aed' stroke-opacity='0.12'/><line x1='36' y1='0' x2='72' y2='18' stroke='%237c3aed' stroke-opacity='0.12'/></svg>`,
-        parede: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='80'><defs><linearGradient id='w' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%233f1d5b' stop-opacity='0.9'/><stop offset='100%' stop-color='%23110a1b' stop-opacity='0.9'/></linearGradient></defs><polygon points='0,64 72,64 72,0 0,0' fill='url(%23w)'/><line x1='0' y1='0' x2='72' y2='0' stroke='%237c3aed' stroke-opacity='0.35' stroke-width='1'/></svg>`,
+        piso: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23201533' stop-opacity='0.9'/><stop offset='100%' stop-color='%23110a1b' stop-opacity='0.9'/></linearGradient></defs><polygon points='36,0 72,18 36,36 0,18' fill='url(%23g)'/></svg>`,
+        parede: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='80'><defs><linearGradient id='w' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%233f1d5b' stop-opacity='0.9'/><stop offset='100%' stop-color='%23110a1b' stop-opacity='0.9'/></linearGradient></defs><polygon points='0,64 72,64 72,0 0,0' fill='url(%23w)'/></svg>`,
       };
       let tex = null;
       if (SCENE.atlas && SCENE.atlas.ready) {
@@ -779,6 +802,62 @@
       c.eventMode = "static";
       c.cursor = "pointer";
       return c;
+    }
+
+    // ==== Cores: helpers e override local (não persistido) ====
+    function hexToNumber(hex) {
+      if (!hex) return 0x000000;
+      const s = String(hex).trim();
+      const h = s.startsWith("#") ? s.slice(1) : s;
+      return Number.parseInt(h, 16) || 0x000000;
+    }
+    function numberToHex(num) {
+      const n = Number(num) >>> 0;
+      return "#" + n.toString(16).padStart(6, "0");
+    }
+    function getItemColor(item) {
+      // defaults
+      const def =
+        item.item_key === "parede"
+          ? 0x6b21a8
+          : item.item_key === "piso"
+          ? 0x7c3aed
+          : 0xffffff;
+      try {
+        const ov = SCENE.colorOverrides.get(item.id);
+        return typeof ov === "number" ? ov : def;
+      } catch {
+        return def;
+      }
+    }
+    function setItemColor(id, colorNum) {
+      try {
+        SCENE.colorOverrides.set(id, colorNum >>> 0);
+        const entry = SCENE.items.get(id);
+        if (!entry) return;
+        const item = entry.item;
+        if (item.item_key === "parede" || item.item_key === "piso") {
+          const parent = entry.sprite.parent;
+          const prevX = entry.sprite.x;
+          const prevY = entry.sprite.y;
+          const prevZ = entry.sprite.zIndex;
+          entry.sprite.destroy({ children: true });
+          const rebuilt = spriteFor(item);
+          rebuilt.x = prevX;
+          rebuilt.y = prevY;
+          if (typeof prevZ === "number") rebuilt.zIndex = prevZ;
+          rebuilt.alpha = 0.98;
+          rebuilt.on("pointerdown", (e) => {
+            SCENE.justClickedSprite = true;
+            setTimeout(() => (SCENE.justClickedSprite = false), 0);
+            startDrag(item.id, e);
+          });
+          rebuilt.on("pointertap", () => selectItem(item.id));
+          if (parent) parent.addChild(rebuilt);
+          entry.sprite = rebuilt;
+          if (SCENE.selectedId === id) updateOverlayPosition(id);
+        }
+      } catch {}
     }
 
     // ===== Ghost (preview durante drag) =====
@@ -1061,6 +1140,7 @@
       overlay.style.top = top + "px";
       updateOverlayRotationDisplay(id);
       updateOverlayScaleDisplay(id);
+      updateOverlayColorDisplay(id);
     }
 
     function updateOverlayRotationDisplay(id) {
@@ -1104,6 +1184,23 @@
       const btnLD = document.getElementById("btn-layer-down");
       const btnLT = document.getElementById("btn-layer-top");
       const btnLB = document.getElementById("btn-layer-bottom");
+      // Color controls visibility and binding
+      (function manageColorUI() {
+        const entry = SCENE.items.get(idSel);
+        const colorWrap = document.getElementById("overlay-color-wrap");
+        const input = document.getElementById("overlay-color");
+        const isColorable =
+          entry &&
+          (entry.item.item_key === "parede" || entry.item.item_key === "piso");
+        if (colorWrap) colorWrap.classList.toggle("hidden", !isColorable);
+        if (isColorable && input) {
+          input.onchange = (e) => {
+            e.stopPropagation();
+            const val = String(input.value || "#6b21a8");
+            setItemColor(idSel, hexToNumber(val));
+          };
+        }
+      })();
       if (btnDel)
         btnDel.onclick = async (e) => {
           e.stopPropagation();
@@ -1181,6 +1278,22 @@
           const v = Number((Number(inputScale.value || 1) - 0.05).toFixed(2));
           await setScale(v);
         };
+    }
+
+    function updateOverlayColorDisplay(id) {
+      try {
+        const entry = SCENE.items.get(id);
+        const wrap = document.getElementById("overlay-color-wrap");
+        const input = document.getElementById("overlay-color");
+        if (!entry || !wrap || !input) return;
+        const isColorable =
+          entry.item.item_key === "parede" || entry.item.item_key === "piso";
+        wrap.classList.toggle("hidden", !isColorable);
+        if (isColorable) {
+          const color = getItemColor(entry.item);
+          input.value = numberToHex(color);
+        }
+      } catch (_) {}
     }
 
     function clearSelection() {
@@ -1706,14 +1819,7 @@
           li.className = "px-3 py-2 hover:bg-white/10 cursor-pointer";
           li.setAttribute("draggable", "true");
           li.setAttribute("data-key", item.key);
-          if (item.key === "parede") {
-            li.innerHTML = `${
-              item.label || item.key
-            } <span class="text-xs opacity-70 ml-1" title="Gire com Q/E">⟲</span>`;
-            li.title = "Dica: gire paredes com Q/E";
-          } else {
-            li.textContent = item.label || item.key;
-          }
+          li.textContent = item.label || item.key;
           ul.appendChild(li);
         });
         groups.appendChild(section);
