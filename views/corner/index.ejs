@@ -196,8 +196,12 @@
 <script type="application/json" id="corner-items-data">
   <%- JSON.stringify(items || []) %>
 </script>
-<script type="application/json" id="corner-prefs-data">
-  <%- JSON.stringify(prefs || {}) %>
+<script type="application/json" id="corner-colors-data">
+  <%- JSON.stringify({
+    canvas: (couple && couple.corner_canvas_color) || null,
+    floor: (couple && couple.corner_floor_color) || null,
+    wall: (couple && couple.corner_wall_color) || null,
+  }) %>
 </script>
 
 <style>
@@ -243,10 +247,10 @@
       window.__cornerItems = [];
     }
     try {
-      const elp = document.getElementById("corner-prefs-data");
-      window.__cornerPrefs = elp ? JSON.parse(elp.textContent || "{}") : {};
+      const el = document.getElementById("corner-colors-data");
+      window.__cornerColors = el ? JSON.parse(el.textContent || "{}") : {};
     } catch {
-      window.__cornerPrefs = {};
+      window.__cornerColors = {};
     }
   })();
   // Isolar todo o código da página em um controller para evitar redeclarações em navegação htmx
@@ -383,19 +387,27 @@
       ghost: null,
       colorOverrides: new Map(), // id -> color (number, 0xRRGGBB)
       // cores globais
-      canvasColor:
-        (window.__cornerPrefs && Number.isFinite(window.__cornerPrefs.canvas_color)
-          ? window.__cornerPrefs.canvas_color >>> 0
-          : 0x0b0b0b),
-      floorColor:
-        (window.__cornerPrefs && Number.isFinite(window.__cornerPrefs.floor_color)
-          ? window.__cornerPrefs.floor_color >>> 0
-          : 0x7c3aed),
-      wallColor:
-        (window.__cornerPrefs && Number.isFinite(window.__cornerPrefs.wall_color)
-          ? window.__cornerPrefs.wall_color >>> 0
-          : 0x6b21a8),
+      canvasColor: 0x0b0b0b,
+      floorColor: 0x7c3aed,
+      wallColor: 0x6b21a8,
+      // cópias persistidas para restauração após preview
+      savedCanvasColor: null,
+      savedFloorColor: null,
+      savedWallColor: null,
     };
+    // inicializa cores globais a partir do backend (se houver)
+    try {
+      if (window.__cornerColors) {
+        const c = window.__cornerColors;
+        if (c.canvas != null) SCENE.canvasColor = Number(c.canvas) >>> 0;
+        if (c.floor != null) SCENE.floorColor = Number(c.floor) >>> 0;
+        if (c.wall != null) SCENE.wallColor = Number(c.wall) >>> 0;
+      }
+    } catch {}
+    // inicializa saved* com os valores atuais
+    SCENE.savedCanvasColor = SCENE.canvasColor;
+    SCENE.savedFloorColor = SCENE.floorColor;
+    SCENE.savedWallColor = SCENE.wallColor;
 
     // Altura visual padrão das paredes (unificada entre bordas e itens "parede")
     function getWallHeight() {
@@ -463,27 +475,6 @@
           return Number.isFinite(n) ? n : null;
         })(),
       };
-    }
-    async function savePrefsColor(partial) {
-      try {
-        const CSRF =
-          (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
-        const res = await fetch("/corner/prefs/colors", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": CSRF,
-          },
-          body: JSON.stringify(partial || {}),
-        });
-        if (!res.ok) return false;
-        const data = await res.json();
-        window.__cornerPrefs = data;
-        return true;
-      } catch (e) {
-        console.error(e);
-        return false;
-      }
     }
 
     async function loadAtlasIfAny() {
@@ -582,8 +573,7 @@
       }
 
       PIXI_APP = new PIXI.Application({
-        backgroundAlpha: 1,
-        backgroundColor: SCENE.canvasColor >>> 0,
+        backgroundAlpha: 0,
         resizeTo: container,
         antialias: true,
       });
@@ -644,34 +634,61 @@
       const inCanvas = document.getElementById("color-canvas");
       const inFloor = document.getElementById("color-floor");
       const inWall = document.getElementById("color-wall");
+      // aplicar cor do canvas na área externa (section), não no WebGL
+      const sectionEl = document.querySelector("section.relative.rounded-xl");
+      if (sectionEl)
+        sectionEl.style.backgroundColor = numberToHex(SCENE.canvasColor);
       if (inCanvas) {
         try {
           inCanvas.value = numberToHex(SCENE.canvasColor);
         } catch {}
+        // preview ao arrastar (sem persistir)
+        inCanvas.oninput = () => {
+          SCENE.canvasColor = hexToNumber(inCanvas.value);
+          const sec = document.querySelector("section.relative.rounded-xl");
+          if (sec) sec.style.backgroundColor = numberToHex(SCENE.canvasColor);
+        };
+        // salva apenas no change (confirmação)
         inCanvas.onchange = () => {
           SCENE.canvasColor = hexToNumber(inCanvas.value);
-          if (PIXI_APP && PIXI_APP.renderer) {
-            PIXI_APP.renderer.background.color = SCENE.canvasColor >>> 0;
-            PIXI_APP.renderer.background.alpha = 1;
-          }
+          SCENE.savedCanvasColor = SCENE.canvasColor;
+          const sec = document.querySelector("section.relative.rounded-xl");
+          if (sec) sec.style.backgroundColor = numberToHex(SCENE.canvasColor);
+          saveCornerColors({ canvas: SCENE.canvasColor });
         };
       }
       if (inFloor) {
         try {
           inFloor.value = numberToHex(SCENE.floorColor);
         } catch {}
-        inFloor.onchange = () => {
+        // preview ao arrastar (sem persistir)
+        inFloor.oninput = () => {
           SCENE.floorColor = hexToNumber(inFloor.value);
           drawFloor(SCENE.world);
+        };
+        // salva apenas no change (confirmação)
+        inFloor.onchange = () => {
+          SCENE.floorColor = hexToNumber(inFloor.value);
+          SCENE.savedFloorColor = SCENE.floorColor;
+          drawFloor(SCENE.world);
+          saveCornerColors({ floor: SCENE.floorColor });
         };
       }
       if (inWall) {
         try {
           inWall.value = numberToHex(SCENE.wallColor);
         } catch {}
-        inWall.onchange = () => {
+        // preview ao arrastar (sem persistir)
+        inWall.oninput = () => {
           SCENE.wallColor = hexToNumber(inWall.value);
           drawWalls(SCENE.world);
+        };
+        // salva apenas no change (confirmação)
+        inWall.onchange = () => {
+          SCENE.wallColor = hexToNumber(inWall.value);
+          SCENE.savedWallColor = SCENE.wallColor;
+          drawWalls(SCENE.world);
+          saveCornerColors({ wall: SCENE.wallColor });
         };
       }
     }
@@ -707,6 +724,7 @@
         } catch (_) {}
       }
       SCENE.floor = new PIXI.Container();
+      const gBack = new PIXI.Graphics();
       const g = new PIXI.Graphics();
       const { gridN, tileW, tileH } = HS_ISO;
       // calcula os vértices do losango externo do piso
@@ -718,8 +736,31 @@
       const right = { x: rightC.sx + tileW / 2, y: rightC.sy };
       const bottom = { x: bottomC.sx, y: bottomC.sy + tileH / 2 };
       const left = { x: leftC.sx - tileW / 2, y: leftC.sy };
-      // desenha apenas um preenchimento suave, sem linhas de grade
-      g.beginFill(SCENE.floorColor >>> 0, 0.08);
+      // fundo neutro da área jogável (losango + extensão da parede para cima)
+      const wallH = getWallHeight();
+      const extTop = { x: top.x, y: top.y - wallH };
+      const extRight = { x: right.x, y: right.y - wallH };
+      const extLeft = { x: left.x, y: left.y - wallH };
+      // base neutra para não influenciar as cores do piso/parede
+      const areaBase = 0x0a0a0a;
+      gBack.beginFill(areaBase, 1.0);
+      gBack.drawPolygon([
+        extTop.x,
+        extTop.y,
+        extRight.x,
+        extRight.y,
+        right.x,
+        right.y,
+        bottom.x,
+        bottom.y,
+        left.x,
+        left.y,
+        extLeft.x,
+        extLeft.y,
+      ]);
+      gBack.endFill();
+      // preenchimento opaco para corresponder exatamente à cor escolhida
+      g.beginFill(SCENE.floorColor >>> 0, 1.0);
       g.drawPolygon([
         top.x,
         top.y,
@@ -731,6 +772,7 @@
         left.y,
       ]);
       g.endFill();
+      SCENE.floor.addChild(gBack);
       SCENE.floor.addChild(g);
       stage.addChild(SCENE.floor);
     }
@@ -752,7 +794,7 @@
         points,
         h,
         color = SCENE.wallColor >>> 0,
-        alpha = 0.24
+        alpha = 1.0
       ) {
         if (!points.length) return null;
         const poly = [];
@@ -1690,6 +1732,25 @@
         const data = domItemToData(node);
         addOrUpdateItem(data);
         return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
+    async function saveCornerColors(partial) {
+      try {
+        const CSRF =
+          (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+          "";
+        const res = await fetch(`/corner/colors`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": CSRF,
+          },
+          body: JSON.stringify(partial || {}),
+        });
+        return res.ok;
       } catch (e) {
         console.error(e);
         return false;

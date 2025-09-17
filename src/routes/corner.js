@@ -14,59 +14,12 @@ router.get("/", (req, res) => {
   const meId = req.session.user.id;
   const cpl = getCoupleForUser(db, meId);
   if (!cpl) return res.redirect("/invite");
-  const prefs = db
-    .prepare(
-      "SELECT canvas_color, floor_color, wall_color FROM couple_prefs WHERE couple_id = ?"
-    )
-    .get(cpl.id) || { canvas_color: null, floor_color: null, wall_color: null };
   const items = db
     .prepare(
       "SELECT id, item_key, x, y, z, rotation, scale, layer, tilt_x, tilt_y, flip_x, flip_y, color FROM couple_items WHERE couple_id = ? ORDER BY id"
     )
     .all(cpl.id);
-  res.render("corner/index", { couple: cpl, items, prefs });
-});
-
-// Salvar cores globais (canvas/floor/wall)
-router.post("/prefs/colors", (req, res) => {
-  const db = getDb();
-  const meId = req.session.user.id;
-  const cpl = getCoupleForUser(db, meId);
-  if (!cpl) return res.status(400).send("not paired");
-  // aceita hex string ou inteiro para cada campo
-  function toNum(v) {
-    if (v == null) return null;
-    if (typeof v === "string") {
-      const s = v.trim();
-      const h = s.startsWith("#") ? s.slice(1) : s;
-      const n = parseInt(h, 16);
-      return Number.isFinite(n) ? n : null;
-    }
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-  const canvas = toNum(req.body?.canvas_color);
-  const floor = toNum(req.body?.floor_color);
-  const wall = toNum(req.body?.wall_color);
-  // upsert
-  const exists = db
-    .prepare("SELECT couple_id FROM couple_prefs WHERE couple_id = ?")
-    .get(cpl.id);
-  if (exists) {
-    db.prepare(
-      "UPDATE couple_prefs SET canvas_color = ?, floor_color = ?, wall_color = ? WHERE couple_id = ?"
-    ).run(canvas, floor, wall, cpl.id);
-  } else {
-    db.prepare(
-      "INSERT INTO couple_prefs (couple_id, canvas_color, floor_color, wall_color) VALUES (?, ?, ?, ?)"
-    ).run(cpl.id, canvas, floor, wall);
-  }
-  const prefs = db
-    .prepare(
-      "SELECT canvas_color, floor_color, wall_color FROM couple_prefs WHERE couple_id = ?"
-    )
-    .get(cpl.id);
-  return res.json(prefs);
+  res.render("corner/index", { couple: cpl, items });
 });
 
 router.post("/items", (req, res) => {
@@ -124,6 +77,42 @@ router.post("/items/:id/delete", (req, res) => {
     return res.send("");
   }
   res.redirect("/corner");
+});
+
+// Preferências de cores globais do cantinho (por casal)
+router.post("/colors", (req, res) => {
+  const db = getDb();
+  const meId = req.session.user.id;
+  const cpl = getCoupleForUser(db, meId);
+  if (!cpl) return res.status(400).send("not paired");
+  const payload = req.body || {};
+  const parseColor = (v) => {
+    if (v == null) return null;
+    if (typeof v === "string") {
+      const s = v.trim();
+      const h = s.startsWith("#") ? s.slice(1) : s;
+      const n = parseInt(h, 16);
+      return Number.isFinite(n) ? n : null;
+    }
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const canvas = parseColor(payload.canvas);
+  const floor = parseColor(payload.floor);
+  const wall = parseColor(payload.wall);
+  const upd = db.prepare(
+    "UPDATE couples SET corner_canvas_color = COALESCE(?, corner_canvas_color), corner_floor_color = COALESCE(?, corner_floor_color), corner_wall_color = COALESCE(?, corner_wall_color) WHERE id = ?"
+  );
+  upd.run(canvas, floor, wall, cpl.id);
+  const updated = getCoupleForUser(db, meId);
+  res.json({
+    ok: true,
+    colors: {
+      canvas: updated.corner_canvas_color,
+      floor: updated.corner_floor_color,
+      wall: updated.corner_wall_color,
+    },
+  });
 });
 
 // mover/girar item (nudge): recebe dx, dy e drot (inteiros), clamped 0..100 e rotação 0..359

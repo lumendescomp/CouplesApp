@@ -40,6 +40,23 @@ export async function initDb() {
     console.warn("Migration note:", e.message);
   }
 
+  // Preferências globais do cantinho no registro do casal
+  try {
+    const cols = db.prepare("PRAGMA table_info(couples)").all();
+    const names = new Set(cols.map((c) => c.name));
+    if (!names.has("corner_canvas_color")) {
+      db.exec("ALTER TABLE couples ADD COLUMN corner_canvas_color INTEGER");
+    }
+    if (!names.has("corner_floor_color")) {
+      db.exec("ALTER TABLE couples ADD COLUMN corner_floor_color INTEGER");
+    }
+    if (!names.has("corner_wall_color")) {
+      db.exec("ALTER TABLE couples ADD COLUMN corner_wall_color INTEGER");
+    }
+  } catch (e) {
+    console.warn("Migration (couples corner colors) note:", e.message);
+  }
+
   // Tabela para itens do "Nosso cantinho"
   db.exec(`
     CREATE TABLE IF NOT EXISTS couple_items (
@@ -61,17 +78,6 @@ export async function initDb() {
       FOREIGN KEY (couple_id) REFERENCES couples(id)
     );
     CREATE INDEX IF NOT EXISTS idx_couple_items_couple ON couple_items(couple_id);
-  `);
-
-  // Preferências globais do "Nosso cantinho" (cores do canvas/chão/borda) por casal
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS couple_prefs (
-      couple_id INTEGER PRIMARY KEY,
-      canvas_color INTEGER,
-      floor_color INTEGER,
-      wall_color INTEGER,
-      FOREIGN KEY (couple_id) REFERENCES couples(id)
-    );
   `);
 
   // Migração condicional: adiciona colunas z/scale/layer se ausentes
