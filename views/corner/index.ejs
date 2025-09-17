@@ -580,83 +580,133 @@
 
     async function loadAtlasIfAny() {
       const ATLAS = { ready: false, frames: {} };
+      // Tenta items.json primeiro
       try {
         const res = await fetch("/public/assets/atlas/items.json", {
           cache: "no-store",
         });
-        if (!res.ok) return ATLAS;
-        const data = await res.json();
-        // Caso 1: já veio pronto de Assets como spritesheet com .textures
-        if (data && data.textures && typeof data.textures === "object") {
-          ATLAS.ready = true;
-          ATLAS.frames = data.textures;
-          console.info("[corner] Atlas carregado (textures)");
-          return ATLAS;
-        }
-        // Caso 2: mapa simples de imagens: { images: { key: url } }
-        if (data && data.images && typeof data.images === "object") {
-          const frames = {};
-          // Carrega data: URIs manualmente em elementos Image para evitar fetch/GET inválido
-          for (const [k, url] of Object.entries(data.images)) {
-            try {
-              if (typeof url === "string" && url.startsWith("data:")) {
-                const img = new Image();
-                img.src = url;
-                // decode() garante que a imagem está pronta
-                if (img.decode) {
-                  await img.decode();
+        if (res.ok) {
+          const data = await res.json();
+          // Caso 1: spritesheet com .textures
+          if (data && data.textures && typeof data.textures === "object") {
+            ATLAS.ready = true;
+            ATLAS.frames = data.textures;
+            console.info("[corner] Atlas carregado (textures)");
+            return ATLAS;
+          }
+          // Caso 2: mapa simples { images: { key: url } }
+          if (data && data.images && typeof data.images === "object") {
+            const frames = {};
+            for (const [k, url] of Object.entries(data.images)) {
+              try {
+                if (typeof url === "string" && url.startsWith("data:")) {
+                  const img = new Image();
+                  img.src = url;
+                  if (img.decode) {
+                    await img.decode();
+                  } else {
+                    await new Promise((resolve) => {
+                      img.onload = () => resolve();
+                      img.onerror = () => resolve();
+                    });
+                  }
+                  const base = PIXI.BaseTexture.from(img);
+                  frames[k] = new PIXI.Texture(base);
                 } else {
-                  await new Promise((resolve) => {
-                    img.onload = () => resolve();
-                    img.onerror = () => resolve();
-                  });
+                  frames[k] = PIXI.Texture.from(url);
                 }
-                const base = PIXI.BaseTexture.from(img);
-                frames[k] = new PIXI.Texture(base);
-              } else {
-                frames[k] = PIXI.Texture.from(url);
+              } catch (_) {
+                frames[k] = PIXI.Texture.WHITE;
               }
-            } catch (_) {
-              // fallback simples para evitar quebra total
-              frames[k] = PIXI.Texture.WHITE;
             }
+            ATLAS.ready = true;
+            ATLAS.frames = frames;
+            console.info("[corner] Atlas carregado (images map)");
+            return ATLAS;
           }
-          ATLAS.ready = true;
-          ATLAS.frames = frames;
-          console.info("[corner] Atlas carregado (images map)");
-          return ATLAS;
-        }
-        // Caso 3: TexturePacker style { frames, meta: { image } }
-        if (data && data.frames && data.meta && data.meta.image) {
-          let base;
-          if (
-            typeof data.meta.image === "string" &&
-            data.meta.image.startsWith("data:")
-          ) {
-            const img = new Image();
-            img.src = data.meta.image;
-            if (img.decode) {
-              await img.decode();
+          // Caso 3: TexturePacker { frames, meta: { image } }
+          if (data && data.frames && data.meta && data.meta.image) {
+            let base;
+            if (
+              typeof data.meta.image === "string" &&
+              data.meta.image.startsWith("data:")
+            ) {
+              const img = new Image();
+              img.src = data.meta.image;
+              if (img.decode) {
+                await img.decode();
+              } else {
+                await new Promise((resolve) => {
+                  img.onload = () => resolve();
+                  img.onerror = () => resolve();
+                });
+              }
+              base = PIXI.BaseTexture.from(img);
             } else {
-              await new Promise((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve();
-              });
+              base = PIXI.BaseTexture.from(data.meta.image);
             }
-            base = PIXI.BaseTexture.from(img);
-          } else {
-            base = PIXI.BaseTexture.from(data.meta.image);
+            const ss = new PIXI.Spritesheet(base, data);
+            await ss.parse();
+            ATLAS.ready = true;
+            ATLAS.frames = ss.textures;
+            console.info("[corner] Atlas carregado (TexturePacker)");
+            return ATLAS;
           }
-          const ss = new PIXI.Spritesheet(base, data);
-          await ss.parse();
-          ATLAS.ready = true;
-          ATLAS.frames = ss.textures;
-          console.info("[corner] Atlas carregado (TexturePacker)");
-          return ATLAS;
         }
-      } catch (_) {
-        // Sem atlas: usa SVG inline
-      }
+      } catch (_) {}
+
+      // Fallback: manifest.json (nome -> caminho), normalizando para /public/assets/atlas
+      try {
+        const resMan = await fetch("/public/assets/atlas/manifest.json", {
+          cache: "no-store",
+        });
+        if (resMan.ok) {
+          const man = await resMan.json();
+          const exts = /\.(png|jpg|jpeg|webp|gif|svg)$/i;
+          const normUrl = (u) => {
+            if (typeof u !== "string") return null;
+            let s = u.replace(/^\.\/?/, "");
+            s = s.replace(/^public\//, "");
+            s = s.replace(/^furniture2\//i, "");
+            s = s.replace(/^Isometric\//i, "");
+            const fname = s.split("/").pop();
+            if (!fname || !exts.test(fname)) return null;
+            return `/public/assets/atlas/${fname}`;
+          };
+          const frames = {};
+          if (man && man.images && typeof man.images === "object") {
+            for (const [k, u] of Object.entries(man.images)) {
+              const url = normUrl(u);
+              if (!url) continue;
+              try {
+                frames[`${k}`] = PIXI.Texture.from(url);
+              } catch {}
+              try {
+                frames[`${k}.png`] = PIXI.Texture.from(url);
+              } catch {}
+            }
+          } else if (man && typeof man === "object") {
+            for (const [k, u] of Object.entries(man)) {
+              if (typeof u !== "string") continue;
+              const url = normUrl(u);
+              if (!url) continue;
+              try {
+                frames[`${k}`] = PIXI.Texture.from(url);
+              } catch {}
+              try {
+                frames[`${k}.png`] = PIXI.Texture.from(url);
+              } catch {}
+            }
+          }
+          if (Object.keys(frames).length) {
+            ATLAS.ready = true;
+            ATLAS.frames = frames;
+            console.info("[corner] Atlas carregado (manifest)");
+            return ATLAS;
+          }
+        }
+      } catch (_) {}
+
       return ATLAS;
     }
 
@@ -953,6 +1003,29 @@
       return PIXI.Texture.from(url);
     }
 
+    // Normaliza caminhos legados (furniture2/Isometric -> assets/atlas)
+    function normalizeLegacyUrl(k) {
+      try {
+        if (k == null) return k;
+        let s = String(k);
+        if (!s) return k;
+        // normaliza prefixos e remove "public/" duplicado
+        s = s.replace(/^\.\/?/, "");
+        // garante barra inicial para caminhos servidos em /public
+        if (s.startsWith("public/")) s = "/" + s;
+        // já está no atlas
+        if (/\/public\/assets\/atlas\//i.test(s)) return s;
+        // mapeia qualquer variante de furniture2/Isometric para o atlas pelo nome do arquivo
+        if (/furniture2\/Isometric\//i.test(s)) {
+          const fname = s.split("/").pop();
+          if (fname) return `/public/assets/atlas/${fname}`;
+        }
+        return s;
+      } catch (_) {
+        return k;
+      }
+    }
+
     function spriteFor(item) {
       // PISO: desenha como losango sólido (sem borda), cor customizável
       if (item.item_key === "piso") {
@@ -1047,10 +1120,12 @@
       if (!tex) {
         // suportar item_key como caminho/URL de imagem
         const key = String(item.item_key || "");
+        const normKey = normalizeLegacyUrl(key);
         const looksLikeImg =
-          /\.(png|jpg|jpeg|webp|gif)$/i.test(key) || key.startsWith("/public/");
+          /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(normKey) ||
+          normKey.startsWith("/public/");
         const url = looksLikeImg
-          ? key
+          ? normKey
           : textures[item.item_key] ||
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='10' fill='%23a78bfa'/></svg>`;
         tex = textureFromUrl(url);
@@ -2374,11 +2449,33 @@
 
     async function loadInventoryFromManifest() {
       try {
-        const res = await fetch("/public/furniture2/manifest.json", {
+        const res = await fetch("/public/assets/atlas/manifest.json", {
           cache: "no-store",
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const raw = await res.json();
+        // Reescreve URLs antigas para o novo atlas
+        const normalizeKey = (k) => {
+          if (typeof k !== "string") return k;
+          if (
+            !/\.(png|jpg|jpeg|webp|gif|svg)$/i.test(k) &&
+            !k.startsWith("/public/")
+          )
+            return k;
+          let s = k.replace(/^\.\/?/, "");
+          s = s.replace(/^public\//, "");
+          s = s.replace(/^furniture2\//i, "");
+          s = s.replace(/^Isometric\//i, "");
+          const fname = s.split("/").pop();
+          return fname ? `/public/assets/atlas/${fname}` : k;
+        };
+        const data = {};
+        Object.keys(raw || {}).forEach((cat) => {
+          data[cat] = (raw[cat] || []).map((it) => ({
+            label: it.label,
+            key: normalizeKey(it.key),
+          }));
+        });
         renderInventoryGroups(data);
       } catch (e) {
         console.warn(

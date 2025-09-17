@@ -1,0 +1,235 @@
+{
+  "Sofás": [
+    { "label": "Sofá (básico)", "key": "sofa" },
+    { "label": "Sofá (reto)", "key": "/public/assets/atlas/loungeSofa_SE.png" },
+    {
+      "label": "Sofá de canto",
+      "key": "/public/assets/atlas/loungeSofaCorner_SE.png"
+    },
+    {
+      "label": "Sofá longo",
+      "key": "/public/assets/atlas/loungeSofaLong_SE.png"
+    },
+    {
+      "label": "Sofá design",
+      "key": "/public/assets/atlas/loungeDesignSofa_SE.png"
+    },
+    {
+      "label": "Pufe / Ottoman",
+      "key": "/public/assets/atlas/loungeSofaOttoman_SE.png"
+    }
+  ],
+  "Cadeiras": [
+    { "label": "Cadeira (básica)", "key": "chair" },
+    { "label": "Cadeira", "key": "/public/assets/atlas/chair_SE.png" },
+    {
+      "label": "Cadeira arredondada",
+      "key": "/public/assets/atlas/chairRounded_SE.png"
+    },
+    {
+      "label": "Cadeira de escritório",
+      "key": "/public/assets/atlas/chairDesk_SE.png"
+    },
+    {
+      "label": "Poltrona lounge",
+      "key": "/public/assets/atlas/loungeChair_SE.png"
+    },
+    {
+      "label": "Poltrona lounge relax",
+      "key": "/public/assets/atlas/loungeChairRelax_SE.png"
+    },
+    {
+      "label": "Cadeira design",
+      "key": "/public/assets/atlas/loungeDesignChair_SE.png"
+    },
+    { "label": "Banqueta", "key": "/public/assets/atlas/stoolBar_SE.png" },
+    {
+      "label": "Banqueta quadrada",
+      "key": "/public/assets/atlas/stoolBarSquare_SE.png"
+    },
+    { "label": "Banco", "key": "/public/assets/atlas/bench_SE.png" },
+    {
+      "label": "Banco c/ almofada",
+      "key": "/public/assets/atlas/benchCushion_SE.png"
+    }
+  ],
+  "Mesas": [
+    { "label": "Mesa (básica)", "key": "table" },
+    {
+      "label": "Mesa redonda",
+      "key": "/public/assets/atlas/tableRound_SE.png"
+    },
+    {
+      "label": "Mesa de vidro",
+      "key": "/public/assets/atlas/tableGlass_SE.png"
+    },
+    {
+      "label": "Mesa de centro",
+      "key": "/public/assets/atlas/tableCoffee_SE.png"
+    },
+    {
+      "label": "Mesa de centro quadrada",
+      "key": "/public/assets/atlas/tableCoffeeSquare_SE.png"
+    },
+    {
+      "label": "Mesa de centro vidro",
+      "key": "/public/assets/atlas/tableCoffeeGlass_SE.png"
+    },
+    { "label": "Mesa lateral", "key": "/public/assets/atlas/sideTable_SE.png" },
+    {
+      "label": "Mesa lateral c/ gaveta",
+      "key": "/public/assets/atlas/sideTableDrawers_SE.png"
+    },
+    { "label": "Escrivaninha", "key": "/public/assets/atlas/desk_SE.png" },
+    {
+      "label": "Mesa canto (L)",
+      "key": "/public/assets/atlas/deskCorner_SE.png"
+    }
+  ],
+  "Plantas": [
+    { "label": "Planta (básica)", "key": "plant" },
+    {
+      "label": "Planta pequena 1",
+      "key": "/public/assets/atlas/plantSmall1_SE.png"
+    },
+    {
+      "label": "Planta pequena 2",
+      "key": "/public/assets/atlas/plantSmall2_SE.png"
+    },
+    {
+      "label": "Planta pequena 3",
+      "key": "/public/assets/atlas/plantSmall3_SE.png"
+    },
+    {
+      "label": "Planta em vaso",
+      "key": "/public/assets/atlas/pottedPlant_SE.png"
+    }
+  ],
+  "Iluminação": [
+    { "label": "Luminária (básica)", "key": "lamp" },
+    {
+      "label": "Luminária de chão (redonda)",
+      "key": "/public/assets/atlas/lampRoundFloor_SE.png"
+    },
+    {
+      "label": "Luminária de mesa (redonda)",
+      "key": "/public/assets/atlas/lampRoundTable_SE.png"
+    },
+    {
+      "label": "Luminária de chão (quadrada)",
+      "key": "/public/assets/atlas/lampSquareFloor_SE.png"
+    },
+    {
+      "label": "Luminária de mesa (quadrada)",
+      "key": "/public/assets/atlas/lampSquareTable_SE.png"
+    },
+    { "label": "Arandela", "key": "/public/assets/atlas/lampWall_SE.png" },
+    {
+      "label": "Luminária de teto",
+      "key": "/public/assets/atlas/lampSquareCeiling_SE.png"
+    }
+  ],
+  "Eletrônicos": [
+    { "label": "TV (básica)", "key": "tv" },
+    {
+      "label": "TV moderna",
+      "key": "/public/assets/atlas/televisionModern_SE.png"
+    },
+    {
+      "label": "TV vintage",
+      "key": "/public/assets/atlas/televisionVintage_SE.png"
+    },
+    {
+      "label": "Antena de TV",
+      "key": "/public/assets/atlas/televisionAntenna_SE.png"
+    },
+    { "label": "Monitor", "key": "/public/assets/atlas/computerScreen_SE.png" },
+    { "label": "Notebook", "key": "/public/assets/atlas/laptop_SE.png" },
+    { "label": "Alto-falante", "key": "/public/assets/atlas/speaker_SE.png" },
+    {
+      "label": "Alto-falante pequeno",
+      "key": "/public/assets/atlas/speakerSmall_SE.png"
+    },
+    { "label": "Rádio", "key": "/public/assets/atlas/radio_SE.png" }
+  ],
+  "Banheiro": [
+    {
+      "label": "Armário de banheiro",
+      "key": "/public/assets/atlas/bathroomCabinet_SE.png"
+    },
+    {
+      "label": "Armário c/ gaveta",
+      "key": "/public/assets/atlas/bathroomCabinetDrawer_SE.png"
+    },
+    { "label": "Espelho", "key": "/public/assets/atlas/bathroomMirror_SE.png" },
+    {
+      "label": "Pia redonda",
+      "key": "/public/assets/atlas/bathroomSink_SE.png"
+    },
+    {
+      "label": "Pia quadrada",
+      "key": "/public/assets/atlas/bathroomSinkSquare_SE.png"
+    },
+    { "label": "Banheira", "key": "/public/assets/atlas/bathtub_SE.png" },
+    { "label": "Chuveiro", "key": "/public/assets/atlas/shower_SE.png" },
+    {
+      "label": "Chuveiro redondo",
+      "key": "/public/assets/atlas/showerRound_SE.png"
+    },
+    { "label": "Vaso sanitário", "key": "/public/assets/atlas/toilet_SE.png" },
+    {
+      "label": "Vaso quadrado",
+      "key": "/public/assets/atlas/toiletSquare_SE.png"
+    },
+    { "label": "Lixeira", "key": "/public/assets/atlas/trashcan_SE.png" },
+    {
+      "label": "Máquina de lavar",
+      "key": "/public/assets/atlas/washer_SE.png"
+    },
+    { "label": "Secadora", "key": "/public/assets/atlas/dryer_SE.png" },
+    {
+      "label": "Lava e seca empilhada",
+      "key": "/public/assets/atlas/washerDryerStacked_SE.png"
+    }
+  ],
+  "Portas": [
+    { "label": "Porta (NE)", "key": "/public/assets/atlas/doorway_NE.png" },
+    { "label": "Porta (NW)", "key": "/public/assets/atlas/doorway_NW.png" },
+    { "label": "Porta (SE)", "key": "/public/assets/atlas/doorway_SE.png" },
+    { "label": "Porta (SW)", "key": "/public/assets/atlas/doorway_SW.png" },
+    {
+      "label": "Porta aberta (NE)",
+      "key": "/public/assets/atlas/doorwayOpen_NE.png"
+    },
+    {
+      "label": "Porta aberta (NW)",
+      "key": "/public/assets/atlas/doorwayOpen_NW.png"
+    },
+    {
+      "label": "Porta aberta (SE)",
+      "key": "/public/assets/atlas/doorwayOpen_SE.png"
+    },
+    {
+      "label": "Porta aberta (SW)",
+      "key": "/public/assets/atlas/doorwayOpen_SW.png"
+    },
+    {
+      "label": "Porta frontal (NE)",
+      "key": "/public/assets/atlas/doorwayFront_NE.png"
+    },
+    {
+      "label": "Porta frontal (NW)",
+      "key": "/public/assets/atlas/doorwayFront_NW.png"
+    },
+    {
+      "label": "Porta frontal (SE)",
+      "key": "/public/assets/atlas/doorwayFront_SE.png"
+    },
+    {
+      "label": "Porta frontal (SW)",
+      "key": "/public/assets/atlas/doorwayFront_SW.png"
+    }
+  ],
+  "Paredes": [{ "label": "Parede básica", "key": "parede" }],
+  "Pisos": [{ "label": "Piso básico", "key": "piso" }]
+}
