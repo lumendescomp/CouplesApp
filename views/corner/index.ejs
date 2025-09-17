@@ -498,7 +498,7 @@
           // Carrega data: URIs manualmente em elementos Image para evitar fetch/GET inválido
           for (const [k, url] of Object.entries(data.images)) {
             try {
-              if (typeof url === "string" && url.startsWith("data:")) {
+              if (typeof url === "string" && url.startsWith("data:")) { 
                 const img = new Image();
                 img.src = url;
                 // decode() garante que a imagem está pronta
@@ -859,7 +859,8 @@
         const g = new PIXI.Graphics();
         const color = getItemColor(item);
         const { tileW, tileH } = HS_ISO;
-        g.beginFill(color, 0.18);
+        // preenchimento opaco para não sofrer influência do piso global
+        g.beginFill(color, 1.0);
         g.drawPolygon([
           0,
           -tileH / 2,
@@ -898,12 +899,12 @@
         // topo: mesmo x, y - wallH (vertical na tela)
         const A2 = { x: A.x, y: A.y - wallH };
         const B2 = { x: B.x, y: B.y - wallH };
-        // desenha paralelogramo
+        // desenha paralelogramo com leve transparência para manter o look anterior
         g.beginFill(color, 0.24);
         g.drawPolygon([A.x, A.y, B.x, B.y, B2.x, B2.y, A2.x, A2.y]);
         g.endFill();
         c.addChild(g);
-        c.hsSpr = g;
+        c.hsSpr = g; 
         c.eventMode = "static";
         c.cursor = "pointer";
         return c;
@@ -1014,7 +1015,8 @@
           rebuilt.x = prevX;
           rebuilt.y = prevY;
           if (typeof prevZ === "number") rebuilt.zIndex = prevZ;
-          rebuilt.alpha = 0.98;
+          // piso opaco; parede volta a ter leve transparência no container
+          rebuilt.alpha = item.item_key === "piso" ? 1.0 : 0.98;
           rebuilt.on("pointerdown", (e) => {
             SCENE.justClickedSprite = true;
             setTimeout(() => (SCENE.justClickedSprite = false), 0);
@@ -1108,7 +1110,9 @@
           const rotDeg = Number(item.rotation || 0);
           sprite.rotation = (rotDeg * Math.PI) / 180;
         }
-        sprite.alpha = 0.98;
+        // itens padrão levemente abaixo de 1; piso/parede opacos (ajustado abaixo)
+        sprite.alpha =
+          item.item_key === "piso" || item.item_key === "parede" ? 1.0 : 0.98;
         // aplica escala/tilt/flip do usuário (não aplica em "parede" para manter geometria reta)
         if (item.item_key !== "parede") {
           const base =
@@ -1156,7 +1160,8 @@
           rebuilt.x = prevX;
           rebuilt.y = prevY;
           if (typeof prevZ === "number") rebuilt.zIndex = prevZ;
-          rebuilt.alpha = 0.98;
+          rebuilt.alpha =
+            item.item_key === "piso" || item.item_key === "parede" ? 1.0 : 0.98;
           rebuilt.on("pointerdown", (e) => {
             SCENE.justClickedSprite = true;
             setTimeout(() => (SCENE.justClickedSprite = false), 0);
@@ -1203,7 +1208,17 @@
     let DRAG = null;
     function startDrag(id, e) {
       selectItem(id);
-      DRAG = { id };
+      // inicia drag já com a posição atual do item para evitar (0,0) se não houver movimento
+      const entry = SCENE.items.get(id);
+      let gx0 = 0,
+        gy0 = 0;
+      try {
+        if (entry && entry.item) {
+          gx0 = pctToGrid(entry.item.x);
+          gy0 = pctToGrid(entry.item.y);
+        }
+      } catch {}
+      DRAG = { id, gx: gx0, gy: gy0 };
       const up = () => {
         if (!DRAG) return;
         finishDrag();
@@ -1254,8 +1269,17 @@
         DRAG = null;
         return;
       }
-      const xPct = gridToPct(DRAG.gx);
-      const yPct = gridToPct(DRAG.gy);
+      // robustez: se por algum motivo gx/gy não foram definidos, usa posição atual do item
+      const gx =
+        DRAG.gx != null && Number.isFinite(DRAG.gx)
+          ? DRAG.gx
+          : pctToGrid(entry.item.x);
+      const gy =
+        DRAG.gy != null && Number.isFinite(DRAG.gy)
+          ? DRAG.gy
+          : pctToGrid(entry.item.y);
+      const xPct = gridToPct(gx);
+      const yPct = gridToPct(gy);
       const ok = await savePosition(DRAG.id, xPct, yPct);
       if (ok) {
         entry.item.x = xPct;
@@ -1362,6 +1386,13 @@
           (entry.item.item_key === "parede" || entry.item.item_key === "piso");
         if (colorWrap) colorWrap.classList.toggle("hidden", !isColorable);
         if (isColorable && input) {
+          // preview imediato enquanto arrasta a paleta (não persiste)
+          input.oninput = (e) => {
+            e.stopPropagation();
+            const val = String(input.value || "#6b21a8");
+            const n = hexToNumber(val);
+            setItemColor(idSel, n);
+          };
           input.onchange = (e) => {
             e.stopPropagation();
             const val = String(input.value || "#6b21a8");
