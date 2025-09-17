@@ -1,24 +1,285 @@
-<div>
-  <h1 class="text-2xl font-semibold text-violet-200 mb-2">Seu casal</h1>
-  <% if (partner) { %>
-  <div
-    class="flex items-center gap-3 border border-violet-700/40 rounded-xl p-3 bg-white/5"
+<div class="max-w-screen-sm mx-auto space-y-6">
+  <header class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-violet-100">Sobre a gente</h1>
+  </header>
+
+  <section
+    class="glass rounded-xl border border-violet-700/40 bg-white/5 p-4 md:p-6"
   >
-    <% if (partner.avatar_path) { %>
+    <h2 class="text-lg font-medium text-violet-100 mb-3">
+      Compartilhando momentos há...
+    </h2>
+    <form
+      id="start-date-form"
+      class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+    >
+      <label class="text-sm text-violet-200/80 sm:w-44" for="start-date"
+        >Data de início</label
+      >
+      <input
+        id="start-date"
+        name="start_date"
+        type="date"
+        value="<%= couple && couple.relationship_start_date ? couple.relationship_start_date : '' %>"
+        class="flex-1 min-w-0 bg-black/30 border border-violet-700/50 rounded-lg px-3 py-2 text-violet-100 placeholder-violet-300/50 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/50"
+      />
+      <button
+        type="submit"
+        class="shrink-0 px-4 py-2 rounded-lg bg-fuchsia-600/80 hover:bg-fuchsia-600 text-white border border-fuchsia-400/40"
+      >
+        Salvar
+      </button>
+    </form>
+
+    <div class="mt-4 space-y-3">
+      <div class="text-sm text-violet-300 text-center">Estamos juntos há</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div
+          class="rounded-lg border border-violet-700/30 bg-black/20 p-3 text-center"
+        >
+          <div
+            id="years-value"
+            class="text-3xl md:text-4xl font-bold text-violet-100"
+          >
+            —
+          </div>
+          <div
+            class="text-[11px] uppercase tracking-wider text-violet-300/90 mt-1"
+          >
+            Anos
+          </div>
+        </div>
+        <div
+          class="rounded-lg border border-violet-700/30 bg-black/20 p-3 text-center"
+        >
+          <div
+            id="months-rem-value"
+            class="text-3xl md:text-4xl font-bold text-violet-100"
+          >
+            —
+          </div>
+          <div
+            class="text-[11px] uppercase tracking-wider text-violet-300/90 mt-1"
+          >
+            Meses 
+          </div>
+        </div>
+        <div
+          class="rounded-lg border border-violet-700/30 bg-black/20 p-3 text-center"
+        >
+          <div
+            id="days-rem-value"
+            class="text-3xl md:text-4xl font-bold text-violet-100"
+          >
+            —
+          </div>
+          <div
+            class="text-[11px] uppercase tracking-wider text-violet-300/90 mt-1"
+          >
+            Dias 
+          </div>
+        </div>
+      </div>
+      <div class="text-xs text-violet-300/90 text-center" id="since-label">
+        Defina a data para começar a contar
+      </div>
+    </div>
+  </section>
+
+  <% if (partner) { %>
+  <section
+    class="glass rounded-xl border border-violet-700/40 bg-white/5 p-4 md:p-6 flex items-center gap-4"
+  >
     <img
-      src="<%= partner.avatar_path %>"
+      src="<%= partner.avatar_path ? (partner.avatar_path.startsWith('/') ? partner.avatar_path : ('/public/uploads/' + partner.avatar_path)) : 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'64\' height=\'64\'><circle cx=\'32\' cy=\'32\' r=\'30\' fill=\'%238b5cf6\'/></svg>' %>"
       alt="Avatar"
-      class="h-10 w-10 rounded-full object-cover border"
+      class="w-12 h-12 rounded-full object-cover border border-violet-600/60"
     />
-    <% } %>
-    <p class="text-violet-100">
-      Você está pareado com
-      <span class="font-medium text-violet-200"
-        ><%= partner.display_name || partner.email %></span
-      >.
-    </p>
-  </div>
-  <% } else { %>
-  <p class="text-violet-200/80">Aguardando o parceiro(a) aceitar o convite.</p>
+    <div>
+      <div class="text-sm text-violet-300">Meu par</div>
+      <div class="text-base font-medium text-violet-100">
+        <%= partner.display_name || partner.email %>
+      </div>
+    </div>
+  </section>
   <% } %>
 </div>
+
+<script>
+  (function CouplePage() {
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("hs-toast");
+      const msg = document.getElementById("hs-toast-msg");
+      if (!toast || !msg) {
+        console.info(message);
+        return;
+      }
+      msg.textContent = message;
+      toast.classList.remove("hidden", "opacity-0");
+      if (type === "error") {
+        toast.classList.add("bg-red-600/90");
+        toast.classList.remove("bg-emerald-600/90");
+      } else {
+        toast.classList.add("bg-emerald-600/90");
+        toast.classList.remove("bg-red-600/90");
+      }
+      setTimeout(() => {
+        toast.classList.add("hidden");
+        toast.classList.remove("bg-red-600/90", "bg-emerald-600/90");
+      }, 1500);
+    }
+
+    function daysBetween(d1, d2) {
+      const ms = 24 * 60 * 60 * 1000;
+      const t1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+      const t2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+      return Math.floor((t2 - t1) / ms);
+    }
+    function monthsBetween(d1, d2) {
+      let m =
+        (d2.getFullYear() - d1.getFullYear()) * 12 +
+        (d2.getMonth() - d1.getMonth());
+      if (d2.getDate() < d1.getDate()) m -= 1;
+      return Math.max(0, m);
+    }
+    function yearsBetween(d1, d2) {
+      let y = d2.getFullYear() - d1.getFullYear();
+      const mDiff = d2.getMonth() - d1.getMonth();
+      if (mDiff < 0 || (mDiff === 0 && d2.getDate() < d1.getDate())) y -= 1;
+      return Math.max(0, y);
+    }
+    function daysInMonth(y, m) {
+      return new Date(y, m + 1, 0).getDate();
+    }
+    function addMonthsClamped(date, n) {
+      const y = date.getFullYear();
+      const m = date.getMonth() + n;
+      const d = date.getDate();
+      const anchor = new Date(y, m, 1);
+      const maxD = daysInMonth(anchor.getFullYear(), anchor.getMonth());
+      const useD = Math.min(d, maxD);
+      return new Date(anchor.getFullYear(), anchor.getMonth(), useD);
+    }
+    function addYearsClamped(date, n) {
+      const y = date.getFullYear() + n;
+      const m = date.getMonth();
+      const d = date.getDate();
+      const anchor = new Date(y, m, 1);
+      const maxD = daysInMonth(anchor.getFullYear(), anchor.getMonth());
+      const useD = Math.min(d, maxD);
+      return new Date(anchor.getFullYear(), anchor.getMonth(), useD);
+    }
+
+    function updateAllCounters() {
+      const elYears = document.getElementById("years-value");
+      const elMonthsRem = document.getElementById("months-rem-value");
+      const elDaysRem = document.getElementById("days-rem-value");
+      const since = document.getElementById("since-label");
+      const inp = document.getElementById("start-date");
+      const v = (inp.value || "").trim();
+
+      if (!v) {
+        elYears.textContent = "—";
+        elMonthsRem.textContent = "—";
+        elDaysRem.textContent = "—";
+        since.textContent = "Defina a data para começar a contar";
+        return;
+      }
+
+      const parts = v.split("-").map(Number);
+      if (parts.length !== 3) {
+        elYears.textContent = "—";
+        elMonthsRem.textContent = "—";
+        elDaysRem.textContent = "—";
+        since.textContent = "Data inválida";
+        return;
+      }
+      const d0 = new Date(parts[0], parts[1] - 1, parts[2]);
+      if (isNaN(d0.getTime())) {
+        elYears.textContent = "—";
+        elMonthsRem.textContent = "—";
+        elDaysRem.textContent = "—";
+        since.textContent = "Data inválida";
+        return;
+      }
+
+      const today = new Date();
+      const years = Math.max(0, yearsBetween(d0, today));
+      const afterYears = addYearsClamped(d0, years);
+      const monthsR = Math.max(0, monthsBetween(afterYears, today));
+      const afterMonths = addMonthsClamped(afterYears, monthsR);
+      const daysR = Math.max(0, daysBetween(afterMonths, today));
+
+      elYears.textContent = years.toLocaleString();
+      elMonthsRem.textContent = monthsR.toLocaleString();
+      elDaysRem.textContent = daysR.toLocaleString();
+      try {
+        since.textContent = `Desde ${d0.toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })}`;
+      } catch {
+        since.textContent = `Desde ${d0.toLocaleDateString()}`;
+      }
+    }
+
+    updateAllCounters();
+    document
+      .getElementById("start-date")
+      ?.addEventListener("change", updateAllCounters);
+    // Atualiza uma vez por minuto é suficiente
+    setInterval(updateAllCounters, 60 * 1000);
+
+    const form = document.getElementById("start-date-form");
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const inp = document.getElementById("start-date");
+      const CSRF =
+        (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+      try {
+        const res = await fetch("/couple/start-date", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF },
+          body: JSON.stringify({ start_date: inp.value || null }),
+        });
+        if (res.ok) {
+          showToast("Salvo!");
+          inp.classList.remove("ring-2", "ring-red-500", "border-red-500");
+        } else {
+          let data = null;
+          try {
+            data = await res.json();
+          } catch {}
+          showToast(
+            data && data.error === "invalid_date"
+              ? "Data inválida"
+              : "Erro ao salvar",
+            "error"
+          );
+          inp.classList.add("ring-2", "ring-red-500", "border-red-500");
+          setTimeout(
+            () =>
+              inp.classList.remove("ring-2", "ring-red-500", "border-red-500"),
+            1500
+          );
+        }
+      } catch {
+        showToast("Erro ao salvar", "error");
+        inp.classList.add("ring-2", "ring-red-500", "border-red-500");
+        setTimeout(
+          () =>
+            inp.classList.remove("ring-2", "ring-red-500", "border-red-500"),
+          1500
+        );
+      }
+    });
+    document.getElementById("start-date")?.addEventListener("input", (e) => {
+      e.currentTarget.classList.remove(
+        "ring-2",
+        "ring-red-500",
+        "border-red-500"
+      );
+    });
+  })();
+</script>

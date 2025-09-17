@@ -40,7 +40,7 @@ Este documento explica a estrutura e o funcionamento da página `views/corner/in
 - Pan: `bindPan` usa botão do meio ou Space+arraste com esquerdo, atualiza `world.position` e reposiciona overlay.
 - Wheel: `bindWheelRotate` implementa zoom sem modificadores; Shift para escala; Ctrl/Alt para rotação do item.
 - Salvamentos: `savePosition`, `saveNudge`, `saveHeight`, `saveScale`, `saveTilt`, `saveFlip`, `saveLayer`, `saveStack`, `deleteItem` — todos usam `fetch` com CSRF header; quando o endpoint retorna HTML com o item, convertem com `htmlToNode` e atualizam a cena e `__cornerItems`.
-- Inventário: `loadInventoryFromManifest` busca `/public/furniture2/manifest.json`, `renderInventoryGroups` constrói UI por categoria, `bindInventoryInteractions` liga colapsar/expandir com persistência e interações dos itens (click destaca/abre grupo; dragstart/dragend; dblclick cria ao centro). `refreshGroupCounts` soma itens no canvas por chave e exibe ao lado do título do grupo.
+- Inventário: `loadInventoryFromManifest` busca `/public/assets/atlas/manifest.json`, `renderInventoryGroups` constrói UI por categoria, `bindInventoryInteractions` liga colapsar/expandir com persistência e interações dos itens (click destaca/abre grupo; dragstart/dragend; dblclick cria ao centro). `refreshGroupCounts` soma itens no canvas por chave e exibe ao lado do título do grupo.
 - Drop no canvas: listeners em `#corner-canvas` para `dragover/dragenter/dragleave/drop`; mostram ghost, calculam melhor célula (snap 0.25, bordas permitidas), criam item via POST e atualizam contadores.
 - Resize: recalcula origem, redesenha piso e re-renderiza itens; reposiciona overlay.
 - Destroy: remove listeners e destrói o app Pixi sem vazamentos.

@@ -53,6 +53,10 @@ export async function initDb() {
     if (!names.has("corner_wall_color")) {
       db.exec("ALTER TABLE couples ADD COLUMN corner_wall_color INTEGER");
     }
+    // Data de início do relacionamento (YYYY-MM-DD)
+    if (!names.has("relationship_start_date")) {
+      db.exec("ALTER TABLE couples ADD COLUMN relationship_start_date TEXT");
+    }
   } catch (e) {
     console.warn("Migration (couples corner colors) note:", e.message);
   }

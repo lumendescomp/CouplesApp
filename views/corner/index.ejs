@@ -364,87 +364,7 @@
       // origem fixa no espaço do "world" (não depende do container após inicializar)
       originX: 0,
       originY: 0,
-      sizes: {
-        table: { w: 2, h: 1 },
-        chair: { w: 1, h: 1 },
-        plant: { w: 1, h: 1 },
-        lamp: { w: 1, h: 1 },
-        sofa: { w: 2, h: 1 },
-        tv: { w: 2, h: 1 },
-        // --- Isometric (Banheiro) ---
-        "/public/furniture2/Isometric/bathroomCabinet_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/bathroomCabinetDrawer_SE.png": {
-          w: 1,
-          h: 1,
-        },
-        "/public/furniture2/Isometric/bathroomMirror_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/bathroomSink_SE.png": { w: 1, h: 1 },
-        // --- Isometric (Sofás) ---
-        "/public/furniture2/Isometric/loungeSofa_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/loungeSofaLong_SE.png": { w: 3, h: 1 },
-        "/public/furniture2/Isometric/loungeSofaCorner_SE.png": { w: 2, h: 2 },
-        "/public/furniture2/Isometric/loungeDesignSofa_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/loungeSofaOttoman_SE.png": { w: 1, h: 1 },
-        // --- Isometric (Mesas) ---
-        "/public/furniture2/Isometric/table_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/tableGlass_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/tableRound_SE.png": { w: 2, h: 2 },
-        "/public/furniture2/Isometric/tableCoffee_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/tableCoffeeSquare_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/tableCoffeeGlass_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/sideTable_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/sideTableDrawers_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/desk_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/deskCorner_SE.png": { w: 2, h: 2 },
-        "/public/furniture2/Isometric/bathroomSinkSquare_SE.png": {
-          w: 1,
-          h: 1,
-        },
-        "/public/furniture2/Isometric/bathtub_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/shower_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/showerRound_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/toilet_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/toiletSquare_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/trashcan_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/washer_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/dryer_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/washerDryerStacked_SE.png": {
-          w: 1,
-          h: 1,
-        },
-        // --- Isometric (Cadeiras/Bancos/Poltronas) ---
-        "/public/furniture2/Isometric/chair_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/chairRounded_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/chairDesk_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/loungeChair_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/loungeChairRelax_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/loungeDesignChair_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/stoolBar_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/stoolBarSquare_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/bench_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/benchCushion_SE.png": { w: 2, h: 1 },
-        // --- Isometric (Plantas) ---
-        "/public/furniture2/Isometric/plantSmall1_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/plantSmall2_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/plantSmall3_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/pottedPlant_SE.png": { w: 1, h: 1 },
-        // --- Isometric (Iluminação) ---
-        "/public/furniture2/Isometric/lampRoundFloor_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/lampRoundTable_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/lampSquareFloor_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/lampSquareTable_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/lampWall_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/lampSquareCeiling_SE.png": { w: 1, h: 1 },
-        // --- Isometric (Eletrônicos) ---
-        "/public/furniture2/Isometric/televisionModern_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/televisionVintage_SE.png": { w: 2, h: 1 },
-        "/public/furniture2/Isometric/televisionAntenna_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/computerScreen_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/laptop_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/speaker_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/speakerSmall_SE.png": { w: 1, h: 1 },
-        "/public/furniture2/Isometric/radio_SE.png": { w: 1, h: 1 },
-      },
+      // Nota: o antigo mapa de tamanhos (sizes) foi removido por não ser usado
       // Define a origem no espaço do world, centralizando a grade inicialmente
       computeOrigin(container) {
         const { tileH, gridN } = this;
@@ -579,83 +499,7 @@
     }
 
     async function loadAtlasIfAny() {
-      const ATLAS = { ready: false, frames: {} };
-      // Tenta items.json primeiro
-      try {
-        const res = await fetch("/public/assets/atlas/items.json", {
-          cache: "no-store",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          // Caso 1: spritesheet com .textures
-          if (data && data.textures && typeof data.textures === "object") {
-            ATLAS.ready = true;
-            ATLAS.frames = data.textures;
-            console.info("[corner] Atlas carregado (textures)");
-            return ATLAS;
-          }
-          // Caso 2: mapa simples { images: { key: url } }
-          if (data && data.images && typeof data.images === "object") {
-            const frames = {};
-            for (const [k, url] of Object.entries(data.images)) {
-              try {
-                if (typeof url === "string" && url.startsWith("data:")) {
-                  const img = new Image();
-                  img.src = url;
-                  if (img.decode) {
-                    await img.decode();
-                  } else {
-                    await new Promise((resolve) => {
-                      img.onload = () => resolve();
-                      img.onerror = () => resolve();
-                    });
-                  }
-                  const base = PIXI.BaseTexture.from(img);
-                  frames[k] = new PIXI.Texture(base);
-                } else {
-                  frames[k] = PIXI.Texture.from(url);
-                }
-              } catch (_) {
-                frames[k] = PIXI.Texture.WHITE;
-              }
-            }
-            ATLAS.ready = true;
-            ATLAS.frames = frames;
-            console.info("[corner] Atlas carregado (images map)");
-            return ATLAS;
-          }
-          // Caso 3: TexturePacker { frames, meta: { image } }
-          if (data && data.frames && data.meta && data.meta.image) {
-            let base;
-            if (
-              typeof data.meta.image === "string" &&
-              data.meta.image.startsWith("data:")
-            ) {
-              const img = new Image();
-              img.src = data.meta.image;
-              if (img.decode) {
-                await img.decode();
-              } else {
-                await new Promise((resolve) => {
-                  img.onload = () => resolve();
-                  img.onerror = () => resolve();
-                });
-              }
-              base = PIXI.BaseTexture.from(img);
-            } else {
-              base = PIXI.BaseTexture.from(data.meta.image);
-            }
-            const ss = new PIXI.Spritesheet(base, data);
-            await ss.parse();
-            ATLAS.ready = true;
-            ATLAS.frames = ss.textures;
-            console.info("[corner] Atlas carregado (TexturePacker)");
-            return ATLAS;
-          }
-        }
-      } catch (_) {}
-
-      // Fallback: manifest.json (nome -> caminho), normalizando para /public/assets/atlas
+      const ATLAS = { ready: false, frames: {} };      
       try {
         const resMan = await fetch("/public/assets/atlas/manifest.json", {
           cache: "no-store",
@@ -667,8 +511,6 @@
             if (typeof u !== "string") return null;
             let s = u.replace(/^\.\/?/, "");
             s = s.replace(/^public\//, "");
-            s = s.replace(/^furniture2\//i, "");
-            s = s.replace(/^Isometric\//i, "");
             const fname = s.split("/").pop();
             if (!fname || !exts.test(fname)) return null;
             return `/public/assets/atlas/${fname}`;
@@ -1003,7 +845,7 @@
       return PIXI.Texture.from(url);
     }
 
-    // Normaliza caminhos legados (furniture2/Isometric -> assets/atlas)
+    // Normaliza caminhos legados para o atlas (baseado no nome do arquivo)
     function normalizeLegacyUrl(k) {
       try {
         if (k == null) return k;
@@ -1015,8 +857,11 @@
         if (s.startsWith("public/")) s = "/" + s;
         // já está no atlas
         if (/\/public\/assets\/atlas\//i.test(s)) return s;
-        // mapeia qualquer variante de furniture2/Isometric para o atlas pelo nome do arquivo
-        if (/furniture2\/Isometric\//i.test(s)) {
+        // mapeia qualquer pasta antiga para o atlas pelo nome do arquivo
+        if (
+          /\/public\//i.test(s) ||
+          /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(s)
+        ) {
           const fname = s.split("/").pop();
           if (fname) return `/public/assets/atlas/${fname}`;
         }
@@ -1551,24 +1396,12 @@
       top = Math.max(minY, Math.min(maxY, top));
       overlay.style.left = left + "px";
       overlay.style.top = top + "px";
-      updateOverlayRotationDisplay(id);
       updateOverlayScaleDisplay(id);
       updateOverlayStretchDisplay(id);
       updateOverlayColorDisplay(id);
     }
 
-    function updateOverlayRotationDisplay(id) {
-      try {
-        const entry = SCENE.items.get(id);
-        const span = document.getElementById("overlay-rot");
-        if (!entry || !span) return;
-        let rot = Math.round(entry.item.rotation || 0) % 360;
-        if (entry.item.item_key === "parede") {
-          rot = Math.round(quantizeWallRotation(rot));
-        }
-        span.textContent = `${rot}°`;
-      } catch (_) {}
-    }
+    // updateOverlayRotationDisplay removido: overlay não contém indicador de rotação
 
     function updateOverlayScaleDisplay(id) {
       try {
@@ -1605,16 +1438,7 @@
       const overlay = document.getElementById("corner-overlay");
       if (!overlay) return;
       const idSel = id;
-      // Mostrar dica de rotação para paredes
-      try {
-        const hint = document.getElementById("overlay-rotate-hint");
-        if (hint) {
-          const entry = SCENE.items.get(idSel);
-          const isWall =
-            entry && entry.item && entry.item.item_key === "parede";
-          hint.classList.toggle("hidden", !isWall);
-        }
-      } catch {}
+      // Dica de rotação removida: overlay não exibe mais orientações de rotação
       const btnDel = document.getElementById("btn-delete");
       const btnLU = document.getElementById("btn-layer-up");
       const btnLD = document.getElementById("btn-layer-down");
@@ -2243,11 +2067,9 @@
       if (ev.key.toLowerCase() === "q") {
         ev.preventDefault();
         await saveNudge(id, 0, 0, -15);
-        updateOverlayRotationDisplay(id);
       } else if (ev.key.toLowerCase() === "e") {
         ev.preventDefault();
         await saveNudge(id, 0, 0, 15);
-        updateOverlayRotationDisplay(id);
       } else if (ev.key.toLowerCase() === "t") {
         // tilt X - inclinação no eixo X (skew Y)
         ev.preventDefault();
@@ -2354,7 +2176,6 @@
           const id = SCENE.selectedId;
           const dir = ev.deltaY > 0 ? 15 : -15;
           await saveNudge(id, 0, 0, dir);
-          updateOverlayRotationDisplay(id);
         },
         { passive: false }
       );
@@ -2405,12 +2226,12 @@
     bindPan();
     bindOutsideClicks();
     bindHelpModal();
-    // carregar itens do furniture2 (manifest)
+    // carregar itens do atlas (manifest)
     try {
       loadInventoryFromManifest();
     } catch {}
 
-    // Inventário dinâmico (carrega manifest furniture2 e liga interações)
+    // Inventário dinâmico (carrega manifest do atlas e liga interações)
     const search = document.getElementById("inventory-search");
     const groups = document.getElementById("inventory-groups");
 
@@ -2464,8 +2285,8 @@
             return k;
           let s = k.replace(/^\.\/?/, "");
           s = s.replace(/^public\//, "");
-          s = s.replace(/^furniture2\//i, "");
-          s = s.replace(/^Isometric\//i, "");
+          // remove possíveis prefixos antigos sem depender do nome da pasta
+          s = s.replace(/^[^/]+\//, "");
           const fname = s.split("/").pop();
           return fname ? `/public/assets/atlas/${fname}` : k;
         };
@@ -2479,7 +2300,7 @@
         renderInventoryGroups(data);
       } catch (e) {
         console.warn(
-          "[corner] manifest furniture2 não encontrado, mantendo inventário padrão."
+          "[corner] manifest do atlas não encontrado, mantendo inventário padrão."
         );
       }
     }

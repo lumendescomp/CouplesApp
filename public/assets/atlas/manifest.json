@@ -1,6 +1,5 @@
 {
   "Sofás": [
-    { "label": "Sofá (básico)", "key": "sofa" },
     { "label": "Sofá (reto)", "key": "/public/assets/atlas/loungeSofa_SE.png" },
     {
       "label": "Sofá de canto",
@@ -20,7 +19,6 @@
     }
   ],
   "Cadeiras": [
-    { "label": "Cadeira (básica)", "key": "chair" },
     { "label": "Cadeira", "key": "/public/assets/atlas/chair_SE.png" },
     {
       "label": "Cadeira arredondada",
@@ -54,7 +52,6 @@
     }
   ],
   "Mesas": [
-    { "label": "Mesa (básica)", "key": "table" },
     {
       "label": "Mesa redonda",
       "key": "/public/assets/atlas/tableRound_SE.png"
@@ -87,7 +84,6 @@
     }
   ],
   "Plantas": [
-    { "label": "Planta (básica)", "key": "plant" },
     {
       "label": "Planta pequena 1",
       "key": "/public/assets/atlas/plantSmall1_SE.png"
@@ -106,7 +102,6 @@
     }
   ],
   "Iluminação": [
-    { "label": "Luminária (básica)", "key": "lamp" },
     {
       "label": "Luminária de chão (redonda)",
       "key": "/public/assets/atlas/lampRoundFloor_SE.png"
@@ -130,7 +125,6 @@
     }
   ],
   "Eletrônicos": [
-    { "label": "TV (básica)", "key": "tv" },
     {
       "label": "TV moderna",
       "key": "/public/assets/atlas/televisionModern_SE.png"
