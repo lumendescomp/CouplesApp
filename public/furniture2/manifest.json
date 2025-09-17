@@ -231,4 +231,11 @@
       "key": "/public/furniture2/Isometric/washerDryerStacked_SE.png"
     }
   ]
+  ,
+  "Paredes": [
+    { "label": "Parede (exemplo)", "key": "parede" }
+  ],
+  "Pisos": [
+    { "label": "Piso (exemplo)", "key": "piso" }
+  ]
 }

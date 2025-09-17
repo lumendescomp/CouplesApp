@@ -105,6 +105,14 @@
           >
             🗑
           </button>
+          <span class="mx-1 text-white/30">|</span>
+          <span
+            id="overlay-rotate-hint"
+            class="text-[10px] leading-none text-violet-200/80 hidden"
+            title="Dica: gire paredes com Q/E ou Ctrl/Alt + roda do mouse"
+          >
+            ⟲ Girar: Q/E
+          </span>
         </div>
       </div>
     </section>
@@ -316,6 +324,11 @@
       walls: null,
       ghost: null,
     };
+
+    // Altura visual padrão das paredes (unificada entre bordas e itens "parede")
+    function getWallHeight() {
+      return Math.round(HS_ISO.tileH * 4);
+    }
     // estado de drag global para inventário -> canvas
     const DRAG_STATE = { key: null };
     const BOUND = {
@@ -340,6 +353,22 @@
       const val = (Number(g) || 0) * step;
       // limita a duas casas decimais para estabilidade de rede/render
       return Math.max(0, Math.min(100, Number(val.toFixed(2))));
+    }
+    // Alinha paredes às direções da malha isométrica
+    function quantizeWallRotation(deg) {
+      const a = ((Number(deg) % 360) + 360) % 360;
+      // direções principais da grade: 26.565°, 153.435°, 206.565°, 333.435°
+      const opts = [26.565, 153.435, 206.565, 333.435];
+      let best = opts[0];
+      let min = Infinity;
+      for (const o of opts) {
+        const d = Math.min(Math.abs(a - o), 360 - Math.abs(a - o));
+        if (d < min) {
+          min = d;
+          best = o;
+        }
+      }
+      return best;
     }
     function domItemToData(node) {
       return {
@@ -544,30 +573,30 @@
         } catch (_) {}
       }
       SCENE.floor = new PIXI.Container();
-      const g = new PIXI.Container();
+      const g = new PIXI.Graphics();
       const { gridN, tileW, tileH } = HS_ISO;
-      for (let i = 0; i < gridN; i++) {
-        for (let j = 0; j < gridN; j++) {
-          const { sx, sy } = HS_ISO.projectWorld(i, j);
-          const diamond = new PIXI.Graphics();
-          diamond.lineStyle(1, 0x7c3aed, 0.18);
-          diamond.beginFill(0x7c3aed, 0.1);
-          const w = tileW,
-            h = tileH;
-          diamond.drawPolygon([
-            sx,
-            sy - h / 2,
-            sx + w / 2,
-            sy,
-            sx,
-            sy + h / 2,
-            sx - w / 2,
-            sy,
-          ]);
-          diamond.endFill();
-          g.addChild(diamond);
-        }
-      }
+      // calcula os vértices do losango externo do piso
+      const topC = HS_ISO.projectWorld(0, 0);
+      const rightC = HS_ISO.projectWorld(gridN - 1, 0);
+      const bottomC = HS_ISO.projectWorld(gridN - 1, gridN - 1);
+      const leftC = HS_ISO.projectWorld(0, gridN - 1);
+      const top = { x: topC.sx, y: topC.sy - tileH / 2 };
+      const right = { x: rightC.sx + tileW / 2, y: rightC.sy };
+      const bottom = { x: bottomC.sx, y: bottomC.sy + tileH / 2 };
+      const left = { x: leftC.sx - tileW / 2, y: leftC.sy };
+      // desenha apenas um preenchimento suave, sem linhas de grade
+      g.beginFill(0x7c3aed, 0.08);
+      g.drawPolygon([
+        top.x,
+        top.y,
+        right.x,
+        right.y,
+        bottom.x,
+        bottom.y,
+        left.x,
+        left.y,
+      ]);
+      g.endFill();
       SCENE.floor.addChild(g);
       stage.addChild(SCENE.floor);
     }
@@ -583,7 +612,7 @@
       SCENE.walls = new PIXI.Container();
       SCENE.walls.zIndex = 20; // acima do piso, abaixo dos itens
       const { gridN } = HS_ISO;
-      const wallH = Math.round(HS_ISO.tileH * 4); // altura visual da parede
+      const wallH = getWallHeight(); // altura visual da parede (unificada)
 
       function makeStrip(
         points,
@@ -657,6 +686,42 @@
     }
 
     function spriteFor(item) {
+      // PAREDE: desenha como faixa extrudada alinhada à malha, sem rotação
+      if (item.item_key === "parede") {
+        const c = new PIXI.Container();
+        const g = new PIXI.Graphics();
+        const wallH = getWallHeight();
+        const length = Math.max(0.25, Math.min(2.0, Number(item.scale || 1.0)));
+        // escolher direção a partir da rotação (quantizada)
+        const q = quantizeWallRotation(Number(item.rotation || 0));
+        const isTR = q === 26.565 || q === 206.565;
+        const dir = isTR
+          ? { dx: HS_ISO.tileW / 2, dy: HS_ISO.tileH / 2 }
+          : { dx: -HS_ISO.tileW / 2, dy: HS_ISO.tileH / 2 };
+        const hx = (dir.dx * length) / 2;
+        const hy = (dir.dy * length) / 2;
+        // pontos da base, centrados na origem do container
+        const A = { x: -hx, y: -hy };
+        const B = { x: hx, y: hy };
+        // topo: mesmo x, y - wallH (vertical na tela)
+        const A2 = { x: A.x, y: A.y - wallH };
+        const B2 = { x: B.x, y: B.y - wallH };
+        // desenha paralelogramo
+        g.beginFill(0x6b21a8, 0.24);
+        g.lineStyle(1, 0x6b21a8, 0.35);
+        g.drawPolygon([A.x, A.y, B.x, B.y, B2.x, B2.y, A2.x, A2.y]);
+        g.endFill();
+        // contorno superior
+        g.lineStyle(1, 0x6b21a8, 0.35);
+        g.moveTo(A2.x, A2.y);
+        g.lineTo(B2.x, B2.y);
+        c.addChild(g);
+        c.hsSpr = g;
+        c.eventMode = "static";
+        c.cursor = "pointer";
+        return c;
+      }
+
       const c = new PIXI.Container();
       const textures = {
         table: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect x='8' y='24' width='48' height='16' rx='4' fill='%23c4b5fd'/><rect x='12' y='40' width='8' height='12' fill='%239b87f5'/><rect x='44' y='40' width='8' height='12' fill='%239b87f5'/></svg>`,
@@ -665,6 +730,8 @@
         lamp: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><polygon points='20,18 44,18 38,8 26,8' fill='%23fde68a'/><rect x='30' y='18' width='4' height='26' fill='%239b87f5'/><rect x='24' y='44' width='16' height='6' rx='2' fill='%237c3aed'/></svg>`,
         sofa: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='64'><rect x='8' y='26' width='80' height='22' rx='6' fill='%23a78bfa'/><rect x='8' y='16' width='80' height='14' rx='6' fill='%23c4b5fd'/><rect x='12' y='48' width='10' height='6' fill='%239b87f5'/><rect x='74' y='48' width='10' height='6' fill='%239b87f5'/></svg>`,
         tv: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='64'><rect x='10' y='8' width='76' height='46' rx='6' fill='%230a0a0a'/><rect x='14' y='12' width='68' height='38' rx='4' fill='%23252525'/><rect x='40' y='54' width='16' height='4' fill='%237c3aed'/></svg>`,
+        piso: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='36'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23201533' stop-opacity='0.9'/><stop offset='100%' stop-color='%23110a1b' stop-opacity='0.9'/></linearGradient></defs><polygon points='36,0 72,18 36,36 0,18' fill='url(%23g)' stroke='%237c3aed' stroke-width='1' stroke-opacity='0.35'/><line x1='0' y1='18' x2='36' y2='0' stroke='%237c3aed' stroke-opacity='0.12'/><line x1='36' y1='0' x2='72' y2='18' stroke='%237c3aed' stroke-opacity='0.12'/></svg>`,
+        parede: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='80'><defs><linearGradient id='w' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%233f1d5b' stop-opacity='0.9'/><stop offset='100%' stop-color='%23110a1b' stop-opacity='0.9'/></linearGradient></defs><polygon points='0,64 72,64 72,0 0,0' fill='url(%23w)'/><line x1='0' y1='0' x2='72' y2='0' stroke='%237c3aed' stroke-opacity='0.35' stroke-width='1'/></svg>`,
       };
       let tex = null;
       if (SCENE.atlas && SCENE.atlas.ready) {
@@ -691,15 +758,23 @@
       const spr = new PIXI.Sprite(tex);
       spr.anchor.set(0.5);
       const baseScale =
-        item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
+        item.item_key === "sofa" || item.item_key === "tv"
+          ? 0.75
+          : item.item_key === "piso"
+          ? 1.0
+          : 0.6;
       const userScale = Number(item.scale || 1.0);
       spr.scale.set(baseScale * userScale);
-      const shadow = new PIXI.Graphics();
-      shadow.beginFill(0x000000, 0.18);
-      shadow.drawEllipse(0, 18, 14, 4);
-      shadow.endFill();
-      shadow.zIndex = -1;
-      c.addChild(shadow, spr);
+      // sombra: não desenhar para piso nem para parede
+      if (item.item_key !== "piso" && item.item_key !== "parede") {
+        const shadow = new PIXI.Graphics();
+        shadow.beginFill(0x000000, 0.18);
+        shadow.drawEllipse(0, 18, 14, 4);
+        shadow.endFill();
+        shadow.zIndex = -1;
+        c.addChild(shadow);
+      }
+      c.addChild(spr);
       c.hsSpr = spr; // referência ao sprite principal
       c.eventMode = "static";
       c.cursor = "pointer";
@@ -733,10 +808,11 @@
       const cont = spriteFor(item);
       cont.alpha = 0.6;
       cont.eventMode = "none";
-      // esconder sombra do ghost
+      // esconder apenas a sombra do ghost (zIndex -1), não a geometria principal
       cont.children.forEach((ch) => {
-        if (ch && ch.constructor && ch.constructor.name === "Graphics")
+        if (ch && typeof ch.zIndex === "number" && ch.zIndex === -1) {
           ch.visible = false;
+        }
       });
       cont.zIndex = 100000;
       if (SCENE.world) {
@@ -780,19 +856,29 @@
         const sprite = spriteFor(item);
         sprite.x = sx;
         sprite.y = sy3d;
-        sprite.rotation = ((item.rotation || 0) * Math.PI) / 180;
+        // rotação: parede não roda o container; demais items sim
+        if (item.item_key !== "parede") {
+          const rotDeg = Number(item.rotation || 0);
+          sprite.rotation = (rotDeg * Math.PI) / 180;
+        }
         sprite.alpha = 0.98;
-        // aplica escala do usuário
-        const base =
-          item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
-        const scl = Number(item.scale || 1.0);
-        if (sprite.hsSpr) {
-          const sx = (item.flip_x ? -1 : 1) * base * scl;
-          const sy = (item.flip_y ? -1 : 1) * base * scl;
-          sprite.hsSpr.scale.set(sx, sy);
-          const kx = Number(item.tilt_x || 0) * (Math.PI / 180);
-          const ky = Number(item.tilt_y || 0) * (Math.PI / 180);
-          sprite.hsSpr.skew.set(kx, ky);
+        // aplica escala/tilt/flip do usuário (não aplica em "parede" para manter geometria reta)
+        if (item.item_key !== "parede") {
+          const base =
+            item.item_key === "sofa" || item.item_key === "tv"
+              ? 0.75
+              : item.item_key === "piso"
+              ? 1.0
+              : 0.6;
+          const scl = Number(item.scale || 1.0);
+          if (sprite.hsSpr) {
+            const sx = (item.flip_x ? -1 : 1) * base * scl;
+            const sy = (item.flip_y ? -1 : 1) * base * scl;
+            sprite.hsSpr.scale.set(sx, sy);
+            const kx = Number(item.tilt_x || 0) * (Math.PI / 180);
+            const ky = Number(item.tilt_y || 0) * (Math.PI / 180);
+            sprite.hsSpr.skew.set(kx, ky);
+          }
         }
         sprite.on("pointerdown", (e) => {
           // Evita que o clique no sprite limpe a seleção via handler global
@@ -808,17 +894,48 @@
         entry.item = { ...item };
         entry.sprite.x = sx;
         entry.sprite.y = sy3d;
-        entry.sprite.rotation = ((item.rotation || 0) * Math.PI) / 180;
-        const base =
-          item.item_key === "sofa" || item.item_key === "tv" ? 0.75 : 0.6;
-        const scl = Number(item.scale || 1.0);
-        if (entry.sprite.hsSpr) {
-          const sx = (item.flip_x ? -1 : 1) * base * scl;
-          const sy = (item.flip_y ? -1 : 1) * base * scl;
-          entry.sprite.hsSpr.scale.set(sx, sy);
-          const kx = Number(item.tilt_x || 0) * (Math.PI / 180);
-          const ky = Number(item.tilt_y || 0) * (Math.PI / 180);
-          entry.sprite.hsSpr.skew.set(kx, ky);
+        if (item.item_key !== "parede") {
+          const rotDeg2 = Number(item.rotation || 0);
+          entry.sprite.rotation = (rotDeg2 * Math.PI) / 180;
+        } else {
+          // reconstruir geometria da parede com base em rotação/escala
+          const parent = entry.sprite.parent;
+          // preservar posição antes de destruir
+          const prevX = entry.sprite.x;
+          const prevY = entry.sprite.y;
+          const prevZ = entry.sprite.zIndex;
+          entry.sprite.destroy({ children: true });
+          const rebuilt = spriteFor(item);
+          rebuilt.x = prevX;
+          rebuilt.y = prevY;
+          if (typeof prevZ === "number") rebuilt.zIndex = prevZ;
+          rebuilt.alpha = 0.98;
+          rebuilt.on("pointerdown", (e) => {
+            SCENE.justClickedSprite = true;
+            setTimeout(() => (SCENE.justClickedSprite = false), 0);
+            startDrag(item.id, e);
+          });
+          rebuilt.on("pointertap", () => selectItem(item.id));
+          if (parent) parent.addChild(rebuilt);
+          entry.sprite = rebuilt;
+        }
+        // aplica escala/tilt/flip do usuário (não aplica em "parede" para manter geometria reta)
+        if (item.item_key !== "parede") {
+          const base =
+            item.item_key === "sofa" || item.item_key === "tv"
+              ? 0.75
+              : item.item_key === "piso"
+              ? 1.0
+              : 0.6;
+          const scl = Number(item.scale || 1.0);
+          if (entry.sprite.hsSpr) {
+            const sx = (item.flip_x ? -1 : 1) * base * scl;
+            const sy = (item.flip_y ? -1 : 1) * base * scl;
+            entry.sprite.hsSpr.scale.set(sx, sy);
+            const kx = Number(item.tilt_x || 0) * (Math.PI / 180);
+            const ky = Number(item.tilt_y || 0) * (Math.PI / 180);
+            entry.sprite.hsSpr.skew.set(kx, ky);
+          }
         }
       }
       sortByDepth();
@@ -951,7 +1068,10 @@
         const entry = SCENE.items.get(id);
         const span = document.getElementById("overlay-rot");
         if (!entry || !span) return;
-        const rot = Math.round(entry.item.rotation || 0) % 360;
+        let rot = Math.round(entry.item.rotation || 0) % 360;
+        if (entry.item.item_key === "parede") {
+          rot = Math.round(quantizeWallRotation(rot));
+        }
         span.textContent = `${rot}°`;
       } catch (_) {}
     }
@@ -969,6 +1089,16 @@
       const overlay = document.getElementById("corner-overlay");
       if (!overlay) return;
       const idSel = id;
+      // Mostrar dica de rotação para paredes
+      try {
+        const hint = document.getElementById("overlay-rotate-hint");
+        if (hint) {
+          const entry = SCENE.items.get(idSel);
+          const isWall =
+            entry && entry.item && entry.item.item_key === "parede";
+          hint.classList.toggle("hidden", !isWall);
+        }
+      } catch {}
       const btnDel = document.getElementById("btn-delete");
       const btnLU = document.getElementById("btn-layer-up");
       const btnLD = document.getElementById("btn-layer-down");
@@ -1576,7 +1706,14 @@
           li.className = "px-3 py-2 hover:bg-white/10 cursor-pointer";
           li.setAttribute("draggable", "true");
           li.setAttribute("data-key", item.key);
-          li.textContent = item.label || item.key;
+          if (item.key === "parede") {
+            li.innerHTML = `${
+              item.label || item.key
+            } <span class="text-xs opacity-70 ml-1" title="Gire com Q/E">⟲</span>`;
+            li.title = "Dica: gire paredes com Q/E";
+          } else {
+            li.textContent = item.label || item.key;
+          }
           ul.appendChild(li);
         });
         groups.appendChild(section);
