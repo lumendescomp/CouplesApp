@@ -1,0 +1,10 @@
+{
+  "images": {
+    "table": "/public/assets/atlas/table.svg",
+    "chair": "/public/assets/atlas/chair.png",
+    "plant": "/public/assets/atlas/plant.svg",
+    "lamp": "/public/assets/atlas/lamp.svg",
+    "sofa": "/public/assets/atlas/sofa.svg",
+    "tv": "/public/assets/atlas/tv.svg"
+  }
+}

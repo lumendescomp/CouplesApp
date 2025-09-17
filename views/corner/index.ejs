@@ -25,6 +25,20 @@
       >
         Adicionar
       </button>
+      <label class="ml-2 text-violet-300/80 text-sm" for="add-rot"
+        >Ângulo</label
+      >
+      <input
+        id="add-rot"
+        name="rotation"
+        type="number"
+        min="0"
+        max="359"
+        step="15"
+        value="0"
+        class="w-20 bg-white/5 border border-violet-700/40 rounded px-2 py-1 text-violet-100 focus:outline-none"
+        title="Ângulo inicial (°)"
+      />
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     </form>
   </header>
@@ -73,6 +87,13 @@
           >
             ⤵
           </button>
+          <span class="mx-1 text-white/30">|</span>
+          <span
+            id="overlay-rot"
+            class="px-2 py-1 text-xs text-violet-200/90 select-none"
+            title="Ângulo atual"
+            >0°</span
+          >
           <span class="mx-1 text-white/30">|</span>
           <button
             id="btn-delete"
@@ -196,7 +217,89 @@
       };
     }
 
-    function ensurePixi(force = false) {
+    async function loadAtlasIfAny() {
+      const ATLAS = { ready: false, frames: {} };
+      try {
+        const res = await fetch("/public/assets/atlas/items.json", {
+          cache: "no-store",
+        });
+        if (!res.ok) return ATLAS;
+        const data = await res.json();
+        // Caso 1: já veio pronto de Assets como spritesheet com .textures
+        if (data && data.textures && typeof data.textures === "object") {
+          ATLAS.ready = true;
+          ATLAS.frames = data.textures;
+          console.info("[corner] Atlas carregado (textures)");
+          return ATLAS;
+        }
+        // Caso 2: mapa simples de imagens: { images: { key: url } }
+        if (data && data.images && typeof data.images === "object") {
+          const frames = {};
+          // Carrega data: URIs manualmente em elementos Image para evitar fetch/GET inválido
+          for (const [k, url] of Object.entries(data.images)) {
+            try {
+              if (typeof url === "string" && url.startsWith("data:")) {
+                const img = new Image();
+                img.src = url;
+                // decode() garante que a imagem está pronta
+                if (img.decode) {
+                  await img.decode();
+                } else {
+                  await new Promise((resolve) => {
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                  });
+                }
+                const base = PIXI.BaseTexture.from(img);
+                frames[k] = new PIXI.Texture(base);
+              } else {
+                frames[k] = PIXI.Texture.from(url);
+              }
+            } catch (_) {
+              // fallback simples para evitar quebra total
+              frames[k] = PIXI.Texture.WHITE;
+            }
+          }
+          ATLAS.ready = true;
+          ATLAS.frames = frames;
+          console.info("[corner] Atlas carregado (images map)");
+          return ATLAS;
+        }
+        // Caso 3: TexturePacker style { frames, meta: { image } }
+        if (data && data.frames && data.meta && data.meta.image) {
+          let base;
+          if (
+            typeof data.meta.image === "string" &&
+            data.meta.image.startsWith("data:")
+          ) {
+            const img = new Image();
+            img.src = data.meta.image;
+            if (img.decode) {
+              await img.decode();
+            } else {
+              await new Promise((resolve) => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+              });
+            }
+            base = PIXI.BaseTexture.from(img);
+          } else {
+            base = PIXI.BaseTexture.from(data.meta.image);
+          }
+          const ss = new PIXI.Spritesheet(base, data);
+          await ss.parse();
+          ATLAS.ready = true;
+          ATLAS.frames = ss.textures;
+          console.info("[corner] Atlas carregado (TexturePacker)");
+          return ATLAS;
+        }
+      } catch (_) {
+        // Sem atlas: usa SVG inline
+      }
+      return ATLAS;
+    }
+
+    async function ensurePixi(force = false) {
       const container = document.getElementById("corner-canvas");
       if (!container) return;
       if (PIXI_APP && !force) return;
@@ -219,6 +322,7 @@
 
       drawFloor(PIXI_APP.stage);
       SCENE.items.clear();
+      SCENE.atlas = await loadAtlasIfAny();
       (window.__cornerItems || []).forEach(addOrUpdateItem);
 
       // teclado
@@ -255,6 +359,18 @@
       stage.addChild(g);
     }
 
+    function textureFromUrl(url) {
+      try {
+        if (typeof url === "string" && url.startsWith("data:")) {
+          const img = new Image();
+          img.src = url;
+          const base = PIXI.BaseTexture.from(img);
+          return new PIXI.Texture(base);
+        }
+      } catch (_) {}
+      return PIXI.Texture.from(url);
+    }
+
     function spriteFor(item) {
       const c = new PIXI.Container();
       const textures = {
@@ -265,10 +381,23 @@
         sofa: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='64'><rect x='8' y='26' width='80' height='22' rx='6' fill='%23a78bfa'/><rect x='8' y='16' width='80' height='14' rx='6' fill='%23c4b5fd'/><rect x='12' y='48' width='10' height='6' fill='%239b87f5'/><rect x='74' y='48' width='10' height='6' fill='%239b87f5'/></svg>`,
         tv: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='64'><rect x='10' y='8' width='76' height='46' rx='6' fill='%230a0a0a'/><rect x='14' y='12' width='68' height='38' rx='4' fill='%23252525'/><rect x='40' y='54' width='16' height='4' fill='%237c3aed'/></svg>`,
       };
-      const url =
-        textures[item.item_key] ||
-        `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='10' fill='%23a78bfa'/></svg>`;
-      const tex = PIXI.Texture.from(url);
+      let tex = null;
+      if (SCENE.atlas && SCENE.atlas.ready) {
+        const key = item.item_key;
+        const candidates = [key, `${key}.png`, `${key}.webp`, `${key}.jpg`];
+        for (const k of candidates) {
+          if (SCENE.atlas.frames[k]) {
+            tex = SCENE.atlas.frames[k];
+            break;
+          }
+        }
+      }
+      if (!tex) {
+        const url =
+          textures[item.item_key] ||
+          `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='10' fill='%23a78bfa'/></svg>`;
+        tex = textureFromUrl(url);
+      }
       const spr = new PIXI.Sprite(tex);
       spr.anchor.set(0.5);
       const scale =
@@ -403,6 +532,17 @@
       const gap = 8;
       const h = overlay.offsetHeight || 32;
       overlay.style.transform = `translate(-50%, -${h + gap}px)`;
+      updateOverlayRotationDisplay(id);
+    }
+
+    function updateOverlayRotationDisplay(id) {
+      try {
+        const entry = SCENE.items.get(id);
+        const span = document.getElementById("overlay-rot");
+        if (!entry || !span) return;
+        const rot = Math.round(entry.item.rotation || 0) % 360;
+        span.textContent = `${rot}°`;
+      } catch (_) {}
     }
 
     function bindOverlayActions(id) {
@@ -425,12 +565,14 @@
           e.stopPropagation();
           await saveNudge(idSel, 0, 0, -15);
           updateOverlayPosition(idSel);
+          updateOverlayRotationDisplay(idSel);
         };
       if (btnRR)
         btnRR.onclick = async (e) => {
           e.stopPropagation();
           await saveNudge(idSel, 0, 0, 15);
           updateOverlayPosition(idSel);
+          updateOverlayRotationDisplay(idSel);
         };
       if (btnHU)
         btnHU.onclick = async (e) => {
@@ -593,9 +735,11 @@
       } else if (ev.key.toLowerCase() === "q") {
         ev.preventDefault();
         await saveNudge(id, 0, 0, -15);
+        updateOverlayRotationDisplay(id);
       } else if (ev.key.toLowerCase() === "e") {
         ev.preventDefault();
         await saveNudge(id, 0, 0, 15);
+        updateOverlayRotationDisplay(id);
       } else if (ev.key === "PageUp" || ev.key === "+") {
         ev.preventDefault();
         await saveHeight(id, 1);
@@ -606,6 +750,25 @@
         ev.preventDefault();
         await deleteItem(id);
       }
+    }
+
+    // Roda do mouse (com Ctrl ou Alt) para girar item selecionado
+    function bindWheelRotate() {
+      const container = document.getElementById("corner-canvas");
+      if (!container) return;
+      container.addEventListener(
+        "wheel",
+        async (ev) => {
+          if (!SCENE.selectedId) return;
+          if (!ev.ctrlKey && !ev.altKey) return; // somente com modificador
+          ev.preventDefault();
+          const id = SCENE.selectedId;
+          const dir = ev.deltaY > 0 ? 15 : -15;
+          await saveNudge(id, 0, 0, dir);
+          updateOverlayRotationDisplay(id);
+        },
+        { passive: false }
+      );
     }
 
     // Expor e inicializar
@@ -635,6 +798,7 @@
     ensurePixi();
     bindResize();
     bindHtmx();
+    bindWheelRotate();
 
     // filtro de inventário
     const search = document.getElementById("inventory-search");
