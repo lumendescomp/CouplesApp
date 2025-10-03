@@ -14,6 +14,7 @@ import joinRoutes from "./routes/join.js";
 import coupleRoutes from "./routes/couple.js";
 import profileRoutes from "./routes/profile.js";
 import cornerRoutes from "./routes/corner.js";
+import albumRoutes from "./routes/album.js";
 import { initDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -71,13 +72,17 @@ app.use(
   })
 );
 
-// CSRF: aplicar globalmente, exceto para POST multipart em /profile,
+// CSRF: aplicar globalmente, exceto para POST multipart em /profile e /album/upload,
 // onde validaremos após o multer (pois o corpo ainda não foi processado aqui)
 const csrfProtection = csrf();
 app.use((req, res, next) => {
   const ct = req.headers["content-type"] || "";
   const isMultipart = ct.startsWith("multipart/form-data");
-  if (isMultipart && req.method === "POST" && req.path.startsWith("/profile")) {
+  if (
+    isMultipart &&
+    req.method === "POST" &&
+    (req.path.startsWith("/profile") || req.path.startsWith("/album/upload"))
+  ) {
     return next();
   }
   return csrfProtection(req, res, next);
@@ -116,6 +121,7 @@ app.use("/join", ensureAuthed, joinRoutes);
 app.use("/couple", ensureAuthed, coupleRoutes);
 app.use("/profile", ensureAuthed, profileRoutes);
 app.use("/corner", ensureAuthed, cornerRoutes);
+app.use("/album", ensureAuthed, albumRoutes);
 
 // 404
 app.use((req, res) => {

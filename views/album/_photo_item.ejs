@@ -1,0 +1,24 @@
+<div
+  class="photo-library-item relative group aspect-square bg-violet-900/20 rounded-lg overflow-hidden border border-violet-700/40 flex-shrink-0 snap-start"
+  style="width: 150px; height: 150px"
+  data-photo-id="<%= photo.id %>"
+>
+  <img
+    src="<%= photo.file_path %>"
+    alt="Foto do álbum"
+    class="w-full h-full object-cover"
+  />
+
+  <!-- Overlay com ação de deletar -->
+  <div
+    class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+  >
+    <button
+      class="photo-delete-btn px-3 py-1.5 bg-red-600/90 hover:bg-red-600 text-white text-sm rounded-full"
+      data-photo-id="<%= photo.id %>"
+      title="Deletar foto"
+    >
+      🗑 Deletar
+    </button>
+  </div>
+</div>

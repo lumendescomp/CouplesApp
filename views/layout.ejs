@@ -260,6 +260,13 @@
                 href="/corner"
                 >Nosso cantinho</a
               >
+              <a
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                data-nav
+                <%= currentPath.startsWith('/album') ? 'aria-current="page"' : '' %>
+                href="/album"
+                >Nosso álbum</a
+              >
             </div>
             <% } %>
           </div>

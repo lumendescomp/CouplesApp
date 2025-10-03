@@ -1,0 +1,561 @@
+<div class="space-y-6">
+  <header class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-violet-100">Nosso álbum</h1>
+    <div class="text-sm text-violet-300"><%= photos.length %>/20 fotos</div>
+  </header>
+
+  <!-- Biblioteca de fotos -->
+  <section class="glass rounded-xl border border-violet-700/40 bg-white/5 p-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-medium text-violet-100">Biblioteca de Fotos</h2>
+
+      <label
+        id="upload-label"
+        class="btn-heart px-4 py-2 rounded-full cursor-pointer inline-flex items-center gap-2"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="w-4 h-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        <span id="upload-text">Adicionar Fotos</span>
+        <input
+          type="file"
+          name="photo"
+          accept="image/*"
+          multiple
+          class="hidden"
+          id="photo-input"
+        />
+      </label>
+    </div>
+
+    <!-- Carrossel de fotos -->
+    <div class="relative group">
+      <!-- Botão esquerdo -->
+      <button
+        id="carousel-prev"
+        class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-violet-600/80 hover:bg-violet-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0 disabled:cursor-not-allowed"
+        aria-label="Anterior"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+      </button>
+
+      <!-- Container do carrossel -->
+      <div
+        id="photos-carousel"
+        class="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scrollbar"
+        style="scrollbar-width: none; -ms-overflow-style: none"
+      >
+        <% if (photos.length === 0) { %>
+        <div class="w-full text-center text-violet-300/80 py-8 px-4">
+          Nenhuma foto ainda. Adicione suas primeiras memórias! 💕
+        </div>
+        <% } %> <% photos.forEach(photo => { %> <%- include('_photo_item', {
+        photo }) %> <% }) %>
+      </div>
+
+      <!-- Botão direito -->
+      <button
+        id="carousel-next"
+        class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-violet-600/80 hover:bg-violet-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0 disabled:cursor-not-allowed"
+        aria-label="Próximo"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- Template de coração com 6 slots -->
+  <section class="glass rounded-xl border border-violet-700/40 bg-white/5 p-6">
+    <h2 class="text-lg font-medium text-violet-100 mb-4">
+      Coração de Memórias ✨
+    </h2>
+
+    <div class="relative mx-auto max-w-2xl">
+      <!-- SVG do template em formato de coração -->
+      <div class="album-template" id="album-template">
+        <!-- Slot 1 - Topo esquerdo -->
+        <div
+          class="album-slot"
+          data-slot="1"
+          style="
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 120px;
+            height: 120px;
+          "
+        >
+          <% if (slots[1]) { %> <%- include('_slot_filled', { slotNumber: 1,
+          filePath: slots[1].file_path }) %> <% } else { %> <%-
+          include('_slot_empty', { slotNumber: 1 }) %> <% } %>
+        </div>
+
+        <!-- Slot 2 - Topo direito -->
+        <div
+          class="album-slot"
+          data-slot="2"
+          style="
+            position: absolute;
+            top: 15%;
+            right: 15%;
+            width: 120px;
+            height: 120px;
+          "
+        >
+          <% if (slots[2]) { %> <%- include('_slot_filled', { slotNumber: 2,
+          filePath: slots[2].file_path }) %> <% } else { %> <%-
+          include('_slot_empty', { slotNumber: 2 }) %> <% } %>
+        </div>
+
+        <!-- Slot 3 - Centro esquerdo -->
+        <div
+          class="album-slot"
+          data-slot="3"
+          style="
+            position: absolute;
+            top: 45%;
+            left: 10%;
+            width: 140px;
+            height: 140px;
+          "
+        >
+          <% if (slots[3]) { %> <%- include('_slot_filled', { slotNumber: 3,
+          filePath: slots[3].file_path }) %> <% } else { %> <%-
+          include('_slot_empty', { slotNumber: 3 }) %> <% } %>
+        </div>
+
+        <!-- Slot 4 - Centro direito -->
+        <div
+          class="album-slot"
+          data-slot="4"
+          style="
+            position: absolute;
+            top: 45%;
+            right: 10%;
+            width: 140px;
+            height: 140px;
+          "
+        >
+          <% if (slots[4]) { %> <%- include('_slot_filled', { slotNumber: 4,
+          filePath: slots[4].file_path }) %> <% } else { %> <%-
+          include('_slot_empty', { slotNumber: 4 }) %> <% } %>
+        </div>
+
+        <!-- Slot 5 - Base esquerdo -->
+        <div
+          class="album-slot"
+          data-slot="5"
+          style="
+            position: absolute;
+            bottom: 10%;
+            left: 25%;
+            width: 110px;
+            height: 110px;
+          "
+        >
+          <% if (slots[5]) { %> <%- include('_slot_filled', { slotNumber: 5,
+          filePath: slots[5].file_path }) %> <% } else { %> <%-
+          include('_slot_empty', { slotNumber: 5 }) %> <% } %>
+        </div>
+
+        <!-- Slot 6 - Base direito -->
+        <div
+          class="album-slot"
+          data-slot="6"
+          style="
+            position: absolute;
+            bottom: 10%;
+            right: 25%;
+            width: 110px;
+            height: 110px;
+          "
+        >
+          <% if (slots[6]) { %> <%- include('_slot_filled', { slotNumber: 6,
+          filePath: slots[6].file_path }) %> <% } else { %> <%-
+          include('_slot_empty', { slotNumber: 6 }) %> <% } %>
+        </div>
+
+        <!-- Fundo decorativo (coração) -->
+        <svg
+          viewBox="0 0 100 100"
+          class="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
+          style="z-index: -1"
+        >
+          <path
+            d="M50,90 C50,90 10,60 10,35 C10,20 20,10 30,10 C40,10 50,20 50,30 C50,20 60,10 70,10 C80,10 90,20 90,35 C90,60 50,90 50,90 Z"
+            fill="currentColor"
+            class="text-fuchsia-500/30"
+          />
+        </svg>
+      </div>
+
+      <!-- Área para manter aspect ratio -->
+      <div style="padding-bottom: 100%"></div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .album-template {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%; /* Aspect ratio 1:1 */
+  }
+
+  .album-slot {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .album-slot.drag-over {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(232, 121, 249, 0.5);
+  }
+
+  .photo-library-item {
+    cursor: grab;
+    transition: transform 0.2s ease;
+  }
+
+  .photo-library-item:active {
+    cursor: grabbing;
+  }
+
+  .photo-library-item:hover {
+    transform: scale(1.05);
+  }
+
+  /* Esconde scrollbar */
+  #photos-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  #photos-carousel {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<script>
+  (function AlbumPage() {
+    const CSRF =
+      (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+
+    // Controles do carrossel
+    const carousel = document.getElementById("photos-carousel");
+    const prevBtn = document.getElementById("carousel-prev");
+    const nextBtn = document.getElementById("carousel-next");
+
+    function updateCarouselButtons() {
+      if (!carousel || !prevBtn || !nextBtn) return;
+
+      const { scrollLeft, scrollWidth, clientWidth } = carousel;
+
+      // Desabilita botão esquerdo se estiver no início
+      prevBtn.disabled = scrollLeft <= 0;
+
+      // Desabilita botão direito se estiver no final
+      nextBtn.disabled = scrollLeft + clientWidth >= scrollWidth - 10;
+    }
+
+    if (carousel && prevBtn && nextBtn) {
+      // Scroll suave ao clicar nos botões
+      prevBtn.addEventListener("click", () => {
+        carousel.scrollBy({ left: -300, behavior: "smooth" });
+      });
+
+      nextBtn.addEventListener("click", () => {
+        carousel.scrollBy({ left: 300, behavior: "smooth" });
+      });
+
+      // Atualiza estado dos botões ao scrollar
+      carousel.addEventListener("scroll", updateCarouselButtons);
+
+      // Atualiza no carregamento
+      updateCarouselButtons();
+    }
+
+    // Auto-submit form quando arquivo for selecionado (usando fetch direto)
+    const photoInput = document.getElementById("photo-input");
+    const uploadLabel = document.getElementById("upload-label");
+    const uploadText = document.getElementById("upload-text");
+
+    if (photoInput) {
+      photoInput.addEventListener("change", async function () {
+        if (!this.files || this.files.length === 0) return;
+
+        const files = Array.from(this.files);
+        let uploadedCount = 0;
+        let failedCount = 0;
+
+        // Desabilita botão e mostra loading
+        uploadLabel.style.opacity = "0.6";
+        uploadLabel.style.pointerEvents = "none";
+        uploadText.textContent = `Enviando... 0/${files.length}`;
+
+        // Upload de cada foto individualmente
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append("photo", file);
+
+          try {
+            // Fetch direto sem interceptação do HTMX
+            const response = await fetch(
+              window.location.origin + "/album/upload",
+              {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin",
+              }
+            );
+
+            if (response.ok) {
+              const html = await response.text();
+
+              // Insere novo item de foto no início do carrossel
+              const photosCarousel = document.getElementById("photos-carousel");
+              photosCarousel.insertAdjacentHTML("afterbegin", html);
+
+              uploadedCount++;
+              uploadText.textContent = `Enviando... ${uploadedCount}/${files.length}`;
+            } else {
+              const errorData = await response.json();
+              console.error(
+                `Erro ao fazer upload de ${file.name}:`,
+                errorData.error
+              );
+              failedCount++;
+            }
+          } catch (error) {
+            console.error(`Erro no upload de ${file.name}:`, error);
+            failedCount++;
+          }
+        }
+
+        // Restaura botão
+        uploadLabel.style.opacity = "1";
+        uploadLabel.style.pointerEvents = "auto";
+        uploadText.textContent = "Adicionar Fotos";
+
+        // Atualiza contador
+        if (uploadedCount > 0) {
+          const counter = document.querySelector("header .text-sm");
+          const currentCount = parseInt(counter.textContent.match(/\d+/)[0]);
+          counter.textContent = `${currentCount + uploadedCount}/20 fotos`;
+
+          // Re-aplica drag handlers e delete handlers
+          initDragDrop();
+          initPhotoDelete();
+
+          // Atualiza botões do carrossel
+          updateCarouselButtons();
+        }
+
+        // Reset input
+        photoInput.value = "";
+
+        // Mostra resultado
+        if (uploadedCount > 0 && failedCount === 0) {
+          if (window.showToast) {
+            window.showToast(
+              `✅ ${uploadedCount} foto${
+                uploadedCount > 1 ? "s" : ""
+              } adicionada${uploadedCount > 1 ? "s" : ""}!`
+            );
+          }
+        } else if (failedCount > 0) {
+          alert(
+            `${uploadedCount} foto(s) adicionada(s), ${failedCount} falhou(aram).`
+          );
+        }
+      });
+    }
+
+    // Drag & Drop da biblioteca para slots
+    function initDragDrop() {
+      // Tornar fotos da biblioteca arrastáveis
+      document.querySelectorAll(".photo-library-item").forEach((item) => {
+        item.draggable = true;
+
+        item.addEventListener("dragstart", (e) => {
+          e.dataTransfer.effectAllowed = "copy";
+          e.dataTransfer.setData("photo-id", item.dataset.photoId);
+          item.style.opacity = "0.5";
+        });
+
+        item.addEventListener("dragend", (e) => {
+          item.style.opacity = "1";
+        });
+      });
+
+      // Tornar slots receptivos
+      document.querySelectorAll(".album-slot").forEach((slot) => {
+        slot.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          slot.classList.add("drag-over");
+        });
+
+        slot.addEventListener("dragleave", (e) => {
+          slot.classList.remove("drag-over");
+        });
+
+        slot.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          slot.classList.remove("drag-over");
+
+          const photoId = e.dataTransfer.getData("photo-id");
+          const slotNumber = slot.dataset.slot;
+
+          if (!photoId || !slotNumber) return;
+
+          try {
+            const res = await fetch(`/album/slot/${slotNumber}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": CSRF,
+                "HX-Request": "true",
+              },
+              body: JSON.stringify({ photo_id: parseInt(photoId) }),
+            });
+
+            if (res.ok) {
+              const html = await res.text();
+              slot.innerHTML = html;
+              // Re-inicializar eventos de remoção
+              initSlotRemoval();
+              if (window.showToast)
+                window.showToast("Foto adicionada ao slot!");
+            } else {
+              if (window.showToast)
+                window.showToast("Erro ao adicionar foto", "error");
+            }
+          } catch (err) {
+            console.error(err);
+            if (window.showToast)
+              window.showToast("Erro ao adicionar foto", "error");
+          }
+        });
+      });
+    }
+
+    // Remover foto do slot
+    function initSlotRemoval() {
+      document.querySelectorAll(".slot-remove-btn").forEach((btn) => {
+        btn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const slotNumber = btn.dataset.slot;
+          if (!confirm("Remover foto deste slot?")) return;
+
+          try {
+            const res = await fetch(`/album/slot/${slotNumber}`, {
+              method: "DELETE",
+              headers: {
+                "X-CSRF-Token": CSRF,
+                "HX-Request": "true",
+              },
+            });
+
+            if (res.ok) {
+              const html = await res.text();
+              const slot = document.querySelector(
+                `.album-slot[data-slot="${slotNumber}"]`
+              );
+              if (slot) slot.innerHTML = html;
+              if (window.showToast) window.showToast("Foto removida");
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+      });
+    }
+
+    // Deletar foto da biblioteca
+    function initPhotoDelete() {
+      document.querySelectorAll(".photo-delete-btn").forEach((btn) => {
+        btn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const photoId = btn.dataset.photoId;
+          if (
+            !confirm("Deletar esta foto? Ela será removida de todos os slots.")
+          )
+            return;
+
+          try {
+            const res = await fetch(`/album/photo/${photoId}`, {
+              method: "DELETE",
+              headers: {
+                "X-CSRF-Token": CSRF,
+                "HX-Request": "true",
+              },
+            });
+
+            if (res.ok) {
+              const item = btn.closest(".photo-library-item");
+              if (item) item.remove();
+
+              // Recarregar slots que usavam essa foto
+              window.location.reload();
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+      });
+    }
+
+    // Inicializar após HTMX swap
+    document.addEventListener("htmx:afterSwap", () => {
+      initDragDrop();
+      initPhotoDelete();
+    });
+
+    // Inicializar na carga
+    initDragDrop();
+    initSlotRemoval();
+    initPhotoDelete();
+  })();
+</script>

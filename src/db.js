@@ -84,6 +84,33 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_couple_items_couple ON couple_items(couple_id);
   `);
 
+  // Tabelas para "Nosso Álbum"
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS album_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      couple_id INTEGER NOT NULL,
+      file_path TEXT NOT NULL,
+      uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (couple_id) REFERENCES couples(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_album_photos_couple ON album_photos(couple_id);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS album_slots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      couple_id INTEGER NOT NULL,
+      template_id INTEGER NOT NULL DEFAULT 1,
+      slot_number INTEGER NOT NULL,
+      photo_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (couple_id) REFERENCES couples(id),
+      FOREIGN KEY (photo_id) REFERENCES album_photos(id),
+      UNIQUE(couple_id, template_id, slot_number)
+    );
+    CREATE INDEX IF NOT EXISTS idx_album_slots_couple ON album_slots(couple_id);
+  `);
+
   // Migração condicional: adiciona colunas z/scale/layer se ausentes
   try {
     const cols = db.prepare("PRAGMA table_info(couple_items)").all();
