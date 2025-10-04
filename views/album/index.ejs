@@ -7,7 +7,9 @@
   <!-- Biblioteca de fotos -->
   <section class="glass rounded-xl border border-violet-700/40 bg-white/5 p-4">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-medium text-violet-100">Biblioteca de Fotos</h2>
+      <h2 class="text-lg font-medium text-violet-100">
+        Biblioteca de Memórias
+      </h2>
 
       <label
         id="upload-label"
@@ -65,8 +67,7 @@
       <!-- Container do carrossel -->
       <div
         id="photos-carousel"
-        class="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scrollbar"
-        style="scrollbar-width: none; -ms-overflow-style: none"
+        class="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory"
       >
         <% if (photos.length === 0) { %>
         <div class="w-full text-center text-violet-300/80 py-8 px-4">
@@ -443,6 +444,8 @@
         const files = Array.from(this.files);
         let uploadedCount = 0;
         let failedCount = 0;
+        let videoCount = 0;
+        let photoCount = 0;
 
         // Desabilita botão e mostra loading
         uploadLabel.style.opacity = "0.6";
@@ -473,6 +476,14 @@
               const photosCarousel = document.getElementById("photos-carousel");
               photosCarousel.insertAdjacentHTML("afterbegin", html);
 
+              // Conta se é vídeo ou foto baseado no tipo do arquivo
+              const isVideo = file.type.startsWith("video/");
+              if (isVideo) {
+                videoCount++;
+              } else {
+                photoCount++;
+              }
+
               uploadedCount++;
               uploadText.textContent = `Enviando... ${uploadedCount}/${files.length}`;
             } else {
@@ -492,7 +503,7 @@
         // Restaura botão
         uploadLabel.style.opacity = "1";
         uploadLabel.style.pointerEvents = "auto";
-        uploadText.textContent = "Adicionar Fotos";
+        uploadText.textContent = "Adicionar mídia";
 
         // Atualiza contador
         if (uploadedCount > 0) {
@@ -521,15 +532,27 @@
         // Mostra resultado
         if (uploadedCount > 0 && failedCount === 0) {
           if (window.showToast) {
-            window.showToast(
-              `✅ ${uploadedCount} foto${
-                uploadedCount > 1 ? "s" : ""
-              } adicionada${uploadedCount > 1 ? "s" : ""}!`
-            );
+            // Cria mensagem apropriada baseada no que foi enviado
+            let message = "✅ ";
+            const parts = [];
+
+            if (photoCount > 0) {
+              parts.push(`${photoCount} foto${photoCount > 1 ? "s" : ""}`);
+            }
+            if (videoCount > 0) {
+              parts.push(`${videoCount} vídeo${videoCount > 1 ? "s" : ""}`);
+            }
+
+            message +=
+              parts.join(" e ") +
+              " adicionado" +
+              (uploadedCount > 1 ? "s" : "") +
+              "!";
+            window.showToast(message);
           }
         } else if (failedCount > 0) {
           alert(
-            `${uploadedCount} foto(s) adicionada(s), ${failedCount} falhou(aram).`
+            `${uploadedCount} mídia(s) adicionada(s), ${failedCount} falhou(aram).`
           );
         }
       });
@@ -611,16 +634,25 @@
               slot.dataset.dropInitialized = "false";
               // Re-inicializar eventos de remoção
               initSlotRemoval();
+
+              // Detecta se é vídeo ou foto baseado no elemento arrastado
+              const draggedItem = document.querySelector(
+                `[data-photo-id="${photoId}"]`
+              );
+              const isVideo =
+                draggedItem && draggedItem.dataset.mediaType === "video";
+              const mediaType = isVideo ? "Vídeo" : "Foto";
+
               if (window.showToast)
-                window.showToast("Foto adicionada ao slot!");
+                window.showToast(`${mediaType} adicionado ao slot!`);
             } else {
               if (window.showToast)
-                window.showToast("Erro ao adicionar foto", "error");
+                window.showToast("Erro ao adicionar mídia", "error");
             }
           } catch (err) {
             console.error(err);
             if (window.showToast)
-              window.showToast("Erro ao adicionar foto", "error");
+              window.showToast("Erro ao adicionar mídia", "error");
           }
         });
       });
@@ -638,7 +670,7 @@
           e.stopPropagation();
 
           const slotNumber = btn.dataset.slot;
-          if (!confirm("Remover foto deste slot?")) return;
+          if (!confirm("Remover mídia deste slot?")) return;
 
           try {
             const res = await fetch(`/album/slot/${slotNumber}`, {
@@ -659,7 +691,7 @@
                 // Remove flag para permitir re-inicialização
                 slot.dataset.dropInitialized = "false";
               }
-              if (window.showToast) window.showToast("Foto removida");
+              if (window.showToast) window.showToast("Mídia removida");
             }
           } catch (err) {
             console.error(err);
@@ -681,7 +713,7 @@
 
           const photoId = btn.dataset.photoId;
           if (
-            !confirm("Deletar esta foto? Ela será removida de todos os slots.")
+            !confirm("Deletar esta mídia? Ela será removida de todos os slots.")
           )
             return;
 
@@ -722,13 +754,13 @@
               updateCarouselButtons();
 
               if (window.showToast) {
-                window.showToast("Foto deletada com sucesso!");
+                window.showToast("Mídia deletada com sucesso!");
               }
             }
           } catch (err) {
             console.error(err);
             if (window.showToast) {
-              window.showToast("Erro ao deletar foto", "error");
+              window.showToast("Erro ao deletar mídia", "error");
             }
           }
         };
