@@ -180,6 +180,7 @@ router.post("/slot/:slotNumber", async (req, res) => {
     return res.render("album/_slot_filled", {
       slotNumber,
       filePath: updated.file_path,
+      photoId: photoId,
       layout: false,
     });
   }

@@ -121,8 +121,8 @@
           "
         >
           <% if (slots[1]) { %> <%- include('_slot_filled', { slotNumber: 1,
-          filePath: slots[1].file_path }) %> <% } else { %> <%-
-          include('_slot_empty', { slotNumber: 1 }) %> <% } %>
+          filePath: slots[1].file_path, photoId: slots[1].photo_id }) %> <% }
+          else { %> <%- include('_slot_empty', { slotNumber: 1 }) %> <% } %>
         </div>
 
         <!-- Slot 2 - Topo direito -->
@@ -138,8 +138,8 @@
           "
         >
           <% if (slots[2]) { %> <%- include('_slot_filled', { slotNumber: 2,
-          filePath: slots[2].file_path }) %> <% } else { %> <%-
-          include('_slot_empty', { slotNumber: 2 }) %> <% } %>
+          filePath: slots[2].file_path, photoId: slots[2].photo_id }) %> <% }
+          else { %> <%- include('_slot_empty', { slotNumber: 2 }) %> <% } %>
         </div>
 
         <!-- Slot 3 - Centro esquerdo -->
@@ -155,8 +155,8 @@
           "
         >
           <% if (slots[3]) { %> <%- include('_slot_filled', { slotNumber: 3,
-          filePath: slots[3].file_path }) %> <% } else { %> <%-
-          include('_slot_empty', { slotNumber: 3 }) %> <% } %>
+          filePath: slots[3].file_path, photoId: slots[3].photo_id }) %> <% }
+          else { %> <%- include('_slot_empty', { slotNumber: 3 }) %> <% } %>
         </div>
 
         <!-- Slot 4 - Centro direito -->
@@ -172,8 +172,8 @@
           "
         >
           <% if (slots[4]) { %> <%- include('_slot_filled', { slotNumber: 4,
-          filePath: slots[4].file_path }) %> <% } else { %> <%-
-          include('_slot_empty', { slotNumber: 4 }) %> <% } %>
+          filePath: slots[4].file_path, photoId: slots[4].photo_id }) %> <% }
+          else { %> <%- include('_slot_empty', { slotNumber: 4 }) %> <% } %>
         </div>
 
         <!-- Slot 5 - Base esquerdo -->
@@ -189,8 +189,8 @@
           "
         >
           <% if (slots[5]) { %> <%- include('_slot_filled', { slotNumber: 5,
-          filePath: slots[5].file_path }) %> <% } else { %> <%-
-          include('_slot_empty', { slotNumber: 5 }) %> <% } %>
+          filePath: slots[5].file_path, photoId: slots[5].photo_id }) %> <% }
+          else { %> <%- include('_slot_empty', { slotNumber: 5 }) %> <% } %>
         </div>
 
         <!-- Slot 6 - Base direito -->
@@ -206,8 +206,8 @@
           "
         >
           <% if (slots[6]) { %> <%- include('_slot_filled', { slotNumber: 6,
-          filePath: slots[6].file_path }) %> <% } else { %> <%-
-          include('_slot_empty', { slotNumber: 6 }) %> <% } %>
+          filePath: slots[6].file_path, photoId: slots[6].photo_id }) %> <% }
+          else { %> <%- include('_slot_empty', { slotNumber: 6 }) %> <% } %>
         </div>
 
         <!-- Fundo decorativo (coração) -->
@@ -259,6 +259,25 @@
 
   .photo-library-item:hover {
     transform: scale(1.05);
+  }
+
+  /* Controle individual do overlay de deletar */
+  .photo-item-individual:hover .photo-delete-overlay {
+    opacity: 1;
+  }
+
+  /* Overlay nunca deve interferir no drag - apenas o botão é clicável */
+  .photo-delete-overlay {
+    pointer-events: none;
+  }
+
+  .photo-delete-overlay .photo-delete-btn {
+    pointer-events: auto;
+  }
+
+  /* Durante drag, esconde overlay para evitar conflitos */
+  .photo-library-item[style*="opacity: 0.5"] .photo-delete-overlay {
+    display: none !important;
   }
 
   /* Esconde scrollbar */
@@ -419,10 +438,22 @@
           e.dataTransfer.effectAllowed = "copy";
           e.dataTransfer.setData("photo-id", item.dataset.photoId);
           item.style.opacity = "0.5";
+
+          // Esconde o overlay durante o drag (evita conflitos)
+          const overlay = item.querySelector(".photo-delete-overlay");
+          if (overlay) {
+            overlay.style.display = "none";
+          }
         });
 
         item.addEventListener("dragend", (e) => {
           item.style.opacity = "1";
+
+          // Restaura o overlay após o drag
+          const overlay = item.querySelector(".photo-delete-overlay");
+          if (overlay) {
+            overlay.style.display = "flex";
+          }
         });
       });
 
@@ -525,6 +556,10 @@
           )
             return;
 
+          // Salva posição do scroll antes de deletar
+          const carousel = document.getElementById("photos-carousel");
+          const scrollPosition = carousel ? carousel.scrollLeft : 0;
+
           try {
             const res = await fetch(`/album/photo/${photoId}`, {
               method: "DELETE",
@@ -535,16 +570,60 @@
             });
 
             if (res.ok) {
+              // Remove item da biblioteca com animação
               const item = btn.closest(".photo-library-item");
-              if (item) item.remove();
+              if (item) {
+                item.style.transition = "opacity 0.3s, transform 0.3s";
+                item.style.opacity = "0";
+                item.style.transform = "scale(0.8)";
+                setTimeout(() => item.remove(), 300);
+              }
 
-              // Recarregar slots que usavam essa foto
-              window.location.reload();
+              // Limpa slots que tinham essa foto (transforma em vazio)
+              clearSlotsWithPhoto(photoId);
+
+              // Restaura posição do scroll após breve delay
+              setTimeout(() => {
+                if (carousel) {
+                  carousel.scrollLeft = scrollPosition;
+                }
+              }, 350);
+
+              // Atualiza botões do carrossel
+              updateCarouselButtons();
+
+              if (window.showToast) {
+                window.showToast("Foto deletada com sucesso!");
+              }
             }
           } catch (err) {
             console.error(err);
+            if (window.showToast) {
+              window.showToast("Erro ao deletar foto", "error");
+            }
           }
         };
+      });
+    }
+
+    // Limpa slots que continham uma foto específica
+    function clearSlotsWithPhoto(photoId) {
+      const slots = document.querySelectorAll(".album-slot");
+
+      slots.forEach((slot) => {
+        // Verifica se slot tem imagem com data-photo-id correspondente
+        const img = slot.querySelector(`img[data-photo-id="${photoId}"]`);
+
+        if (img) {
+          // Transforma slot preenchido em slot vazio
+          const slotNumber = slot.dataset.slot;
+          slot.innerHTML = `
+            <div class="w-full h-full rounded-lg border-2 border-dashed border-violet-700/50 bg-violet-900/10 flex items-center justify-center text-violet-300/60 text-xs">
+              ${slotNumber}
+            </div>
+          `;
+          slot.classList.add("empty-slot");
+        }
       });
     }
 
