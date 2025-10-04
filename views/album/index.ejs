@@ -1,4 +1,56 @@
 <div class="space-y-6">
+  <!-- Modal de Confirmação Customizado -->
+  <div
+    id="confirm-modal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden"
+    style="transition: opacity 0.3s ease"
+  >
+    <div
+      class="glass rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-900/90 to-fuchsia-900/90 p-6 max-w-md w-full mx-4 shadow-2xl"
+      style="transform: scale(0.9); transition: transform 0.3s ease"
+    >
+      <div class="flex items-start gap-4 mb-4">
+        <div
+          class="flex-shrink-0 w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center"
+        >
+          <svg
+            class="w-6 h-6 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-violet-100 mb-2">
+            Confirmar ação
+          </h3>
+          <p id="confirm-message" class="text-violet-200/80 text-sm"></p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button
+          id="confirm-cancel"
+          class="px-4 py-2 rounded-lg bg-violet-700/30 hover:bg-violet-700/50 text-violet-100 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          id="confirm-ok"
+          class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <header class="flex items-center justify-between">
     <h1 class="text-2xl font-semibold text-violet-100">Nosso álbum</h1>
     <div class="text-sm text-violet-300"><%= photos.length %>/20 fotos</div>
@@ -230,9 +282,6 @@
           />
         </svg>
       </div>
-
-      <!-- Área para manter aspect ratio -->
-      <div style="padding-bottom: 100%"></div>
     </div>
   </section>
 </div>
@@ -336,6 +385,52 @@
   (function AlbumPage() {
     const CSRF =
       (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+
+    // ===== MODAL DE CONFIRMAÇÃO CUSTOMIZADO =====
+    function showConfirm(message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("confirm-modal");
+        const messageEl = document.getElementById("confirm-message");
+        const okBtn = document.getElementById("confirm-ok");
+        const cancelBtn = document.getElementById("confirm-cancel");
+
+        messageEl.textContent = message;
+        modal.classList.remove("hidden");
+
+        // Animação de entrada
+        setTimeout(() => {
+          modal.style.opacity = "1";
+          modal.querySelector("div > div").style.transform = "scale(1)";
+        }, 10);
+
+        function close(result) {
+          // Animação de saída
+          modal.style.opacity = "0";
+          modal.querySelector("div > div").style.transform = "scale(0.9)";
+          setTimeout(() => {
+            modal.classList.add("hidden");
+            resolve(result);
+          }, 300);
+        }
+
+        okBtn.onclick = () => close(true);
+        cancelBtn.onclick = () => close(false);
+
+        // Fechar ao clicar fora
+        modal.onclick = (e) => {
+          if (e.target === modal) close(false);
+        };
+
+        // Fechar com ESC
+        const escHandler = (e) => {
+          if (e.key === "Escape") {
+            close(false);
+            document.removeEventListener("keydown", escHandler);
+          }
+        };
+        document.addEventListener("keydown", escHandler);
+      });
+    }
 
     // Controles do carrossel
     const carousel = document.getElementById("photos-carousel");
@@ -670,7 +765,8 @@
           e.stopPropagation();
 
           const slotNumber = btn.dataset.slot;
-          if (!confirm("Remover mídia deste slot?")) return;
+          const confirmed = await showConfirm("Remover mídia deste slot?");
+          if (!confirmed) return;
 
           try {
             const res = await fetch(`/album/slot/${slotNumber}`, {
@@ -712,10 +808,10 @@
           e.stopPropagation();
 
           const photoId = btn.dataset.photoId;
-          if (
-            !confirm("Deletar esta mídia? Ela será removida de todos os slots.")
-          )
-            return;
+          const confirmed = await showConfirm(
+            "Deletar esta mídia? Ela será removida de todos os slots."
+          );
+          if (!confirmed) return;
 
           // Salva posição do scroll antes de deletar
           const carousel = document.getElementById("photos-carousel");
