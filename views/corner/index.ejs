@@ -560,7 +560,9 @@
     }
 
     async function loadAtlasIfAny() {
+      // Sempre cria um novo objeto de atlas limpo
       const ATLAS = { ready: false, frames: {} };
+      
       try {
         const resMan = await fetch("/public/assets/atlas/manifest.json", {
           cache: "no-store",
@@ -582,10 +584,13 @@
               const url = normUrl(u);
               if (!url) continue;
               try {
-                frames[`${k}`] = PIXI.Texture.from(url);
+                // Força criação de nova textura (não usa cache)
+                frames[`${k}`] = PIXI.Texture.from(url, { 
+                  resourceOptions: { autoLoad: true } 
+                });
               } catch {}
               try {
-                frames[`${k}.png`] = PIXI.Texture.from(url);
+                frames[`${k}.png`] = frames[`${k}`];
               } catch {}
             }
           } else if (man && typeof man === "object") {
@@ -594,21 +599,26 @@
               const url = normUrl(u);
               if (!url) continue;
               try {
-                frames[`${k}`] = PIXI.Texture.from(url);
+                // Força criação de nova textura (não usa cache)
+                frames[`${k}`] = PIXI.Texture.from(url, { 
+                  resourceOptions: { autoLoad: true } 
+                });
               } catch {}
               try {
-                frames[`${k}.png`] = PIXI.Texture.from(url);
+                frames[`${k}.png`] = frames[`${k}`];
               } catch {}
             }
           }
           if (Object.keys(frames).length) {
             ATLAS.ready = true;
             ATLAS.frames = frames;
-            console.info("[corner] Atlas carregado (manifest)");
+            console.info("[corner] Atlas carregado com", Object.keys(frames).length, "texturas");
             return ATLAS;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        console.error("[corner] Erro ao carregar atlas:", e);
+      }
 
       return ATLAS;
     }
@@ -644,37 +654,67 @@
       if (PIXI_APP) {
         console.info("[corner] Destruindo instância anterior do PIXI");
         try {
-          // Remove o canvas do DOM primeiro
+          // 1. Limpa o cache de texturas ANTES de destruir (crítico!)
+          if (PIXI.utils && PIXI.utils.clearTextureCache) {
+            console.info("[corner] Limpando cache de texturas");
+            PIXI.utils.clearTextureCache();
+          }
+
+          // 2. Destrói todos os sprites e containers recursivamente
+          if (SCENE.world) {
+            SCENE.world.destroy({ children: true, texture: true, baseTexture: true });
+            SCENE.world = null;
+          }
+
+          // 3. Limpa referências do atlas
+          if (SCENE.atlas && SCENE.atlas.frames) {
+            Object.values(SCENE.atlas.frames).forEach(tex => {
+              try {
+                if (tex && tex.destroy) {
+                  tex.destroy(true);
+                }
+              } catch (e) {
+                console.warn("[corner] Erro ao destruir textura:", e);
+              }
+            });
+            SCENE.atlas.frames = {};
+            SCENE.atlas.ready = false;
+          }
+
+          // 4. Limpa o mapa de itens
+          SCENE.items.clear();
+
+          // 5. Força a limpeza do contexto WebGL
+          if (PIXI_APP.renderer && PIXI_APP.renderer.gl) {
+            const gl = PIXI_APP.renderer.gl;
+            const loseContext = gl.getExtension("WEBGL_lose_context");
+            if (loseContext) {
+              console.info("[corner] Forçando perda de contexto WebGL");
+              loseContext.loseContext();
+            }
+          }
+
+          // 6. Remove o canvas do DOM
           if (PIXI_APP.view && PIXI_APP.view.parentNode) {
             PIXI_APP.view.parentNode.removeChild(PIXI_APP.view);
           }
 
-          // Destrói a aplicação com todas as opções de limpeza
+          // 7. Destrói a aplicação
           PIXI_APP.destroy(true, {
             children: true,
             texture: true,
             baseTexture: true,
           });
 
-          // Força a limpeza do contexto WebGL
-          if (PIXI_APP.renderer && PIXI_APP.renderer.gl) {
-            const gl = PIXI_APP.renderer.gl;
-            const loseContext = gl.getExtension("WEBGL_lose_context");
-            if (loseContext) {
-              loseContext.loseContext();
-            }
-          }
-
-          // Limpa o cache de texturas global do PIXI
-          if (PIXI.utils && PIXI.utils.clearTextureCache) {
-            PIXI.utils.clearTextureCache();
-          }
         } catch (e) {
           console.error("[corner] Erro ao destruir PIXI:", e);
         }
 
         PIXI_APP = null;
         window.__PIXI_APP_GLOBAL = null;
+        
+        // Aguarda um frame para garantir que o contexto foi limpo
+        await new Promise(resolve => requestAnimationFrame(resolve));
       }
 
       console.info("[corner] Criando nova instância do PIXI");
@@ -2330,12 +2370,32 @@
         if (PIXI_APP) {
           console.info("[corner] Destruindo contexto WebGL do PIXI");
 
-          // Remove o canvas do DOM primeiro
-          if (PIXI_APP.view && PIXI_APP.view.parentNode) {
-            PIXI_APP.view.parentNode.removeChild(PIXI_APP.view);
+          // 1. Limpa o cache de texturas global
+          if (PIXI.utils && PIXI.utils.clearTextureCache) {
+            console.info("[corner] Limpando cache de texturas global");
+            PIXI.utils.clearTextureCache();
           }
 
-          // Força a perda do contexto WebGL
+          // 2. Destrói o world container recursivamente
+          if (SCENE.world) {
+            SCENE.world.destroy({ children: true, texture: true, baseTexture: true });
+            SCENE.world = null;
+          }
+
+          // 3. Limpa atlas
+          if (SCENE.atlas && SCENE.atlas.frames) {
+            Object.values(SCENE.atlas.frames).forEach(tex => {
+              try {
+                if (tex && tex.destroy) tex.destroy(true);
+              } catch (e) {}
+            });
+            SCENE.atlas.frames = {};
+          }
+
+          // 4. Limpa items
+          SCENE.items.clear();
+
+          // 5. Força a perda do contexto WebGL
           if (PIXI_APP.renderer && PIXI_APP.renderer.gl) {
             const gl = PIXI_APP.renderer.gl;
             const loseContext = gl.getExtension("WEBGL_lose_context");
@@ -2345,7 +2405,12 @@
             }
           }
 
-          // Destrói a aplicação
+          // 6. Remove o canvas do DOM
+          if (PIXI_APP.view && PIXI_APP.view.parentNode) {
+            PIXI_APP.view.parentNode.removeChild(PIXI_APP.view);
+          }
+
+          // 7. Destrói a aplicação
           PIXI_APP.destroy(true, {
             children: true,
             texture: true,
