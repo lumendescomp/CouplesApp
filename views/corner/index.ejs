@@ -385,7 +385,12 @@
     };
 
     // ===== Implementação Pixi =====
-    let PIXI_APP = null;
+    // Usar variável global para evitar múltiplos contextos WebGL
+    if (!window.__PIXI_APP_GLOBAL) {
+      window.__PIXI_APP_GLOBAL = null;
+    }
+    let PIXI_APP = window.__PIXI_APP_GLOBAL;
+
     const SCENE = {
       items: new Map(),
       selectedId: null,
@@ -499,7 +504,7 @@
     }
 
     async function loadAtlasIfAny() {
-      const ATLAS = { ready: false, frames: {} };      
+      const ATLAS = { ready: false, frames: {} };
       try {
         const resMan = await fetch("/public/assets/atlas/manifest.json", {
           cache: "no-store",
@@ -555,21 +560,71 @@
     async function ensurePixi(force = false) {
       const container = document.getElementById("corner-canvas");
       if (!container) return;
-      if (PIXI_APP && !force) return;
-      if (PIXI_APP && force) {
-        PIXI_APP.destroy(true, {
-          children: true,
-          texture: true,
-          baseTexture: true,
-        });
-        PIXI_APP = null;
+
+      // Recupera referência global para evitar múltiplos contextos
+      PIXI_APP = window.__PIXI_APP_GLOBAL;
+
+      // Se já existe instância, verifica se precisa recriar
+      if (PIXI_APP && !force) {
+        // Verifica se o canvas ainda está no DOM
+        const canvasStillInDOM =
+          PIXI_APP.view && document.body.contains(PIXI_APP.view);
+        if (!canvasStillInDOM) {
+          console.warn("[corner] Detectado canvas órfão, forçando recriação");
+          force = true;
+        } else {
+          console.info("[corner] Reutilizando instância existente do PIXI");
+          return; // Tudo OK, já está inicializado
+        }
       }
 
+      // Destruir instância antiga (se existir)
+      if (PIXI_APP) {
+        console.info("[corner] Destruindo instância anterior do PIXI");
+        try {
+          // Remove o canvas do DOM primeiro
+          if (PIXI_APP.view && PIXI_APP.view.parentNode) {
+            PIXI_APP.view.parentNode.removeChild(PIXI_APP.view);
+          }
+
+          // Destrói a aplicação com todas as opções de limpeza
+          PIXI_APP.destroy(true, {
+            children: true,
+            texture: true,
+            baseTexture: true,
+          });
+
+          // Força a limpeza do contexto WebGL
+          if (PIXI_APP.renderer && PIXI_APP.renderer.gl) {
+            const gl = PIXI_APP.renderer.gl;
+            const loseContext = gl.getExtension("WEBGL_lose_context");
+            if (loseContext) {
+              loseContext.loseContext();
+            }
+          }
+
+          // Limpa o cache de texturas global do PIXI
+          if (PIXI.utils && PIXI.utils.clearTextureCache) {
+            PIXI.utils.clearTextureCache();
+          }
+        } catch (e) {
+          console.error("[corner] Erro ao destruir PIXI:", e);
+        }
+
+        PIXI_APP = null;
+        window.__PIXI_APP_GLOBAL = null;
+      }
+
+      console.info("[corner] Criando nova instância do PIXI");
       PIXI_APP = new PIXI.Application({
         backgroundAlpha: 0,
         resizeTo: container,
         antialias: true,
       });
+
+      // Salva referência global
+      window.__PIXI_APP_GLOBAL = PIXI_APP;
+
       container.innerHTML = "";
       container.appendChild(PIXI_APP.view);
 
@@ -2183,6 +2238,7 @@
 
     // Expor e inicializar
     function destroy() {
+      console.info("[corner] Destruindo instância Corner");
       try {
         if (BOUND.keydown) window.removeEventListener("keydown", BOUND.keydown);
         if (BOUND.keyup) window.removeEventListener("keyup", BOUND.keyup);
@@ -2204,21 +2260,69 @@
             container.removeEventListener("pointerdown", BOUND.pan.onDown);
         }
       } catch (_) {}
+
       try {
         const container = document.getElementById("corner-canvas");
+        PIXI_APP = window.__PIXI_APP_GLOBAL;
+
         if (PIXI_APP) {
+          console.info("[corner] Destruindo contexto WebGL do PIXI");
+
+          // Remove o canvas do DOM primeiro
+          if (PIXI_APP.view && PIXI_APP.view.parentNode) {
+            PIXI_APP.view.parentNode.removeChild(PIXI_APP.view);
+          }
+
+          // Força a perda do contexto WebGL
+          if (PIXI_APP.renderer && PIXI_APP.renderer.gl) {
+            const gl = PIXI_APP.renderer.gl;
+            const loseContext = gl.getExtension("WEBGL_lose_context");
+            if (loseContext) {
+              console.info("[corner] Forçando perda de contexto WebGL");
+              loseContext.loseContext();
+            }
+          }
+
+          // Destrói a aplicação
           PIXI_APP.destroy(true, {
             children: true,
             texture: true,
             baseTexture: true,
           });
+
           if (container) container.innerHTML = "";
         }
-      } catch (_) {}
+      } catch (e) {
+        console.error("[corner] Erro ao destruir:", e);
+      }
+
       PIXI_APP = null;
+      window.__PIXI_APP_GLOBAL = null;
     }
 
     window.__CornerInstance = { destroy };
+
+    // Limpa instância do PIXI quando navegar para outra página via HTMX
+    const cleanupHandler = (evt) => {
+      // Verifica se estamos saindo da página corner
+      if (
+        evt.detail &&
+        evt.detail.pathInfo &&
+        evt.detail.pathInfo.requestPath
+      ) {
+        const newPath = evt.detail.pathInfo.requestPath;
+        if (!newPath.includes("/corner")) {
+          console.info("[corner] Limpando PIXI antes de sair da página");
+          if (window.__CornerInstance && window.__CornerInstance.destroy) {
+            window.__CornerInstance.destroy();
+          }
+          // Remove o próprio handler
+          document.removeEventListener("htmx:beforeRequest", cleanupHandler);
+        }
+      }
+    };
+    document.addEventListener("htmx:beforeRequest", cleanupHandler);
+
     // init now (scripts de páginas htmx executam após inserção no DOM)
     ensurePixi();
     bindResize();
