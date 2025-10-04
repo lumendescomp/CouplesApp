@@ -176,6 +176,12 @@
       const elDaysRem = document.getElementById("days-rem-value");
       const since = document.getElementById("since-label");
       const inp = document.getElementById("start-date");
+
+      // Se elementos não existem mais (página foi destruída), para o interval
+      if (!inp || !elYears || !elMonthsRem || !elDaysRem || !since) {
+        return;
+      }
+
       const v = (inp.value || "").trim();
 
       if (!v) {
@@ -229,7 +235,17 @@
       .getElementById("start-date")
       ?.addEventListener("change", updateAllCounters);
     // Atualiza uma vez por minuto é suficiente
-    setInterval(updateAllCounters, 60 * 1000);
+    const intervalId = setInterval(updateAllCounters, 60 * 1000);
+
+    // Limpa o interval quando sair da página (HTMX navigation)
+    document.addEventListener(
+      "htmx:beforeRequest",
+      function cleanupInterval() {
+        clearInterval(intervalId);
+        document.removeEventListener("htmx:beforeRequest", cleanupInterval);
+      },
+      { once: true }
+    );
 
     const form = document.getElementById("start-date-form");
     form?.addEventListener("submit", async (e) => {

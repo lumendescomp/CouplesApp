@@ -4,9 +4,10 @@
   data-photo-id="<%= photo.id %>"
 >
   <img
-    src="<%= photo.file_path %>"
+    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'%3E%3Crect fill='%23581c87' width='150' height='150'/%3E%3Cpath fill='%237c3aed' d='M75 45a15 15 0 1 0 0 30 15 15 0 0 0 0-30zm-45 60l30-30 15 15 30-30 15 15v30H30z'/%3E%3C/svg%3E"
+    data-src="<%= photo.file_path %>"
     alt="Foto do álbum"
-    class="w-full h-full object-cover"
+    class="lazy-image w-full h-full object-cover transition-opacity duration-300"
   />
 
   <!-- Overlay com ação de deletar -->

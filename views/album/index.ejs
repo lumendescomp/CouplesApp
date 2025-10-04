@@ -380,9 +380,10 @@
           const currentCount = parseInt(counter.textContent.match(/\d+/)[0]);
           counter.textContent = `${currentCount + uploadedCount}/20 fotos`;
 
-          // Re-aplica drag handlers e delete handlers
+          // Re-aplica drag handlers, delete handlers e lazy loading
           initDragDrop();
           initPhotoDelete();
+          initLazyLoading();
 
           // Atualiza botões do carrossel
           updateCarouselButtons();
@@ -547,15 +548,56 @@
       });
     }
 
+    // Lazy loading de imagens com Intersection Observer
+    function initLazyLoading() {
+      const imageObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const img = entry.target;
+              const src = img.getAttribute("data-src");
+
+              if (src) {
+                // Preload da imagem antes de aplicar
+                const tempImg = new Image();
+                tempImg.onload = () => {
+                  img.src = src;
+                  img.style.opacity = "0";
+                  setTimeout(() => {
+                    img.style.opacity = "1";
+                  }, 10);
+                  img.removeAttribute("data-src");
+                  img.classList.remove("lazy-image");
+                };
+                tempImg.src = src;
+                observer.unobserve(img);
+              }
+            }
+          });
+        },
+        {
+          rootMargin: "200px", // Carrega 200px antes (mais agressivo)
+          threshold: 0.01,
+        }
+      );
+
+      // Observa todas as imagens lazy
+      document.querySelectorAll(".lazy-image").forEach((img) => {
+        imageObserver.observe(img);
+      });
+    }
+
     // Inicializar após HTMX swap
     document.addEventListener("htmx:afterSwap", () => {
       initDragDrop();
       initPhotoDelete();
+      initLazyLoading();
     });
 
     // Inicializar na carga
     initDragDrop();
     initSlotRemoval();
     initPhotoDelete();
+    initLazyLoading();
   })();
 </script>

@@ -68,6 +68,17 @@ router.get("/", (req, res) => {
       : null;
   }
 
+  // Otimização: Adiciona Resource Hints para preload das primeiras 6 fotos
+  // Isso permite que o navegador baixe em paralelo (HTTP/2)
+  const firstPhotos = photos.slice(0, 6);
+  const linkHeaders = firstPhotos
+    .map((photo) => `<${photo.file_path}>; rel=preload; as=image`)
+    .join(", ");
+
+  if (linkHeaders) {
+    res.set("Link", linkHeaders);
+  }
+
   res.render("album/index", { photos, slots: slotMap });
 });
 
