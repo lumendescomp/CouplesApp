@@ -157,6 +157,54 @@
           window.Alpine.initTree(e.detail.target);
         }
       });
+
+      // Cleanup de recursos ao sair de páginas específicas
+      // IMPORTANTE: beforeSwap acontece ANTES do DOM ser trocado
+      document.addEventListener("htmx:beforeSwap", (e) => {
+        const targetURL = e.detail.xhr?.responseURL || "";
+        const currentPath = window.location.pathname || "";
+        
+        console.log("[Layout] htmx:beforeSwap - currentPath:", currentPath, "| targetURL:", targetURL);
+        
+        // Se estava em /album e está indo para outra rota
+        if (currentPath.includes("/album") && !targetURL.includes("/album")) {
+          console.log("[Layout] ⚠️ Saindo de /album, chamando cleanup...");
+          if (typeof window.__albumCleanup === "function") {
+            window.__albumCleanup();
+          } else {
+            console.error("[Layout] window.__albumCleanup não está definido!");
+          }
+        }
+
+        // Se estava em /corner e está indo para outra rota
+        if (currentPath.includes("/corner") && !targetURL.includes("/corner")) {
+          console.log("[Layout] Saindo de /corner, limpando recursos...");
+          if (typeof window.__CornerInstance?.destroy === "function") {
+            window.__CornerInstance.destroy();
+          }
+        }
+      });
+
+      // Adicional: cancelar requisições ao trocar conteúdo
+      document.addEventListener("htmx:beforeOnLoad", (e) => {
+        const currentPath = window.location.pathname || "";
+        const targetURL = e.detail.xhr?.responseURL || "";
+        
+        // Se está saindo de /album, tentar cancelar requisições pendentes
+        if (currentPath.includes("/album") && !targetURL.includes("/album")) {
+          console.log("[Layout] htmx:beforeOnLoad - Última tentativa de cleanup");
+          
+          // Força cancelar TODAS as imagens que ainda estão no DOM
+          document.querySelectorAll("#hs-main img").forEach((img) => {
+            if (img.src && img.src.includes("/album-photos/")) {
+              console.log("[Layout] Forçando cancelamento:", img.src);
+              const oldSrc = img.src;
+              img.src = "";
+              img.removeAttribute("src");
+            }
+          });
+        }
+      });
       // Delegação de eventos para botões de copiar (compatível com CSP)
       document.addEventListener("click", async (ev) => {
         const btn = ev.target.closest("[data-copy-text]");

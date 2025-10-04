@@ -993,16 +993,47 @@
       });
     }
 
+    // Armazena o observer globalmente para poder desconectar depois
+    let mediaObserver = null;
+    let loadingImages = new Set(); // Track de imagens sendo carregadas
+
     // Lazy loading de imagens com Intersection Observer
     function initLazyLoading() {
-      const mediaObserver = new IntersectionObserver(
+      console.log("[Album] initLazyLoading chamado");
+
+      // Evitar múltiplos observers
+      const container = document.querySelector("#photos-carousel");
+      if (!container) {
+        console.log("[Album] Container não encontrado");
+        return;
+      }
+
+      if (container.dataset.lazyInitialized === "true") {
+        console.log("[Album] Lazy loading já inicializado");
+        return;
+      }
+
+      container.dataset.lazyInitialized = "true";
+      console.log("[Album] Marcando container como inicializado");
+
+      // Limpar observer anterior se existir
+      if (mediaObserver) {
+        console.log("[Album] Desconectando observer anterior");
+        mediaObserver.disconnect();
+      }
+
+      mediaObserver = new IntersectionObserver(
         (entries, observer) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               const element = entry.target;
               const src = element.getAttribute("data-src");
 
-              if (src) {
+              if (src && !element.dataset.loading) {
+                console.log("[Album] Carregando:", src);
+                element.dataset.loading = "true";
+                loadingImages.add(src);
+
                 if (element.tagName === "VIDEO") {
                   // Para vídeos: definir src e iniciar reprodução
                   element.src = src;
@@ -1010,6 +1041,7 @@
                   element.addEventListener(
                     "loadeddata",
                     () => {
+                      loadingImages.delete(src);
                       setTimeout(() => {
                         element.style.opacity = "1";
                       }, 10);
@@ -1023,18 +1055,29 @@
                   element.classList.remove("lazy-image");
                   observer.unobserve(element);
                 } else {
-                  // Para imagens: preload antes de aplicar
-                  const tempImg = new Image();
-                  tempImg.onload = () => {
-                    element.src = src;
-                    element.style.opacity = "0";
-                    setTimeout(() => {
-                      element.style.opacity = "1";
-                    }, 10);
-                    element.removeAttribute("data-src");
-                    element.classList.remove("lazy-image");
+                  // Para imagens: aplicar src direto (SEM new Image)
+                  element.style.opacity = "0";
+
+                  // Abortar se já saiu da página
+                  const onError = () => {
+                    loadingImages.delete(src);
+                    console.log("[Album] Erro ao carregar:", src);
                   };
-                  tempImg.src = src;
+
+                  element.onerror = onError;
+                  element.onload = () => {
+                    loadingImages.delete(src);
+                    setTimeout(() => {
+                      if (element.isConnected) {
+                        // Só aplicar se ainda estiver no DOM
+                        element.style.opacity = "1";
+                      }
+                    }, 10);
+                  };
+
+                  element.src = src;
+                  element.removeAttribute("data-src");
+                  element.classList.remove("lazy-image");
                   observer.unobserve(element);
                 }
               }
@@ -1042,28 +1085,93 @@
           });
         },
         {
-          rootMargin: "200px", // Carrega 200px antes (mais agressivo)
+          rootMargin: "200px",
           threshold: 0.01,
         }
       );
 
       // Observa todas as imagens e vídeos com lazy loading
-      document.querySelectorAll(".lazy-image").forEach((element) => {
+      const lazyElements = document.querySelectorAll(".lazy-image");
+      console.log("[Album] Observando", lazyElements.length, "elementos lazy");
+      lazyElements.forEach((element) => {
         mediaObserver.observe(element);
       });
     }
 
-    // Inicializar após HTMX swap
-    document.addEventListener("htmx:afterSwap", () => {
+    // Cleanup quando sair da página /album
+    function cleanupAlbum() {
+      console.log("[Album] ⚠️ CLEANUP INICIADO");
+      console.log(
+        "[Album] Imagens ainda carregando:",
+        Array.from(loadingImages)
+      );
+
+      if (mediaObserver) {
+        console.log("[Album] Desconectando observer");
+        mediaObserver.disconnect();
+        mediaObserver = null;
+      }
+
+      // Pausar e cancelar carregamento de todos os vídeos
+      document.querySelectorAll("video").forEach((video) => {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      });
+
+      // Cancelar carregamento de TODAS as imagens com data-src ou que estão carregando
+      document.querySelectorAll("img").forEach((img) => {
+        const dataSrc = img.getAttribute("data-src");
+        if (dataSrc) {
+          console.log("[Album] Cancelando carregamento de imagem:", dataSrc);
+          img.removeAttribute("data-src");
+        }
+
+        // Abortar carregamento em progresso
+        if (img.dataset.loading === "true") {
+          console.log("[Album] Abortando carregamento:", img.src);
+          img.src = ""; // Força cancelar requisição
+        }
+      });
+
+      // Limpar tracking
+      loadingImages.clear();
+
+      // Limpar flag de inicialização
+      const container = document.querySelector("#photos-carousel");
+      if (container) {
+        container.dataset.lazyInitialized = "false";
+      }
+
+      console.log("[Album] ✅ CLEANUP CONCLUÍDO");
+    } // Expor cleanup globalmente
+    window.__albumCleanup = cleanupAlbum;
+
+    // Registrar handler de afterSwap apenas uma vez
+    if (!window.__albumAfterSwapRegistered) {
+      window.__albumAfterSwapRegistered = true;
+      document.addEventListener("htmx:afterSwap", (e) => {
+        // Só executar se estiver na página /album
+        if (window.location.pathname.includes("/album")) {
+          console.log("[Album] htmx:afterSwap detectado, reinicializando...");
+          initDragDrop();
+          initPhotoDelete();
+          initLazyLoading();
+        }
+      });
+    }
+
+    // Inicializar apenas se estiver na página /album
+    if (window.location.pathname.includes("/album")) {
+      console.log("[Album] Inicialização inicial na página /album");
       initDragDrop();
+      initSlotRemoval();
       initPhotoDelete();
       initLazyLoading();
-    });
-
-    // Inicializar na carga
-    initDragDrop();
-    initSlotRemoval();
-    initPhotoDelete();
-    initLazyLoading();
+    } else {
+      console.log(
+        "[Album] Script carregado mas não está em /album, ignorando inicialização"
+      );
+    }
   })();
 </script>
