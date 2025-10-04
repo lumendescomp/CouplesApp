@@ -327,8 +327,39 @@
 </style>
 
 <script src="https://unpkg.com/pixi.js@7.x/dist/pixi.min.js"></script>
-<script src="https://unpkg.com/@pixi/unsafe-eval@7.x/dist/unsafe-eval.min.js"></script>
 <script>
+  // Aguarda o carregamento do PIXI antes de inicializar a página
+  function waitForPixi() {
+    return new Promise((resolve, reject) => {
+      // Verifica se PIXI já está disponível e funcional
+      if (typeof PIXI !== "undefined" && PIXI.Application) {
+        console.info("[corner] PIXI já está disponível");
+        resolve();
+        return;
+      }
+
+      console.info("[corner] Aguardando carregamento do PIXI...");
+      let attempts = 0;
+      const maxAttempts = 100; // 5 segundos (50ms * 100)
+
+      const checkPixi = setInterval(() => {
+        attempts++;
+
+        if (typeof PIXI !== "undefined" && PIXI.Application) {
+          clearInterval(checkPixi);
+          console.info("[corner] PIXI carregado com sucesso!");
+          resolve();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkPixi);
+          console.error(
+            "[corner] Timeout ao aguardar PIXI - biblioteca não carregou"
+          );
+          reject(new Error("PIXI não carregou"));
+        }
+      }, 50);
+    });
+  }
+
   // Dados iniciais vindos do servidor (via tag JSON)
   (function () {
     try {
@@ -345,7 +376,32 @@
     }
   })();
   // Isolar todo o código da página em um controller para evitar redeclarações em navegação htmx
-  (function CornerPage() {
+  (async function CornerPage() {
+    try {
+      // Aguarda PIXI estar disponível
+      await waitForPixi();
+    } catch (error) {
+      console.error("[corner] Erro ao carregar PIXI:", error);
+      const container = document.getElementById("corner-canvas");
+      if (container) {
+        container.innerHTML = `
+          <div class="flex items-center justify-center h-full">
+            <div class="text-center p-6">
+              <div class="text-red-400 text-lg mb-2">⚠️ Erro ao carregar o cantinho</div>
+              <div class="text-violet-300 text-sm">A biblioteca gráfica não carregou corretamente.</div>
+              <button 
+                onclick="window.location.reload()" 
+                class="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg"
+              >
+                Recarregar página
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
+
     // Se já existe uma instância anterior, destrói antes de inicializar
     if (
       window.__CornerInstance &&
@@ -560,6 +616,12 @@
     async function ensurePixi(force = false) {
       const container = document.getElementById("corner-canvas");
       if (!container) return;
+
+      // Verifica se PIXI está disponível
+      if (typeof PIXI === "undefined") {
+        console.error("[corner] PIXI não está carregado ainda");
+        return;
+      }
 
       // Recupera referência global para evitar múltiplos contextos
       PIXI_APP = window.__PIXI_APP_GLOBAL;

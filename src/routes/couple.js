@@ -51,4 +51,37 @@ router.post("/start-date", (req, res) => {
   return res.status(400).json({ ok: false, error: "invalid_date" });
 });
 
+// Desfazer parceria
+router.post("/unlink", (req, res) => {
+  const db = getDb();
+  const meId = req.session.user.id;
+
+  // Encontra o casal
+  const cpl = db
+    .prepare("SELECT * FROM couples WHERE partner1_id = ? OR partner2_id = ?")
+    .get(meId, meId);
+
+  if (!cpl) {
+    return res.status(400).json({ ok: false, error: "not_paired" });
+  }
+
+  try {
+    // Deleta todos os dados relacionados ao casal
+    // 1. Fotos do álbum
+    db.prepare("DELETE FROM album_photos WHERE couple_id = ?").run(cpl.id);
+    db.prepare("DELETE FROM album_slots WHERE couple_id = ?").run(cpl.id);
+
+    // 2. Itens do corner
+    db.prepare("DELETE FROM corner_items WHERE couple_id = ?").run(cpl.id);
+
+    // 3. O próprio casal
+    db.prepare("DELETE FROM couples WHERE id = ?").run(cpl.id);
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Erro ao desfazer parceria:", err);
+    return res.status(500).json({ ok: false, error: "server_error" });
+  }
+});
+
 export default router;

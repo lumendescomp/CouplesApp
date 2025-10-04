@@ -95,13 +95,75 @@
       alt="Avatar"
       class="w-12 h-12 rounded-full object-cover border border-violet-600/60"
     />
-    <div>
+    <div class="flex-1">
       <div class="text-sm text-violet-300">Meu par</div>
       <div class="text-base font-medium text-violet-100">
         <%= partner.display_name || partner.email %>
       </div>
     </div>
+    <button
+      id="unlink-btn"
+      class="px-4 py-2 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-700/40 text-sm transition-colors"
+    >
+      Desfazer parceria
+    </button>
   </section>
+
+  <!-- Modal de Confirmação -->
+  <div
+    id="confirm-unlink-modal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden"
+    style="transition: opacity 0.3s ease"
+  >
+    <div
+      class="glass rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-900/90 to-fuchsia-900/90 p-6 max-w-md w-full mx-4 shadow-2xl"
+      style="transform: scale(0.9); transition: transform 0.3s ease"
+    >
+      <div class="flex items-start gap-4 mb-4">
+        <div
+          class="flex-shrink-0 w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center"
+        >
+          <svg
+            class="w-6 h-6 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-violet-100 mb-2">
+            Desfazer parceria
+          </h3>
+          <p class="text-violet-200/80 text-sm">
+            Tem certeza que deseja desfazer a parceria? Isso irá remover todos
+            os dados compartilhados, incluindo fotos do álbum e itens do
+            cantinho.
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button
+          id="confirm-cancel-unlink"
+          class="px-4 py-2 rounded-lg bg-violet-700/30 hover:bg-violet-700/50 text-violet-100 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          id="confirm-ok-unlink"
+          class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
   <% } %>
 </div>
 
@@ -128,6 +190,87 @@
         toast.classList.remove("bg-red-600/90", "bg-emerald-600/90");
       }, 1500);
     }
+
+    // ===== MODAL DE CONFIRMAÇÃO PARA DESFAZER PARCERIA =====
+    const unlinkBtn = document.getElementById("unlink-btn");
+    const confirmModal = document.getElementById("confirm-unlink-modal");
+    const confirmOk = document.getElementById("confirm-ok-unlink");
+    const confirmCancel = document.getElementById("confirm-cancel-unlink");
+
+    function showUnlinkModal() {
+      if (!confirmModal) return;
+      confirmModal.classList.remove("hidden");
+      setTimeout(() => {
+        confirmModal.style.opacity = "1";
+        confirmModal.querySelector("div > div").style.transform = "scale(1)";
+      }, 10);
+    }
+
+    function hideUnlinkModal() {
+      if (!confirmModal) return;
+      confirmModal.style.opacity = "0";
+      confirmModal.querySelector("div > div").style.transform = "scale(0.9)";
+      setTimeout(() => {
+        confirmModal.classList.add("hidden");
+      }, 300);
+    }
+
+    if (unlinkBtn) {
+      unlinkBtn.addEventListener("click", showUnlinkModal);
+    }
+
+    if (confirmCancel) {
+      confirmCancel.addEventListener("click", hideUnlinkModal);
+    }
+
+    if (confirmModal) {
+      confirmModal.addEventListener("click", (e) => {
+        if (e.target === confirmModal) hideUnlinkModal();
+      });
+    }
+
+    if (confirmOk) {
+      confirmOk.addEventListener("click", async () => {
+        const CSRF =
+          (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+          "";
+        try {
+          const res = await fetch("/couple/unlink", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRF-Token": CSRF,
+            },
+          });
+
+          if (res.ok) {
+            hideUnlinkModal();
+            showToast("Parceria desfeita com sucesso");
+            setTimeout(() => {
+              window.location.href = "/invite";
+            }, 1500);
+          } else {
+            hideUnlinkModal();
+            showToast("Erro ao desfazer parceria", "error");
+          }
+        } catch (err) {
+          console.error(err);
+          hideUnlinkModal();
+          showToast("Erro ao desfazer parceria", "error");
+        }
+      });
+    }
+
+    // Fechar com ESC
+    document.addEventListener("keydown", (e) => {
+      if (
+        e.key === "Escape" &&
+        confirmModal &&
+        !confirmModal.classList.contains("hidden")
+      ) {
+        hideUnlinkModal();
+      }
+    });
 
     function daysBetween(d1, d2) {
       const ms = 24 * 60 * 60 * 1000;

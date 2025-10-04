@@ -32,6 +32,7 @@ app.use(
         "script-src": [
           "'self'",
           "'unsafe-inline'",
+          "'unsafe-eval'", // Necessário para PIXI.js
           "https://cdn.tailwindcss.com",
           "https://unpkg.com",
         ],

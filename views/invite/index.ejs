@@ -6,6 +6,10 @@
     <p class="text-sm text-violet-200/80 mb-3">
       Compartilhe um código de amor válido por 24 horas.
     </p>
+
+    <!-- Mensagem de erro -->
+    <div id="invite-error" class="mb-3"></div>
+
     <button
       class="btn-heart px-4 py-2 rounded-full"
       hx-post="/invite/create"
@@ -31,3 +35,28 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Tratar erros do HTMX
+  document.body.addEventListener("htmx:responseError", function (evt) {
+    if (
+      evt.detail.xhr.status === 400 &&
+      evt.detail.pathInfo.requestPath === "/invite/create"
+    ) {
+      const errorDiv = document.getElementById("invite-error");
+      errorDiv.innerHTML = evt.detail.xhr.response;
+
+      // Esconde após 7 segundos
+      setTimeout(() => {
+        errorDiv.innerHTML = "";
+      }, 7000);
+    }
+  });
+
+  // Limpa erro quando houver sucesso
+  document.body.addEventListener("htmx:afterSwap", function (evt) {
+    if (evt.detail.target.id === "invites-list") {
+      document.getElementById("invite-error").innerHTML = "";
+    }
+  });
+</script>

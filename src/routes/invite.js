@@ -23,7 +23,9 @@ router.post("/create", (req, res) => {
   if (cpl) {
     return res
       .status(400)
-      .send('<div class="text-red-600">Você já está em um casal.</div>');
+      .send(
+        '<div class="border border-red-700/40 rounded-xl p-3 bg-red-900/20 text-red-200 text-sm">❌ Você já está em um casal e não pode criar novos convites.</div>'
+      );
   }
   const code = generateInviteCode(8);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
