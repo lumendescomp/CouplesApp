@@ -27,11 +27,11 @@
             d="M12 4v16m8-8H4"
           />
         </svg>
-        <span id="upload-text">Adicionar Fotos</span>
+        <span id="upload-text">Adicionar Mídia</span>
         <input
           type="file"
           name="photo"
-          accept="image/*"
+          accept="image/*,video/mp4,video/webm,video/quicktime"
           multiple
           class="hidden"
           id="photo-input"
@@ -121,8 +121,9 @@
           "
         >
           <% if (slots[1]) { %> <%- include('_slot_filled', { slotNumber: 1,
-          filePath: slots[1].file_path, photoId: slots[1].photo_id }) %> <% }
-          else { %> <%- include('_slot_empty', { slotNumber: 1 }) %> <% } %>
+          filePath: slots[1].file_path, photoId: slots[1].photo_id, mediaType:
+          slots[1].media_type }) %> <% } else { %> <%- include('_slot_empty', {
+          slotNumber: 1 }) %> <% } %>
         </div>
 
         <!-- Slot 2 - Topo direito -->
@@ -138,8 +139,9 @@
           "
         >
           <% if (slots[2]) { %> <%- include('_slot_filled', { slotNumber: 2,
-          filePath: slots[2].file_path, photoId: slots[2].photo_id }) %> <% }
-          else { %> <%- include('_slot_empty', { slotNumber: 2 }) %> <% } %>
+          filePath: slots[2].file_path, photoId: slots[2].photo_id, mediaType:
+          slots[2].media_type }) %> <% } else { %> <%- include('_slot_empty', {
+          slotNumber: 2 }) %> <% } %>
         </div>
 
         <!-- Slot 3 - Centro esquerdo -->
@@ -155,8 +157,9 @@
           "
         >
           <% if (slots[3]) { %> <%- include('_slot_filled', { slotNumber: 3,
-          filePath: slots[3].file_path, photoId: slots[3].photo_id }) %> <% }
-          else { %> <%- include('_slot_empty', { slotNumber: 3 }) %> <% } %>
+          filePath: slots[3].file_path, photoId: slots[3].photo_id, mediaType:
+          slots[3].media_type }) %> <% } else { %> <%- include('_slot_empty', {
+          slotNumber: 3 }) %> <% } %>
         </div>
 
         <!-- Slot 4 - Centro direito -->
@@ -172,8 +175,9 @@
           "
         >
           <% if (slots[4]) { %> <%- include('_slot_filled', { slotNumber: 4,
-          filePath: slots[4].file_path, photoId: slots[4].photo_id }) %> <% }
-          else { %> <%- include('_slot_empty', { slotNumber: 4 }) %> <% } %>
+          filePath: slots[4].file_path, photoId: slots[4].photo_id, mediaType:
+          slots[4].media_type }) %> <% } else { %> <%- include('_slot_empty', {
+          slotNumber: 4 }) %> <% } %>
         </div>
 
         <!-- Slot 5 - Base esquerdo -->
@@ -189,8 +193,9 @@
           "
         >
           <% if (slots[5]) { %> <%- include('_slot_filled', { slotNumber: 5,
-          filePath: slots[5].file_path, photoId: slots[5].photo_id }) %> <% }
-          else { %> <%- include('_slot_empty', { slotNumber: 5 }) %> <% } %>
+          filePath: slots[5].file_path, photoId: slots[5].photo_id, mediaType:
+          slots[5].media_type }) %> <% } else { %> <%- include('_slot_empty', {
+          slotNumber: 5 }) %> <% } %>
         </div>
 
         <!-- Slot 6 - Base direito -->
@@ -206,8 +211,9 @@
           "
         >
           <% if (slots[6]) { %> <%- include('_slot_filled', { slotNumber: 6,
-          filePath: slots[6].file_path, photoId: slots[6].photo_id }) %> <% }
-          else { %> <%- include('_slot_empty', { slotNumber: 6 }) %> <% } %>
+          filePath: slots[6].file_path, photoId: slots[6].photo_id, mediaType:
+          slots[6].media_type }) %> <% } else { %> <%- include('_slot_empty', {
+          slotNumber: 6 }) %> <% } %>
         </div>
 
         <!-- Fundo decorativo (coração) -->
@@ -280,14 +286,48 @@
     display: none !important;
   }
 
-  /* Esconde scrollbar */
+  /* Scrollbar customizada e visível */
   #photos-carousel::-webkit-scrollbar {
-    display: none;
+    height: 8px;
+  }
+
+  #photos-carousel::-webkit-scrollbar-track {
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 10px;
+  }
+
+  #photos-carousel::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.6);
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+
+  #photos-carousel::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.8);
   }
 
   #photos-carousel {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    -ms-overflow-style: auto; /* Mostra scrollbar no IE/Edge */
+    scrollbar-width: thin; /* Firefox: scrollbar fina */
+    scrollbar-color: rgba(139, 92, 246, 0.6) rgba(139, 92, 246, 0.1); /* Firefox: cor do thumb e track */
+    cursor: grab;
+    scroll-behavior: smooth;
+    padding-bottom: 12px; /* Espaço para scrollbar */
+  }
+
+  #photos-carousel:active {
+    cursor: grabbing;
+    scroll-behavior: auto; /* Desativa smooth durante drag manual */
+  }
+
+  /* Feedback visual durante drag do carrossel */
+  #photos-carousel.dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  #photos-carousel.dragging .photo-library-item {
+    pointer-events: none; /* Previne iniciar drag de foto durante scroll */
   }
 </style>
 
@@ -328,6 +368,67 @@
 
       // Atualiza no carregamento
       updateCarouselButtons();
+
+      // ===== DRAG TO SCROLL =====
+      let isDragging = false;
+      let startX;
+      let scrollLeftStart;
+      let hasMoved = false; // Flag para detectar se houve movimento
+
+      carousel.addEventListener("mousedown", (e) => {
+        // Ignora se for em um elemento arrastável (foto)
+        if (e.target.closest(".photo-library-item")) return;
+
+        isDragging = true;
+        hasMoved = false;
+        carousel.classList.add("dragging");
+        carousel.style.cursor = "grabbing";
+        carousel.style.userSelect = "none";
+        startX = e.pageX - carousel.offsetLeft;
+        scrollLeftStart = carousel.scrollLeft;
+      });
+
+      carousel.addEventListener("mouseleave", () => {
+        isDragging = false;
+        carousel.classList.remove("dragging");
+        carousel.style.cursor = "grab";
+      });
+
+      carousel.addEventListener("mouseup", () => {
+        isDragging = false;
+        carousel.classList.remove("dragging");
+        carousel.style.cursor = "grab";
+      });
+
+      carousel.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        hasMoved = true;
+        const x = e.pageX - carousel.offsetLeft;
+        const walk = (x - startX) * 2; // Multiplicador para velocidade do scroll
+        carousel.scrollLeft = scrollLeftStart - walk;
+      });
+
+      // ===== TOUCH SUPPORT (Mobile) =====
+      let touchStartX;
+      let touchScrollLeft;
+
+      carousel.addEventListener("touchstart", (e) => {
+        if (e.target.closest(".photo-library-item")) return;
+        touchStartX = e.touches[0].pageX;
+        touchScrollLeft = carousel.scrollLeft;
+      });
+
+      carousel.addEventListener("touchmove", (e) => {
+        if (!touchStartX) return;
+        const x = e.touches[0].pageX;
+        const walk = (touchStartX - x) * 1.5;
+        carousel.scrollLeft = touchScrollLeft + walk;
+      });
+
+      carousel.addEventListener("touchend", () => {
+        touchStartX = null;
+      });
     }
 
     // Auto-submit form quando arquivo for selecionado (usando fetch direto)
@@ -399,6 +500,12 @@
           const currentCount = parseInt(counter.textContent.match(/\d+/)[0]);
           counter.textContent = `${currentCount + uploadedCount}/20 fotos`;
 
+          // Volta o carrossel para o início
+          const carousel = document.getElementById("photos-carousel");
+          if (carousel) {
+            carousel.scrollTo({ left: 0, behavior: "smooth" });
+          }
+
           // Re-aplica drag handlers, delete handlers e lazy loading
           initDragDrop();
           initPhotoDelete();
@@ -432,6 +539,10 @@
     function initDragDrop() {
       // Tornar fotos da biblioteca arrastáveis
       document.querySelectorAll(".photo-library-item").forEach((item) => {
+        // Evita adicionar listeners duplicados
+        if (item.dataset.dragInitialized === "true") return;
+        item.dataset.dragInitialized = "true";
+
         item.draggable = true;
 
         item.addEventListener("dragstart", (e) => {
@@ -459,6 +570,10 @@
 
       // Tornar slots receptivos
       document.querySelectorAll(".album-slot").forEach((slot) => {
+        // Evita adicionar listeners duplicados
+        if (slot.dataset.dropInitialized === "true") return;
+        slot.dataset.dropInitialized = "true";
+
         slot.addEventListener("dragover", (e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = "copy";
@@ -492,6 +607,8 @@
             if (res.ok) {
               const html = await res.text();
               slot.innerHTML = html;
+              // Remove flag para permitir re-inicialização após innerHTML
+              slot.dataset.dropInitialized = "false";
               // Re-inicializar eventos de remoção
               initSlotRemoval();
               if (window.showToast)
@@ -512,6 +629,10 @@
     // Remover foto do slot
     function initSlotRemoval() {
       document.querySelectorAll(".slot-remove-btn").forEach((btn) => {
+        // Evita adicionar listeners duplicados
+        if (btn.dataset.removeInitialized === "true") return;
+        btn.dataset.removeInitialized = "true";
+
         btn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -533,7 +654,11 @@
               const slot = document.querySelector(
                 `.album-slot[data-slot="${slotNumber}"]`
               );
-              if (slot) slot.innerHTML = html;
+              if (slot) {
+                slot.innerHTML = html;
+                // Remove flag para permitir re-inicialização
+                slot.dataset.dropInitialized = "false";
+              }
               if (window.showToast) window.showToast("Foto removida");
             }
           } catch (err) {
@@ -546,6 +671,10 @@
     // Deletar foto da biblioteca
     function initPhotoDelete() {
       document.querySelectorAll(".photo-delete-btn").forEach((btn) => {
+        // Evita adicionar listeners duplicados
+        if (btn.dataset.deleteInitialized === "true") return;
+        btn.dataset.deleteInitialized = "true";
+
         btn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -611,10 +740,11 @@
       const slots = document.querySelectorAll(".album-slot");
 
       slots.forEach((slot) => {
-        // Verifica se slot tem imagem com data-photo-id correspondente
+        // Verifica se slot tem imagem OU vídeo com data-photo-id correspondente
         const img = slot.querySelector(`img[data-photo-id="${photoId}"]`);
+        const video = slot.querySelector(`video[data-photo-id="${photoId}"]`);
 
-        if (img) {
+        if (img || video) {
           // Transforma slot preenchido em slot vazio
           const slotNumber = slot.dataset.slot;
           slot.innerHTML = `
@@ -629,27 +759,48 @@
 
     // Lazy loading de imagens com Intersection Observer
     function initLazyLoading() {
-      const imageObserver = new IntersectionObserver(
+      const mediaObserver = new IntersectionObserver(
         (entries, observer) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              const img = entry.target;
-              const src = img.getAttribute("data-src");
+              const element = entry.target;
+              const src = element.getAttribute("data-src");
 
               if (src) {
-                // Preload da imagem antes de aplicar
-                const tempImg = new Image();
-                tempImg.onload = () => {
-                  img.src = src;
-                  img.style.opacity = "0";
-                  setTimeout(() => {
-                    img.style.opacity = "1";
-                  }, 10);
-                  img.removeAttribute("data-src");
-                  img.classList.remove("lazy-image");
-                };
-                tempImg.src = src;
-                observer.unobserve(img);
+                if (element.tagName === "VIDEO") {
+                  // Para vídeos: definir src e iniciar reprodução
+                  element.src = src;
+                  element.style.opacity = "0";
+                  element.addEventListener(
+                    "loadeddata",
+                    () => {
+                      setTimeout(() => {
+                        element.style.opacity = "1";
+                      }, 10);
+                      element.play().catch(() => {
+                        // Ignorar erros de autoplay
+                      });
+                    },
+                    { once: true }
+                  );
+                  element.removeAttribute("data-src");
+                  element.classList.remove("lazy-image");
+                  observer.unobserve(element);
+                } else {
+                  // Para imagens: preload antes de aplicar
+                  const tempImg = new Image();
+                  tempImg.onload = () => {
+                    element.src = src;
+                    element.style.opacity = "0";
+                    setTimeout(() => {
+                      element.style.opacity = "1";
+                    }, 10);
+                    element.removeAttribute("data-src");
+                    element.classList.remove("lazy-image");
+                  };
+                  tempImg.src = src;
+                  observer.unobserve(element);
+                }
               }
             }
           });
@@ -660,9 +811,9 @@
         }
       );
 
-      // Observa todas as imagens lazy
-      document.querySelectorAll(".lazy-image").forEach((img) => {
-        imageObserver.observe(img);
+      // Observa todas as imagens e vídeos com lazy loading
+      document.querySelectorAll(".lazy-image").forEach((element) => {
+        mediaObserver.observe(element);
       });
     }
 

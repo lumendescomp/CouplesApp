@@ -44,6 +44,8 @@ app.use(
         "font-src": ["'self'", "https://fonts.gstatic.com"],
         // Permite imagens locais e data: para ícones/toasts
         "img-src": ["'self'", "data:"],
+        // Permite vídeos locais (sem data:)
+        "media-src": ["'self'"],
       },
     },
   })

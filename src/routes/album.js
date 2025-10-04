@@ -22,11 +22,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB para vídeos
   fileFilter: (req, file, cb) => {
-    const ok = [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(
-      path.extname(file.originalname).toLowerCase()
-    );
+    const imageFormats = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+    const videoFormats = [".mp4", ".webm", ".mov"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    const ok = [...imageFormats, ...videoFormats].includes(ext);
     cb(ok ? null : new Error("Formato inválido"), ok);
   },
 });
@@ -48,14 +49,14 @@ router.get("/", (req, res) => {
   // Buscar fotos da biblioteca
   const photos = db
     .prepare(
-      "SELECT id, file_path, uploaded_at FROM album_photos WHERE couple_id = ? ORDER BY uploaded_at DESC"
+      "SELECT id, file_path, media_type, uploaded_at FROM album_photos WHERE couple_id = ? ORDER BY uploaded_at DESC"
     )
     .all(cpl.id);
 
   // Buscar slots preenchidos (template 1 = coração com 6 slots)
   const slots = db
     .prepare(
-      "SELECT slot_number, photo_id, file_path FROM album_slots LEFT JOIN album_photos ON album_slots.photo_id = album_photos.id WHERE album_slots.couple_id = ? AND album_slots.template_id = 1"
+      "SELECT slot_number, photo_id, file_path, media_type FROM album_slots LEFT JOIN album_photos ON album_slots.photo_id = album_photos.id WHERE album_slots.couple_id = ? AND album_slots.template_id = 1"
     )
     .all(cpl.id);
 
@@ -64,7 +65,11 @@ router.get("/", (req, res) => {
   for (let i = 1; i <= 6; i++) {
     const slot = slots.find((s) => s.slot_number === i);
     slotMap[i] = slot
-      ? { photo_id: slot.photo_id, file_path: slot.file_path }
+      ? {
+          photo_id: slot.photo_id,
+          file_path: slot.file_path,
+          media_type: slot.media_type || "image",
+        }
       : null;
   }
 
@@ -117,12 +122,22 @@ router.post("/upload", upload.single("photo"), (req, res) => {
   }
 
   const filePath = `/public/album-photos/${req.file.filename}`;
+
+  // Detecta o tipo de mídia baseado na extensão
+  const ext = path.extname(req.file.filename).toLowerCase();
+  const videoFormats = [".mp4", ".webm", ".mov"];
+  const mediaType = videoFormats.includes(ext) ? "video" : "image";
+
   const info = db
-    .prepare("INSERT INTO album_photos (couple_id, file_path) VALUES (?, ?)")
-    .run(cpl.id, filePath);
+    .prepare(
+      "INSERT INTO album_photos (couple_id, file_path, media_type) VALUES (?, ?, ?)"
+    )
+    .run(cpl.id, filePath, mediaType);
 
   const photo = db
-    .prepare("SELECT id, file_path, uploaded_at FROM album_photos WHERE id = ?")
+    .prepare(
+      "SELECT id, file_path, media_type, uploaded_at FROM album_photos WHERE id = ?"
+    )
     .get(info.lastInsertRowid);
 
   // Sempre retorna o partial (para fetch e HTMX)
@@ -175,11 +190,12 @@ router.post("/slot/:slotNumber", async (req, res) => {
 
   if (req.get("HX-Request")) {
     const updated = db
-      .prepare("SELECT file_path FROM album_photos WHERE id = ?")
+      .prepare("SELECT file_path, media_type FROM album_photos WHERE id = ?")
       .get(photoId);
     return res.render("album/_slot_filled", {
       slotNumber,
       filePath: updated.file_path,
+      mediaType: updated.media_type || "image",
       photoId: photoId,
       layout: false,
     });

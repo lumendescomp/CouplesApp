@@ -2,13 +2,37 @@
   class="photo-library-item photo-item-individual relative aspect-square bg-violet-900/20 rounded-lg overflow-hidden border border-violet-700/40 flex-shrink-0 snap-start"
   style="width: 150px; height: 150px"
   data-photo-id="<%= photo.id %>"
+  data-media-type="<%= photo.media_type || 'image' %>"
 >
+  <% if (photo.media_type === 'video') { %>
+  <!-- Vídeo com lazy loading -->
+  <video
+    data-src="<%= photo.file_path %>"
+    class="lazy-image w-full h-full object-cover transition-opacity duration-300"
+    muted
+    loop
+    playsinline
+    style="opacity: 0"
+  ></video>
+  <!-- Ícone de play sobreposto -->
+  <div
+    class="absolute inset-0 flex items-center justify-center pointer-events-none"
+  >
+    <div class="bg-black/50 rounded-full p-3">
+      <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+    </div>
+  </div>
+  <% } else { %>
+  <!-- Imagem -->
   <img
     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'%3E%3Crect fill='%23581c87' width='150' height='150'/%3E%3Cpath fill='%237c3aed' d='M75 45a15 15 0 1 0 0 30 15 15 0 0 0 0-30zm-45 60l30-30 15 15 30-30 15 15v30H30z'/%3E%3C/svg%3E"
     data-src="<%= photo.file_path %>"
     alt="Foto do álbum"
     class="lazy-image w-full h-full object-cover transition-opacity duration-300"
   />
+  <% } %>
 
   <!-- Overlay com ação de deletar -->
   <div
@@ -17,7 +41,7 @@
     <button
       class="photo-delete-btn px-3 py-1.5 bg-red-600/90 hover:bg-red-600 text-white text-sm rounded-full pointer-events-auto"
       data-photo-id="<%= photo.id %>"
-      title="Deletar foto"
+      title="Deletar <%= photo.media_type === 'video' ? 'vídeo' : 'foto' %>"
     >
       🗑 Deletar
     </button>

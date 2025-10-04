@@ -167,5 +167,19 @@ export async function initDb() {
     console.warn("Migration (couple_items.z) note:", e.message);
   }
 
+  // Migração: adiciona coluna media_type na tabela album_photos
+  try {
+    const albumCols = db.prepare("PRAGMA table_info(album_photos)").all();
+    const albumNames = new Set(albumCols.map((c) => c.name));
+    if (!albumNames.has("media_type")) {
+      db.exec(
+        "ALTER TABLE album_photos ADD COLUMN media_type TEXT NOT NULL DEFAULT 'image'"
+      );
+      console.log("✅ Coluna media_type adicionada à tabela album_photos");
+    }
+  } catch (e) {
+    console.warn("Migration (album_photos.media_type) note:", e.message);
+  }
+
   return db;
 }
