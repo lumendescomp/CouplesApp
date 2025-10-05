@@ -13,6 +13,7 @@
   const manualRating = document.getElementById('manual-rating');
   let searchTimeout = null;
   let selectedRating = 0;
+  let selectedPosterUrl = ''; // Para armazenar a URL do poster selecionado
   window.openAddMovieModal = function() {
     console.log('openAddMovieModal called');
     modal.classList.remove('hidden');
@@ -91,6 +92,7 @@
   function selectMovie(movie) {
     document.getElementById('manual-title').value = movie.title;
     document.getElementById('manual-year').value = movie.year || '';
+    selectedPosterUrl = movie.posterPath || ''; // Armazenar URL do poster (w500 para melhor qualidade)
     document.getElementById('manual-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     if (window.showToast) window.showToast(movie.title + ' selecionado!');
   }
@@ -139,7 +141,14 @@
       const response = await fetch('/movies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-        body: JSON.stringify({ title, year: year ? parseInt(year) : null, status, rating, notes: notes || null }),
+        body: JSON.stringify({ 
+          title, 
+          year: year ? parseInt(year) : null, 
+          posterUrl: selectedPosterUrl || null,
+          status, 
+          rating, 
+          notes: notes || null 
+        }),
       });
       if (!response.ok) throw new Error('Erro ao adicionar filme');
       if (window.showToast) window.showToast(title + ' adicionado com sucesso!');
@@ -156,6 +165,7 @@
     searchResults.style.display = 'none';
     resultsGrid.innerHTML = '';
     selectedRating = 0;
+    selectedPosterUrl = ''; // Limpar URL do poster
     updateManualStars();
     manualRatingContainer.style.display = 'none';
   }

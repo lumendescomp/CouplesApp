@@ -59,23 +59,39 @@ router.get("/", (req, res) => {
   const watchlistMovies = db
     .prepare(
       `
-    SELECT * FROM movies 
-    WHERE couple_id = ? AND status = 'watchlist'
-    ORDER BY created_at DESC
+    SELECT m.*,
+           r1.rating as partner1_rating,
+           r1.notes as partner1_notes,
+           r2.rating as partner2_rating,
+           r2.notes as partner2_notes,
+           (r1.user_id = ?) as current_user_is_partner1
+    FROM movies m
+    LEFT JOIN movie_ratings r1 ON m.id = r1.movie_id AND r1.user_id = ?
+    LEFT JOIN movie_ratings r2 ON m.id = r2.movie_id AND r2.user_id = ? AND r2.user_id != ?
+    WHERE m.couple_id = ? AND m.status = 'watchlist'
+    ORDER BY m.created_at DESC
   `
     )
-    .all(couple.id);
+    .all(
+      userId,
+      userId,
+      couple.partner1_id === userId ? couple.partner2_id : couple.partner1_id,
+      userId,
+      couple.id
+    );
 
-  // Adicionar informação de quem avaliou
-  watchedMovies.forEach((movie) => {
-    movie.currentUserRating = movie.current_user_is_partner1
-      ? movie.partner1_rating
-      : movie.partner2_rating;
-    movie.partnerRating = movie.current_user_is_partner1
-      ? movie.partner2_rating
-      : movie.partner1_rating;
-    movie.hasCurrentUserRated = !!movie.currentUserRating;
-    movie.hasPartnerRated = !!movie.partnerRating;
+  // Adicionar informação de quem avaliou para ambas as listas
+  [watchedMovies, watchlistMovies].forEach((movieList) => {
+    movieList.forEach((movie) => {
+      movie.currentUserRating = movie.current_user_is_partner1
+        ? movie.partner1_rating
+        : movie.partner2_rating;
+      movie.partnerRating = movie.current_user_is_partner1
+        ? movie.partner2_rating
+        : movie.partner1_rating;
+      movie.hasCurrentUserRated = !!movie.currentUserRating;
+      movie.hasPartnerRated = !!movie.partnerRating;
+    });
   });
 
   res.render("movies/index", {
@@ -241,7 +257,8 @@ router.put("/:id", (req, res) => {
     );
 
     // Se houver rating, atualizar ou inserir na tabela movie_ratings
-    if (rating !== undefined && status === "watched") {
+    // Não verifica status pois só queremos salvar o rating
+    if (rating !== undefined) {
       const existingRating = db
         .prepare(
           "SELECT id FROM movie_ratings WHERE movie_id = ? AND user_id = ?"

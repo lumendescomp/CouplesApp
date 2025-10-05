@@ -1,3 +1,47 @@
+<style>
+  /* Custom scrollbar para modal e listas */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(76, 29, 149, 0.2);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(124, 58, 237);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(139, 92, 246);
+  }
+
+  /* Melhorar scroll do modal externo */
+  #add-movie-modal::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  #add-movie-modal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  #add-movie-modal::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.5);
+    border-radius: 5px;
+  }
+  
+  #add-movie-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 58, 237, 0.7);
+  }
+
+  /* Scroll suave */
+  #add-movie-modal, .scrollbar-thin {
+    scroll-behavior: smooth;
+  }
+</style>
+
 <div class="container mx-auto px-4 py-8 max-w-7xl">
   <div class="glass rounded-2xl border border-violet-700/30 bg-white/5 p-6 md:p-8">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -81,9 +125,15 @@
     if (!rating || !movieId) return;
 
     try {
+      // Buscar o CSRF token da meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+      
       const response = await fetch(`/movies/${movieId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
         body: JSON.stringify({ rating }),
       });
 
