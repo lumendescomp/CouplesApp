@@ -1,0 +1,74 @@
+<div class="space-y-6">
+  <header class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-violet-100">🎬 Nossos filmes</h1>
+      <p class="text-sm text-violet-300 mt-1">
+        Filmes que assistimos juntos ou queremos assistir
+      </p>
+    </div>
+    <button
+      class="px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:from-violet-700 hover:to-fuchsia-700 transition flex items-center gap-2 shadow-lg"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"
+        />
+      </svg>
+      <span>Adicionar filme</span>
+    </button>
+  </header>
+
+  <!-- Tabs: Assistidos / Lista de desejos -->
+  <div class="flex gap-2 border-b border-violet-700/40">
+    <button
+      class="px-4 py-2 text-sm font-medium text-violet-100 border-b-2 border-fuchsia-400 -mb-px"
+    >
+      Já assistimos
+    </button>
+    <button
+      class="px-4 py-2 text-sm font-medium text-violet-300 hover:text-violet-100 transition"
+    >
+      Queremos assistir
+    </button>
+  </div>
+
+  <!-- Lista vazia (placeholder) -->
+  <div
+    class="glass rounded-xl border border-violet-700/40 bg-white/5 p-12 text-center"
+  >
+    <div
+      class="w-20 h-20 mx-auto mb-4 rounded-full bg-violet-900/30 flex items-center justify-center"
+    >
+      <svg
+        class="w-10 h-10 text-violet-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
+        />
+      </svg>
+    </div>
+    <h3 class="text-lg font-medium text-violet-100 mb-2">Nenhum filme ainda</h3>
+    <p class="text-violet-300 text-sm mb-6">
+      Comece adicionando o primeiro filme que vocês assistiram juntos!
+    </p>
+    <button
+      class="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:from-violet-700 hover:to-fuchsia-700 transition shadow-lg"
+    >
+      Adicionar primeiro filme
+    </button>
+  </div>
+</div>

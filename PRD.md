@@ -32,7 +32,7 @@
 ## 4. Product Description
 
 - **Key Features Overview:**
-  _Couple Product Divulgation_, _Parent Likeability Ranking_, _Relationship Health Dashboard_, _Relationship Duration Clock_, _Playful Daily Challenge_, _Secure Messaging_, _Gift List_, _Important Date Calendar_, _Sexual Position Roullete_, _Fetiche List_, _Joint Goals Tracker_, _Store Preffered Executions of Daily Challenge_, _Jogos de Casal em Nosso Cantinho_, _Criar um Pet em nosso Cantinho_, _Movies Watched_, _Character Look-Alike List (Movies, TV & Animation)_.
+  _Couple Product Divulgation_, _Parent Likeability Ranking_, _Relationship Health Dashboard_, _Relationship Duration Clock_, _Playful Daily Challenge_, _Secure Messaging_, _Gift List_, _Important Date Calendar_, _Sexual Position Roullete_, _Fetiche List_, _Joint Goals Tracker_, _Store Preffered Executions of Daily Challenge_, _Jogos de Casal em Nosso Cantinho_, _Criar um Pet em nosso Cantinho_, _Movies Watched_, _Character Look-Alike List (Movies, TV & Animation)_, _Receitas do Casal_,.
 - **User Stories:**
 - **User Flows:**
 - **Wireframes / Mockups:**

@@ -181,5 +181,24 @@ export async function initDb() {
     console.warn("Migration (album_photos.media_type) note:", e.message);
   }
 
+  // Tabela para "Nossos Filmes"
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS movies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      couple_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      year INTEGER,
+      poster_url TEXT,
+      rating INTEGER CHECK(rating >= 1 AND rating <= 5),
+      notes TEXT,
+      status TEXT NOT NULL DEFAULT 'watchlist' CHECK(status IN ('watchlist', 'watched')),
+      watched_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (couple_id) REFERENCES couples(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_movies_couple ON movies(couple_id);
+    CREATE INDEX IF NOT EXISTS idx_movies_status ON movies(status);
+  `);
+
   return db;
 }

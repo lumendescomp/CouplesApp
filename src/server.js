@@ -15,6 +15,7 @@ import coupleRoutes from "./routes/couple.js";
 import profileRoutes from "./routes/profile.js";
 import cornerRoutes from "./routes/corner.js";
 import albumRoutes from "./routes/album.js";
+import moviesRoutes from "./routes/movies.js";
 import { initDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,6 +126,7 @@ app.use("/couple", ensureAuthed, coupleRoutes);
 app.use("/profile", ensureAuthed, profileRoutes);
 app.use("/corner", ensureAuthed, cornerRoutes);
 app.use("/album", ensureAuthed, albumRoutes);
+app.use("/movies", ensureAuthed, moviesRoutes);
 
 // 404
 app.use((req, res) => {
