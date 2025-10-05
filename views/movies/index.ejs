@@ -40,6 +40,31 @@
   #add-movie-modal, .scrollbar-thin {
     scroll-behavior: smooth;
   }
+
+  /* Animações da roleta */
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(234, 179, 8, 0.6); }
+  }
+
+  #roulette-carousel .movie-slot {
+    animation: none;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  #roulette-result > * {
+    animation: slideIn 0.5s ease-out;
+  }
 </style>
 
 <div class="container mx-auto px-4 py-8 max-w-7xl">
@@ -48,12 +73,26 @@
       <h1 class="text-3xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
         🎬 Nossos Filmes
       </h1>
-      <button class="add-movie-trigger w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-violet-500/50 hover:scale-105">
-        <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Adicionar Filme
-      </button>
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+        <button class="add-movie-trigger flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-violet-500/50 hover:scale-105">
+          <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Adicionar Filme
+        </button>
+        <button id="open-roulette-btn" class="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-pink-500/50 hover:scale-105">
+          <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          🎰 Roleta
+        </button>
+        <button id="open-game-btn" class="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-amber-500/50 hover:scale-105">
+          <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+          🎮 Jogo
+        </button>
+      </div>
     </div>
 
     <div class="flex border-b border-violet-700/30 mb-6 overflow-x-auto">
@@ -94,6 +133,8 @@
 </div>
 
 <%- include('_add_movie_modal', { tmdbConfigured }) %>
+<%- include('_movie_roulette_modal') %>
+<%- include('_rating_game_modal') %>
 
 <script>
 (function() {
@@ -220,5 +261,490 @@
       setTimeout(() => toast.remove(), 300);
     }, 3000);
   };
+
+  // ==================== ROLETA DE FILMES ====================
+  const watchlistMovies = <%- JSON.stringify(watchlistMovies) %>;
+  const rouletteModal = document.getElementById('movie-roulette-modal');
+  const rouletteModalContent = document.getElementById('roulette-modal-content');
+  const rouletteSelection = document.getElementById('roulette-selection');
+  const rouletteSpinner = document.getElementById('roulette-spinner');
+  let selectedMovies = [];
+  let rouletteInterval = null;
+
+  document.getElementById('open-roulette-btn')?.addEventListener('click', () => {
+    if (watchlistMovies.length === 0) {
+      window.showToast('Adicione filmes à lista "Queremos assistir" primeiro!', 'error');
+      return;
+    }
+    openRouletteModal();
+  });
+
+  function openRouletteModal() {
+    // Resetar estado
+    selectedMovies = [...watchlistMovies];
+    rouletteSelection.classList.remove('hidden');
+    rouletteSpinner.classList.add('hidden');
+    document.getElementById('roulette-result').classList.add('hidden');
+    
+    // Renderizar lista de filmes
+    const moviesList = document.getElementById('roulette-movies-list');
+    moviesList.innerHTML = watchlistMovies.map(movie => `
+      <label class="flex items-center gap-2 p-2 rounded bg-violet-900/20 border border-violet-700/30 hover:border-violet-600 cursor-pointer transition">
+        <input type="checkbox" checked class="roulette-checkbox w-4 h-4 accent-fuchsia-500" data-movie-id="${movie.id}">
+        <span class="text-sm text-violet-200 line-clamp-1">${movie.title}</span>
+      </label>
+    `).join('');
+
+    updateSelectedCount();
+    
+    rouletteModal.classList.remove('hidden');
+    setTimeout(() => {
+      rouletteModal.style.opacity = '1';
+      rouletteModalContent.style.transform = 'scale(1)';
+    }, 10);
+  }
+
+  function closeRouletteModal() {
+    rouletteModal.style.opacity = '0';
+    rouletteModalContent.style.transform = 'scale(0.9)';
+    if (rouletteInterval) clearInterval(rouletteInterval);
+    setTimeout(() => rouletteModal.classList.add('hidden'), 300);
+  }
+
+  document.getElementById('close-roulette-btn')?.addEventListener('click', closeRouletteModal);
+
+  document.getElementById('select-all-btn')?.addEventListener('click', () => {
+    document.querySelectorAll('.roulette-checkbox').forEach(cb => cb.checked = true);
+    updateSelectedCount();
+  });
+
+  document.getElementById('deselect-all-btn')?.addEventListener('click', () => {
+    document.querySelectorAll('.roulette-checkbox').forEach(cb => cb.checked = false);
+    updateSelectedCount();
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('roulette-checkbox')) {
+      updateSelectedCount();
+    }
+  });
+
+  function updateSelectedCount() {
+    const checked = document.querySelectorAll('.roulette-checkbox:checked');
+    selectedMovies = Array.from(checked).map(cb => {
+      const id = parseInt(cb.dataset.movieId);
+      return watchlistMovies.find(m => m.id === id);
+    }).filter(Boolean);
+    document.getElementById('selected-count').textContent = selectedMovies.length;
+    document.getElementById('spin-btn-selection').disabled = selectedMovies.length === 0;
+  }
+
+  document.getElementById('spin-btn-selection')?.addEventListener('click', startRoulette);
+  document.getElementById('spin-again-btn')?.addEventListener('click', () => {
+    document.getElementById('roulette-result').classList.add('hidden');
+    document.getElementById('spin-again-btn').classList.add('hidden');
+    document.getElementById('spin-btn-selection').classList.remove('hidden');
+    
+    // Resetar seleção
+    rouletteSelection.classList.remove('hidden');
+    rouletteSpinner.classList.add('hidden');
+  });
+
+  function startRoulette() {
+    console.log('startRoulette called, selectedMovies:', selectedMovies);
+    if (selectedMovies.length === 0) {
+      console.log('No movies selected!');
+      return;
+    }
+
+    // Esconder seleção, mostrar spinner
+    rouletteSelection.classList.add('hidden');
+    rouletteSpinner.classList.remove('hidden');
+    document.getElementById('spin-btn-selection').classList.add('hidden');
+    document.getElementById('roulette-result').classList.add('hidden');
+
+    // Criar carrossel com filmes repetidos para efeito infinito
+    const carousel = document.getElementById('roulette-carousel');
+    console.log('carousel element:', carousel);
+    const repeatCount = 5; // Repetir filmes para efeito contínuo
+    const allMovies = [];
+    
+    for (let i = 0; i < repeatCount; i++) {
+      allMovies.push(...selectedMovies);
+    }
+    
+    console.log('allMovies count:', allMovies.length);
+
+    // Renderizar todos os filmes no carrossel
+    carousel.innerHTML = allMovies.map(movie => `
+      <div class="movie-slot flex items-center gap-3 p-3 my-2 bg-violet-900/80 rounded-lg border-2 border-violet-600/50 backdrop-blur-sm" style="height: 140px; min-height: 140px;">
+        <div class="w-20 h-28 flex-shrink-0 rounded overflow-hidden bg-violet-950/50 border border-violet-700">
+          ${movie.poster_url ? 
+            `<img src="${movie.poster_url}" alt="${movie.title}" class="w-full h-full object-cover">` :
+            `<div class="w-full h-full flex items-center justify-center">
+              <svg class="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+              </svg>
+            </div>`
+          }
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-lg font-bold text-white drop-shadow-lg line-clamp-2">${movie.title}</h4>
+          <p class="text-sm text-violet-200 font-medium">${movie.year || ''}</p>
+        </div>
+      </div>
+    `).join('');
+    
+    console.log('carousel HTML rendered, length:', carousel.innerHTML.length);
+    console.log('carousel children count:', carousel.children.length);
+    console.log('Total height estimate:', allMovies.length * 144, 'px');
+
+    // Escolher filme vencedor (entre os filmes originais)
+    const winnerIndex = Math.floor(Math.random() * selectedMovies.length);
+    const winner = selectedMovies[winnerIndex];
+    console.log('Winner selected:', winner.title, 'at index', winnerIndex);
+
+    // Calcular posição final para centralizar o vencedor
+    const slotHeight = 144; // altura de cada slot (140px + 4px margin)
+    const viewportHeight = 480; // altura da janela de visualização
+    
+    // Encontrar o índice do filme vencedor no array completo (allMovies)
+    // Queremos usar uma cópia que esteja no meio do array para evitar edges
+    const middleRepetition = Math.floor(repeatCount / 2); // repetição do meio (índice 2 de 5)
+    const winnerPositionInAll = (middleRepetition * selectedMovies.length) + winnerIndex;
+    
+    // Calcular offset para centralizar o slot na janela
+    // O topo do slot deve estar a: (alturaJanela / 2) - (alturaSlot / 2)
+    const slotTopOffset = (viewportHeight / 2) - (slotHeight / 2);
+    
+    // Posição final: mover o carousel para que o filme vencedor fique centralizado
+    const finalPosition = -(winnerPositionInAll * slotHeight) + slotTopOffset;
+    
+    console.log('Final position calculated:', finalPosition, 'winnerPositionInAll:', winnerPositionInAll, 'slotTopOffset:', slotTopOffset);
+
+    // Resetar posição inicial do carousel
+    carousel.style.transform = 'translateY(0px)';
+    carousel.style.transition = 'none';
+    
+    // Dar um pequeno delay para garantir que o DOM foi atualizado
+    setTimeout(() => {
+      // Animação
+      animateSlotMachine(carousel, finalPosition, winner);
+    }, 100);
+  }
+
+  function animateSlotMachine(carousel, finalPosition, winner) {
+    console.log('animateSlotMachine started, finalPosition:', finalPosition);
+    let currentPosition = 0;
+    let velocity = 80; // Velocidade inicial (pixels por frame)
+    const deceleration = 0.97; // Taxa de desaceleração
+    
+    let frame = 0;
+    const maxFrames = 150;
+
+    function animate() {
+      frame++;
+      
+      // Log a cada 10 frames
+      if (frame % 10 === 0) {
+        console.log(`Frame ${frame}: currentPosition=${currentPosition.toFixed(0)}, velocity=${velocity.toFixed(2)}, target=${finalPosition}`);
+      }
+      
+      // Calcular distância até o alvo
+      const distanceToTarget = currentPosition - finalPosition; // Quanto falta para chegar
+      
+      if (frame < 30) {
+        // Aceleração inicial (primeiros 30 frames)
+        velocity = Math.min(velocity * 1.1, 120);
+      } else {
+        // Desaceleração progressiva
+        velocity *= deceleration;
+        
+        // Se estiver próximo do alvo, ajustar velocidade
+        if (distanceToTarget < 500) {
+          velocity = Math.min(velocity, distanceToTarget * 0.1);
+        }
+        
+        // Se chegou muito perto, parar
+        if (distanceToTarget < 2) {
+          console.log('STOPPING at position:', currentPosition);
+          currentPosition = finalPosition;
+          carousel.style.transform = `translateY(${currentPosition}px)`;
+          carousel.style.transition = 'transform 0.3s ease-out';
+          
+          // Efeito de "bounce" ao parar
+          setTimeout(() => {
+            carousel.style.transform = `translateY(${finalPosition - 10}px)`;
+            setTimeout(() => {
+              carousel.style.transform = `translateY(${finalPosition}px)`;
+              console.log('Animation complete, showing result');
+              showRouletteResult(winner);
+            }, 100);
+          }, 50);
+          return;
+        }
+      }
+
+      // Mover para baixo (negativo)
+      currentPosition -= velocity;
+      
+      // Garantir que não ultrapasse muito o alvo
+      if (currentPosition < finalPosition - 200) {
+        console.log('Went too far! Correcting position');
+        currentPosition = finalPosition - 50;
+        velocity = 10;
+      }
+      
+      carousel.style.transform = `translateY(${currentPosition}px)`;
+      carousel.style.transition = 'none';
+
+      if (frame < maxFrames && distanceToTarget > 2) {
+        requestAnimationFrame(animate);
+      } else {
+        console.log('Animation ended at frame:', frame, 'position:', currentPosition);
+        // Forçar posição final
+        currentPosition = finalPosition;
+        carousel.style.transform = `translateY(${finalPosition}px)`;
+        setTimeout(() => showRouletteResult(winner), 300);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function showRouletteResult(movie) {
+    // Efeitos sonoros visuais
+    const resultDiv = document.getElementById('roulette-result');
+    
+    setTimeout(() => {
+      resultDiv.innerHTML = `
+        <div class="text-7xl mb-4 animate-bounce">🎉</div>
+        <h3 class="text-3xl font-bold text-yellow-400 mb-3 animate-pulse">Filme Escolhido!</h3>
+        <p class="text-violet-300 mb-6">A roleta decidiu que vocês vão assistir:</p>
+        <div class="bg-gradient-to-br from-violet-950/80 to-fuchsia-950/80 rounded-xl p-6 border-2 border-yellow-400/50 shadow-2xl shadow-yellow-500/30 transform hover:scale-105 transition-all">
+          <div class="flex items-center justify-center gap-4 mb-4">
+            ${movie.poster_url ? 
+              `<img src="${movie.poster_url}" alt="${movie.title}" class="w-24 h-36 object-cover rounded-lg shadow-lg">` :
+              ''
+            }
+            <div class="text-left">
+              <h4 class="text-4xl font-bold text-yellow-300 mb-2">${movie.title}</h4>
+              <p class="text-2xl text-violet-200">${movie.year ? `(${movie.year})` : ''}</p>
+            </div>
+          </div>
+          <div class="flex justify-center gap-2 mt-4">
+            <span class="text-3xl">🍿</span>
+            <span class="text-3xl">🎬</span>
+            <span class="text-3xl">❤️</span>
+          </div>
+        </div>
+      `;
+      
+      resultDiv.classList.remove('hidden');
+      document.getElementById('spin-again-btn').classList.remove('hidden');
+      
+      // Confetti effect (emoji rain)
+      createConfetti();
+    }, 800);
+  }
+
+  function createConfetti() {
+    const emojis = ['🎉', '🎊', '⭐', '✨', '🎬', '🍿', '❤️', '💕'];
+    const container = document.getElementById('roulette-spinner');
+    
+    for (let i = 0; i < 30; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        confetti.style.position = 'absolute';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = '-50px';
+        confetti.style.fontSize = Math.random() * 20 + 20 + 'px';
+        confetti.style.opacity = '0';
+        confetti.style.transition = 'all 3s ease-out';
+        confetti.style.pointerEvents = 'none';
+        confetti.style.zIndex = '30';
+        
+        container.appendChild(confetti);
+        
+        setTimeout(() => {
+          confetti.style.top = '100%';
+          confetti.style.opacity = '1';
+          confetti.style.transform = `rotate(${Math.random() * 360}deg) translateX(${Math.random() * 200 - 100}px)`;
+        }, 50);
+        
+        setTimeout(() => {
+          confetti.remove();
+        }, 3000);
+      }, i * 100);
+    }
+  }
+
+  // ==================== JOGO DE ADIVINHAÇÃO ====================
+  const watchedMovies = <%- JSON.stringify(watchedMovies) %>;
+  const currentUserId = <%= currentUserId %>;
+  const gameModal = document.getElementById('rating-game-modal');
+  const gameModalContent = document.getElementById('game-modal-content');
+  let gameMovies = [];
+  let currentGameIndex = 0;
+  let gameScore = 0;
+  let gameErrors = 0;
+  let gameStreak = 0;
+  let maxStreak = 0;
+
+  document.getElementById('open-game-btn')?.addEventListener('click', () => {
+    // Filtrar filmes que o parceiro avaliou
+    gameMovies = watchedMovies.filter(m => m.hasPartnerRated);
+    
+    if (gameMovies.length === 0) {
+      window.showToast('Seu parceiro ainda não avaliou nenhum filme!', 'error');
+      return;
+    }
+
+    // Embaralhar
+    gameMovies = gameMovies.sort(() => Math.random() - 0.5);
+    startGame();
+  });
+
+  function startGame() {
+    currentGameIndex = 0;
+    gameScore = 0;
+    gameErrors = 0;
+    gameStreak = 0;
+    maxStreak = 0;
+
+    document.getElementById('game-question').classList.remove('hidden');
+    document.getElementById('game-options').classList.remove('hidden');
+    document.getElementById('game-feedback').classList.add('hidden');
+    document.getElementById('game-next-btn').classList.add('hidden');
+    document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('game-restart-btn').classList.add('hidden');
+
+    updateGameDisplay();
+    
+    gameModal.classList.remove('hidden');
+    setTimeout(() => {
+      gameModal.style.opacity = '1';
+      gameModalContent.style.transform = 'scale(1)';
+    }, 10);
+  }
+
+  function updateGameDisplay() {
+    const movie = gameMovies[currentGameIndex];
+    document.getElementById('game-poster').src = movie.poster_url || '';
+    document.getElementById('game-title').textContent = movie.title;
+    document.getElementById('game-year').textContent = movie.year ? `(${movie.year})` : '';
+    document.getElementById('game-score').textContent = gameScore;
+    document.getElementById('game-errors').textContent = gameErrors;
+    document.getElementById('game-streak').textContent = gameStreak;
+
+    // Resetar botões
+    document.querySelectorAll('.game-option-btn').forEach(btn => {
+      btn.disabled = false;
+      btn.classList.remove('bg-green-600', 'bg-red-600', 'border-green-500', 'border-red-500');
+      btn.classList.add('bg-violet-900/30', 'border-violet-700/40');
+    });
+  }
+
+  document.querySelectorAll('.game-option-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const selectedRating = parseInt(this.dataset.rating);
+      const movie = gameMovies[currentGameIndex];
+      const correctRating = movie.partnerRating;
+
+      // Desabilitar todos os botões
+      document.querySelectorAll('.game-option-btn').forEach(b => b.disabled = true);
+
+      const feedback = document.getElementById('game-feedback');
+      const feedbackText = document.getElementById('feedback-text');
+      const feedbackDetail = document.getElementById('feedback-detail');
+
+      if (selectedRating === correctRating) {
+        // ACERTOU
+        gameScore++;
+        gameStreak++;
+        maxStreak = Math.max(maxStreak, gameStreak);
+
+        this.classList.remove('bg-violet-900/30', 'border-violet-700/40');
+        this.classList.add('bg-green-600', 'border-green-500');
+
+        feedback.classList.remove('hidden', 'bg-red-950/50', 'border-red-700/30');
+        feedback.classList.add('bg-green-950/50', 'border-green-700/30');
+        feedbackText.textContent = '🎉 Correto!';
+        feedbackText.className = 'text-lg font-semibold mb-2 text-green-300';
+        feedbackDetail.textContent = `Você realmente conhece o gosto do seu parceiro! +${gameStreak} streak`;
+        feedbackDetail.className = 'text-sm text-green-200';
+      } else {
+        // ERROU
+        gameErrors++;
+        gameStreak = 0;
+
+        this.classList.remove('bg-violet-900/30', 'border-violet-700/40');
+        this.classList.add('bg-red-600', 'border-red-500');
+
+        // Mostrar resposta correta
+        document.querySelectorAll('.game-option-btn').forEach(b => {
+          if (parseInt(b.dataset.rating) === correctRating) {
+            b.classList.remove('bg-violet-900/30', 'border-violet-700/40');
+            b.classList.add('bg-green-600', 'border-green-500');
+          }
+        });
+
+        feedback.classList.remove('hidden', 'bg-green-950/50', 'border-green-700/30');
+        feedback.classList.add('bg-red-950/50', 'border-red-700/30');
+        feedbackText.textContent = '❌ Ops! Errou...';
+        feedbackText.className = 'text-lg font-semibold mb-2 text-red-300';
+        feedbackDetail.textContent = `A resposta correta era ${correctRating} estrelas`;
+        feedbackDetail.className = 'text-sm text-red-200';
+      }
+
+      updateGameDisplay();
+
+      // Mostrar botão de próximo ou fim
+      currentGameIndex++;
+      if (currentGameIndex < gameMovies.length) {
+        document.getElementById('game-next-btn').classList.remove('hidden');
+      } else {
+        endGame();
+      }
+    });
+  });
+
+  document.getElementById('game-next-btn')?.addEventListener('click', () => {
+    document.getElementById('game-feedback').classList.add('hidden');
+    document.getElementById('game-next-btn').classList.add('hidden');
+    document.getElementById('game-question').classList.remove('hidden');
+    document.getElementById('game-options').classList.remove('hidden');
+    updateGameDisplay();
+  });
+
+  function endGame() {
+    document.getElementById('game-question').classList.add('hidden');
+    document.getElementById('game-options').classList.add('hidden');
+    document.getElementById('game-feedback').classList.add('hidden');
+    document.getElementById('game-next-btn').classList.add('hidden');
+    document.getElementById('game-over').classList.remove('hidden');
+    document.getElementById('game-restart-btn').classList.remove('hidden');
+
+    const total = gameScore + gameErrors;
+    const accuracy = total > 0 ? Math.round((gameScore / total) * 100) : 0;
+
+    document.getElementById('final-score').textContent = gameScore;
+    document.getElementById('final-total').textContent = total;
+    document.getElementById('final-accuracy').textContent = accuracy + '%';
+    document.getElementById('final-streak').textContent = maxStreak;
+  }
+
+  document.getElementById('game-restart-btn')?.addEventListener('click', () => {
+    gameMovies = gameMovies.sort(() => Math.random() - 0.5);
+    startGame();
+  });
+
+  document.getElementById('close-game-btn')?.addEventListener('click', () => {
+    gameModal.style.opacity = '0';
+    gameModalContent.style.transform = 'scale(0.9)';
+    setTimeout(() => gameModal.classList.add('hidden'), 300);
+  });
+
 })();
 </script>

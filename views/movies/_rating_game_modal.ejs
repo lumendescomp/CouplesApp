@@ -1,0 +1,107 @@
+<!-- Modal do Jogo de Adivinhação de Ratings -->
+<div
+  id="rating-game-modal"
+  class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+  style="transition: opacity 0.3s ease"
+>
+  <div
+    class="glass rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-950/95 to-fuchsia-950/95 w-full max-w-2xl shadow-2xl flex flex-col"
+    style="transform: scale(0.9); transition: transform 0.3s ease"
+    id="game-modal-content"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-violet-700/40 flex-shrink-0">
+      <div>
+        <h2 class="text-2xl font-bold text-violet-100 flex items-center gap-2">
+          🎮 Adivinhe o Rating do Parceiro
+        </h2>
+        <p class="text-violet-300 text-sm mt-1">Quanto seu parceiro deu para esse filme?</p>
+      </div>
+      <button
+        id="close-game-btn"
+        class="p-2 rounded-full hover:bg-white/10 text-violet-100 transition"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6 flex-1">
+      <!-- Placar -->
+      <div class="flex justify-center gap-4 mb-6">
+        <div class="text-center">
+          <div class="text-3xl font-bold text-green-400" id="game-score">0</div>
+          <div class="text-xs text-violet-300">Acertos</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-red-400" id="game-errors">0</div>
+          <div class="text-xs text-violet-300">Erros</div>
+        </div>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-yellow-400" id="game-streak">0</div>
+          <div class="text-xs text-violet-300">Sequência</div>
+        </div>
+      </div>
+
+      <!-- Filme Atual -->
+      <div id="game-question" class="text-center mb-6">
+        <div class="w-40 mx-auto mb-4">
+          <div class="aspect-[2/3] bg-violet-900/20 rounded-lg overflow-hidden border border-violet-700/40 shadow-lg">
+            <img id="game-poster" src="" alt="" class="w-full h-full object-cover" />
+          </div>
+        </div>
+        <h3 id="game-title" class="text-2xl font-bold text-violet-100 mb-2"></h3>
+        <p id="game-year" class="text-violet-300 mb-4"></p>
+        <p class="text-lg text-fuchsia-300 font-semibold">Qual foi o rating que seu parceiro deu?</p>
+      </div>
+
+      <!-- Opções de Rating -->
+      <div id="game-options" class="flex justify-center gap-2 mb-6">
+        <% for (let i = 1; i <= 5; i++) { %>
+        <button
+          class="game-option-btn w-14 h-14 rounded-lg border-2 border-violet-700/40 bg-violet-900/30 hover:bg-violet-800/50 hover:border-fuchsia-500 transition-all flex items-center justify-center text-2xl font-bold text-violet-200 hover:text-yellow-400 hover:scale-110"
+          data-rating="<%= i %>"
+        >
+          <%= i %>
+        </button>
+        <% } %>
+      </div>
+
+      <!-- Feedback -->
+      <div id="game-feedback" class="hidden text-center p-4 rounded-lg mb-4">
+        <p id="feedback-text" class="text-lg font-semibold mb-2"></p>
+        <p id="feedback-detail" class="text-sm"></p>
+      </div>
+
+      <!-- Próximo -->
+      <div class="flex justify-center gap-3">
+        <button
+          id="game-next-btn"
+          class="hidden px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-bold rounded-lg transition-all shadow-lg hover:scale-105"
+        >
+          Próximo Filme →
+        </button>
+        <button
+          id="game-restart-btn"
+          class="hidden px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-all"
+        >
+          🔄 Jogar Novamente
+        </button>
+      </div>
+
+      <!-- Game Over -->
+      <div id="game-over" class="hidden text-center">
+        <div class="text-6xl mb-4">🏆</div>
+        <h3 class="text-3xl font-bold text-yellow-400 mb-4">Fim de Jogo!</h3>
+        <div class="bg-violet-950/50 rounded-lg p-6 border border-violet-700/30">
+          <p class="text-xl text-violet-200 mb-2">Você acertou:</p>
+          <p class="text-5xl font-bold text-green-400 mb-4"><span id="final-score">0</span>/<span id="final-total">0</span></p>
+          <p class="text-violet-300">Precisão: <span id="final-accuracy" class="text-yellow-300 font-bold">0%</span></p>
+          <p class="text-violet-300 mt-2">Maior sequência: <span id="final-streak" class="text-fuchsia-300 font-bold">0</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

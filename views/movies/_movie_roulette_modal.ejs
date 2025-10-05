@@ -1,0 +1,115 @@
+<!-- Modal da Roleta de Filmes -->
+<div
+  id="movie-roulette-modal"
+  class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+  style="transition: opacity 0.3s ease"
+>
+  <div
+    class="glass rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-950/95 to-fuchsia-950/95 w-full max-w-3xl shadow-2xl flex flex-col"
+    style="transform: scale(0.9); transition: transform 0.3s ease"
+    id="roulette-modal-content"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-violet-700/40 flex-shrink-0">
+      <h2 class="text-2xl font-bold text-violet-100 flex items-center gap-2">
+        🎰 Roleta de Filmes
+      </h2>
+      <button
+        id="close-roulette-btn"
+        class="p-2 rounded-full hover:bg-white/10 text-violet-100 transition"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6 flex-1 overflow-y-auto">
+      <!-- Seleção de Filmes -->
+      <div id="roulette-selection" class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-violet-200">Selecione os filmes para a roleta</h3>
+          <div class="flex gap-2">
+            <button id="select-all-btn" class="px-3 py-1 bg-violet-600/50 hover:bg-violet-600 text-white text-sm rounded transition">
+              Selecionar Todos
+            </button>
+            <button id="deselect-all-btn" class="px-3 py-1 bg-violet-600/30 hover:bg-violet-600/50 text-white text-sm rounded transition">
+              Desmarcar Todos
+            </button>
+          </div>
+        </div>
+        
+        <div id="roulette-movies-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin mb-4">
+          <!-- Filmes serão inseridos aqui via JS -->
+        </div>
+        
+        <p class="text-violet-300 text-sm mb-4">
+          <span id="selected-count">0</span> filmes selecionados
+        </p>
+
+        <!-- Botão de Girar (visível apenas na seleção) -->
+        <div class="flex justify-center">
+          <button
+            id="spin-btn-selection"
+            class="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-bold rounded-lg transition-all shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            🎲 Girar Roleta!
+          </button>
+        </div>
+      </div>
+
+      <!-- Roleta Visual -->
+      <div id="roulette-spinner" class="hidden">
+        <div class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-8 border border-violet-700/30 overflow-hidden">
+          
+          <!-- Seta indicadora -->
+          <div class="absolute top-8 left-1/2 -translate-x-1/2 z-20">
+            <div class="text-5xl animate-bounce">👇</div>
+          </div>
+
+          <!-- Container da Slot Machine -->
+          <div class="relative mx-auto" style="width: 280px; height: 480px; perspective: 1000px;">
+            
+            <!-- Frame decorativo -->
+            <div class="absolute inset-0 rounded-2xl border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-500/10 to-pink-500/10 shadow-2xl shadow-yellow-500/20 z-10 pointer-events-none">
+              <!-- Luzes piscando -->
+              <div class="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse shadow-lg shadow-yellow-400"></div>
+              <div class="absolute -top-2 -right-2 w-4 h-4 bg-pink-400 rounded-full animate-pulse shadow-lg shadow-pink-400" style="animation-delay: 0.3s"></div>
+              <div class="absolute -bottom-2 -left-2 w-4 h-4 bg-fuchsia-400 rounded-full animate-pulse shadow-lg shadow-fuchsia-400" style="animation-delay: 0.6s"></div>
+              <div class="absolute -bottom-2 -right-2 w-4 h-4 bg-violet-400 rounded-full animate-pulse shadow-lg shadow-violet-400" style="animation-delay: 0.9s"></div>
+            </div>
+
+            <!-- Janela de visualização -->
+            <div class="absolute inset-0 overflow-hidden rounded-xl bg-violet-950/30">
+              <!-- Carrossel vertical de filmes -->
+              <div id="roulette-carousel" class="relative w-full" style="transform: translateY(0px); transition: transform 0.05s linear;">
+                <!-- Filmes serão inseridos aqui dinamicamente -->
+              </div>
+            </div>
+
+            <!-- Destaque central (brilho) -->
+            <div class="absolute top-1/2 left-0 right-0 h-48 -translate-y-1/2 pointer-events-none z-10">
+              <div class="absolute inset-0 bg-gradient-to-b from-transparent via-yellow-400/20 to-transparent"></div>
+              <div class="absolute inset-0 border-y-2 border-yellow-400/40"></div>
+            </div>
+          </div>
+
+          <!-- Resultado Final -->
+          <div id="roulette-result" class="hidden text-center mt-6">
+          </div>
+
+          <!-- Botão Girar Novamente (aparece após resultado) -->
+          <div class="flex justify-center gap-3 mt-6">
+            <button
+              id="spin-again-btn"
+              class="hidden px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-all"
+            >
+              🔄 Girar Novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
