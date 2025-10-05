@@ -117,7 +117,7 @@
   // Event delegation para avaliações de filmes
   document.addEventListener("click", async (e) => {
     const starBtn = e.target.closest(".star-btn");
-    if (!starBtn || starBtn.disabled) return;
+    if (!starBtn) return;
 
     const rating = parseInt(starBtn.dataset.rating);
     const movieId = starBtn.dataset.movieId;
@@ -142,8 +142,13 @@
       const data = await response.json();
       
       if (data.success) {
-        // Recarregar a página para mostrar as avaliações atualizadas
-        window.location.reload();
+        // Atualizar UI sem reload da página
+        updateStarsDisplay(movieId, rating, true);
+        
+        // Mostrar toast de sucesso
+        if (window.showToast) {
+          window.showToast(`Avaliação de ${rating} estrela${rating > 1 ? 's' : ''} salva!`);
+        }
       } else {
         throw new Error(data.error || "Erro ao avaliar filme");
       }
@@ -152,6 +157,40 @@
       window.showToast(error.message || "Erro ao avaliar filme", "error");
     }
   });
+
+  // Função para atualizar a exibição das estrelas
+  function updateStarsDisplay(movieId, rating, isCurrentUser) {
+    // Encontrar todos os botões de estrela deste filme
+    const starButtons = document.querySelectorAll(`button.star-btn[data-movie-id="${movieId}"]`);
+    
+    starButtons.forEach((btn) => {
+      const starRating = parseInt(btn.dataset.rating);
+      const star = btn.querySelector('svg');
+      
+      if (!star) return;
+
+      if (starRating <= rating) {
+        // Estrela preenchida
+        star.classList.remove('text-violet-600');
+        star.classList.add('text-fuchsia-400', 'fill-fuchsia-400');
+        star.setAttribute('fill', 'currentColor');
+      } else {
+        // Estrela vazia
+        star.classList.remove('text-fuchsia-400', 'fill-fuchsia-400');
+        star.classList.add('text-violet-600');
+        star.setAttribute('fill', 'none');
+      }
+    });
+
+    // Atualizar texto de instrução no card
+    const movieCard = document.querySelector(`.movie-card[data-movie-id="${movieId}"]`);
+    if (movieCard) {
+      const instructionSpan = movieCard.querySelector('.text-\\[10px\\].text-violet-400');
+      if (instructionSpan) {
+        instructionSpan.textContent = 'Clique para alterar';
+      }
+    }
+  }
 
   document.querySelectorAll(".add-movie-trigger").forEach((btn) => {
     btn.addEventListener("click", () => {

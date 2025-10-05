@@ -117,10 +117,9 @@
         <div class="flex items-center gap-1" data-movie-id="<%= movie.id %>">
           <% for (let i = 1; i <= 5; i++) { %>
           <button
-            class="star-btn p-0 transition-transform hover:scale-110 <%= movie.hasCurrentUserRated ? 'cursor-default' : '' %>"
+            class="star-btn p-0 transition-transform hover:scale-110"
             data-rating="<%= i %>"
             data-movie-id="<%= movie.id %>"
-            <%= movie.hasCurrentUserRated ? 'disabled' : '' %>
           >
             <svg
               class="w-4 h-4 <%= movie.currentUserRating >= i ? 'text-fuchsia-400 fill-fuchsia-400' : 'text-violet-600' %>"
@@ -137,9 +136,9 @@
             </svg>
           </button>
           <% } %>
-          <% if (!movie.hasCurrentUserRated) { %>
-          <span class="text-[10px] text-violet-400 ml-1">Clique para avaliar</span>
-          <% } %>
+          <span class="text-[10px] text-violet-400 ml-1">
+            <%= movie.hasCurrentUserRated ? 'Clique para alterar' : 'Clique para avaliar' %>
+          </span>
         </div>
       </div>
 
