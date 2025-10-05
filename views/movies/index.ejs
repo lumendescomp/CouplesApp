@@ -340,15 +340,6 @@
   }
 
   document.getElementById('spin-btn-selection')?.addEventListener('click', startRoulette);
-  document.getElementById('spin-again-btn')?.addEventListener('click', () => {
-    document.getElementById('roulette-result').classList.add('hidden');
-    document.getElementById('spin-again-btn').classList.add('hidden');
-    document.getElementById('spin-btn-selection').classList.remove('hidden');
-    
-    // Resetar seleção
-    rouletteSelection.classList.remove('hidden');
-    rouletteSpinner.classList.add('hidden');
-  });
 
   function startRoulette() {
     console.log('startRoulette called, selectedMovies:', selectedMovies);
@@ -366,7 +357,7 @@
     // Criar carrossel com filmes repetidos para efeito infinito
     const carousel = document.getElementById('roulette-carousel');
     console.log('carousel element:', carousel);
-    const repeatCount = 5; // Repetir filmes para efeito contínuo
+    const repeatCount = 10; // Mais repetições para rolagem mais longa
     const allMovies = [];
     
     for (let i = 0; i < repeatCount; i++) {
@@ -409,9 +400,9 @@
     const viewportHeight = 480; // altura da janela de visualização
     
     // Encontrar o índice do filme vencedor no array completo (allMovies)
-    // Queremos usar uma cópia que esteja no meio do array para evitar edges
-    const middleRepetition = Math.floor(repeatCount / 2); // repetição do meio (índice 2 de 5)
-    const winnerPositionInAll = (middleRepetition * selectedMovies.length) + winnerIndex;
+    // Vamos usar uma repetição bem no final para dar tempo de rolar
+    const targetRepetition = repeatCount - 2; // Penúltima repetição
+    const winnerPositionInAll = (targetRepetition * selectedMovies.length) + winnerIndex;
     
     // Calcular offset para centralizar o slot na janela
     // O topo do slot deve estar a: (alturaJanela / 2) - (alturaSlot / 2)
@@ -420,7 +411,7 @@
     // Posição final: mover o carousel para que o filme vencedor fique centralizado
     const finalPosition = -(winnerPositionInAll * slotHeight) + slotTopOffset;
     
-    console.log('Final position calculated:', finalPosition, 'winnerPositionInAll:', winnerPositionInAll, 'slotTopOffset:', slotTopOffset);
+    console.log('Final position calculated:', finalPosition, 'winnerPositionInAll:', winnerPositionInAll, 'slotTopOffset:', slotTopOffset, 'totalMovies:', allMovies.length);
 
     // Resetar posição inicial do carousel
     carousel.style.transform = 'translateY(0px)';
@@ -436,77 +427,77 @@
   function animateSlotMachine(carousel, finalPosition, winner) {
     console.log('animateSlotMachine started, finalPosition:', finalPosition);
     let currentPosition = 0;
-    let velocity = 80; // Velocidade inicial (pixels por frame)
-    const deceleration = 0.97; // Taxa de desaceleração
+    let velocity = 20; // Velocidade inicial mais lenta
     
     let frame = 0;
-    const maxFrames = 150;
+    const accelerationFrames = 60; // Acelera por mais tempo (60 frames = ~1 segundo)
+    const maxVelocity = 150; // Velocidade máxima mais alta
 
     function animate() {
       frame++;
       
-      // Log a cada 10 frames
-      if (frame % 10 === 0) {
-        console.log(`Frame ${frame}: currentPosition=${currentPosition.toFixed(0)}, velocity=${velocity.toFixed(2)}, target=${finalPosition}`);
+      // Calcular distância restante (positivo = ainda precisa descer)
+      const remainingDistance = Math.abs(finalPosition - currentPosition);
+      
+      // Log a cada 20 frames
+      if (frame % 20 === 0) {
+        console.log(`Frame ${frame}: pos=${currentPosition.toFixed(0)}, vel=${velocity.toFixed(1)}, remaining=${remainingDistance.toFixed(0)}, target=${finalPosition}`);
       }
       
-      // Calcular distância até o alvo
-      const distanceToTarget = currentPosition - finalPosition; // Quanto falta para chegar
-      
-      if (frame < 30) {
-        // Aceleração inicial (primeiros 30 frames)
-        velocity = Math.min(velocity * 1.1, 120);
-      } else {
-        // Desaceleração progressiva
-        velocity *= deceleration;
+      // Fase de aceleração (primeiros 60 frames)
+      if (frame < accelerationFrames) {
+        velocity = Math.min(velocity * 1.15, maxVelocity);
+      } 
+      // Fase de cruzeiro (velocidade constante por um tempo)
+      else if (remainingDistance > 1500) {
+        // Manter velocidade alta enquanto estiver longe
+        velocity = Math.min(velocity * 1.02, maxVelocity);
+      }
+      // Fase de desaceleração
+      else if (remainingDistance > 500) {
+        // Desaceleração gradual
+        velocity *= 0.96;
+      }
+      else if (remainingDistance > 200) {
+        // Desaceleração mais forte
+        velocity = Math.max(remainingDistance / 6, 10);
+      }
+      else {
+        // Desaceleração final
+        velocity = Math.max(remainingDistance / 4, 3);
         
-        // Se estiver próximo do alvo, ajustar velocidade
-        if (distanceToTarget < 500) {
-          velocity = Math.min(velocity, distanceToTarget * 0.1);
-        }
-        
-        // Se chegou muito perto, parar
-        if (distanceToTarget < 2) {
-          console.log('STOPPING at position:', currentPosition);
-          currentPosition = finalPosition;
-          carousel.style.transform = `translateY(${currentPosition}px)`;
+        // Parar quando estiver muito próximo
+        if (remainingDistance < 8 && velocity < 8) {
+          console.log('STOPPING at position:', currentPosition, '(target:', finalPosition, ')');
+          carousel.style.transform = `translateY(${finalPosition}px)`;
           carousel.style.transition = 'transform 0.3s ease-out';
           
           // Efeito de "bounce" ao parar
           setTimeout(() => {
-            carousel.style.transform = `translateY(${finalPosition - 10}px)`;
+            carousel.style.transform = `translateY(${finalPosition + 20}px)`;
             setTimeout(() => {
               carousel.style.transform = `translateY(${finalPosition}px)`;
               console.log('Animation complete, showing result');
               showRouletteResult(winner);
-            }, 100);
-          }, 50);
+            }, 150);
+          }, 100);
           return;
         }
       }
 
-      // Mover para baixo (negativo)
+      // Mover para baixo (direção negativa)
       currentPosition -= velocity;
       
-      // Garantir que não ultrapasse muito o alvo
-      if (currentPosition < finalPosition - 200) {
-        console.log('Went too far! Correcting position');
-        currentPosition = finalPosition - 50;
-        velocity = 10;
+      // Não ultrapassar o alvo
+      if (currentPosition < finalPosition) {
+        currentPosition = finalPosition;
       }
       
       carousel.style.transform = `translateY(${currentPosition}px)`;
       carousel.style.transition = 'none';
 
-      if (frame < maxFrames && distanceToTarget > 2) {
-        requestAnimationFrame(animate);
-      } else {
-        console.log('Animation ended at frame:', frame, 'position:', currentPosition);
-        // Forçar posição final
-        currentPosition = finalPosition;
-        carousel.style.transform = `translateY(${finalPosition}px)`;
-        setTimeout(() => showRouletteResult(winner), 300);
-      }
+      // Continuar animação
+      requestAnimationFrame(animate);
     }
 
     requestAnimationFrame(animate);
@@ -538,10 +529,25 @@
             <span class="text-3xl">❤️</span>
           </div>
         </div>
+        
+        <!-- Botão Girar Novamente dentro do resultado -->
+        <button
+          id="spin-again-btn"
+          class="mt-6 px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:scale-105"
+        >
+          🔄 Girar Novamente
+        </button>
       `;
       
       resultDiv.classList.remove('hidden');
-      document.getElementById('spin-again-btn').classList.remove('hidden');
+      
+      // Adicionar event listener para o novo botão
+      document.getElementById('spin-again-btn')?.addEventListener('click', () => {
+        document.getElementById('roulette-result').classList.add('hidden');
+        rouletteSelection.classList.remove('hidden');
+        rouletteSpinner.classList.add('hidden');
+        document.getElementById('spin-btn-selection').classList.remove('hidden');
+      });
       
       // Confetti effect (emoji rain)
       createConfetti();

@@ -60,8 +60,8 @@
       </div>
 
       <!-- Roleta Visual -->
-      <div id="roulette-spinner" class="hidden">
-        <div class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-8 border border-violet-700/30 overflow-hidden">
+      <div id="roulette-spinner" class="hidden relative" style="min-height: 700px;">
+        <div class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-8 border border-violet-700/30 overflow-visible">
           
           <!-- Seta indicadora -->
           <div class="absolute top-8 left-1/2 -translate-x-1/2 z-20">
@@ -95,18 +95,10 @@
             </div>
           </div>
 
-          <!-- Resultado Final -->
-          <div id="roulette-result" class="hidden text-center mt-6">
-          </div>
-
-          <!-- Botão Girar Novamente (aparece após resultado) -->
-          <div class="flex justify-center gap-3 mt-6">
-            <button
-              id="spin-again-btn"
-              class="hidden px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-all"
-            >
-              🔄 Girar Novamente
-            </button>
+          <!-- Resultado Final (posição absoluta para não empurrar conteúdo) -->
+          <div id="roulette-result" class="hidden absolute left-0 right-0 text-center px-4" style="top: 520px;">
+            <!-- O conteúdo do resultado será inserido aqui via JS -->
+            <!-- E o botão será adicionado junto -->
           </div>
         </div>
       </div>
