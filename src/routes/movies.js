@@ -35,12 +35,26 @@ router.get("/", (req, res) => {
   const watchedMovies = db
     .prepare(
       `
-    SELECT * FROM movies 
-    WHERE couple_id = ? AND status = 'watched'
-    ORDER BY watched_at DESC, created_at DESC
+    SELECT m.*,
+           r1.rating as partner1_rating,
+           r1.notes as partner1_notes,
+           r2.rating as partner2_rating,
+           r2.notes as partner2_notes,
+           (r1.user_id = ?) as current_user_is_partner1
+    FROM movies m
+    LEFT JOIN movie_ratings r1 ON m.id = r1.movie_id AND r1.user_id = ?
+    LEFT JOIN movie_ratings r2 ON m.id = r2.movie_id AND r2.user_id = ? AND r2.user_id != ?
+    WHERE m.couple_id = ? AND m.status = 'watched'
+    ORDER BY m.watched_at DESC, m.created_at DESC
   `
     )
-    .all(couple.id);
+    .all(
+      userId,
+      userId,
+      couple.partner1_id === userId ? couple.partner2_id : couple.partner1_id,
+      userId,
+      couple.id
+    );
 
   const watchlistMovies = db
     .prepare(
@@ -52,10 +66,23 @@ router.get("/", (req, res) => {
     )
     .all(couple.id);
 
+  // Adicionar informação de quem avaliou
+  watchedMovies.forEach((movie) => {
+    movie.currentUserRating = movie.current_user_is_partner1
+      ? movie.partner1_rating
+      : movie.partner2_rating;
+    movie.partnerRating = movie.current_user_is_partner1
+      ? movie.partner2_rating
+      : movie.partner1_rating;
+    movie.hasCurrentUserRated = !!movie.currentUserRating;
+    movie.hasPartnerRated = !!movie.partnerRating;
+  });
+
   res.render("movies/index", {
     watchedMovies,
     watchlistMovies,
     couple,
+    currentUserId: userId,
     tmdbConfigured: isApiConfigured(),
   });
 });
@@ -120,12 +147,12 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Título é obrigatório" });
     }
 
-    // Inserir filme
+    // Inserir filme (sem rating no filme)
     const result = db
       .prepare(
         `
-      INSERT INTO movies (couple_id, title, year, poster_url, status, rating, notes, watched_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO movies (couple_id, title, year, poster_url, status, notes, watched_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
       )
       .run(
@@ -134,14 +161,25 @@ router.post("/", async (req, res) => {
         year || null,
         posterUrl || null,
         status,
-        rating || null,
         notes || null,
         status === "watched" ? new Date().toISOString() : null
       );
 
+    const movieId = result.lastInsertRowid;
+
+    // Se houver rating, inserir na tabela movie_ratings
+    if (rating && status === "watched") {
+      db.prepare(
+        `
+        INSERT INTO movie_ratings (movie_id, user_id, rating, notes)
+        VALUES (?, ?, ?, ?)
+      `
+      ).run(movieId, userId, rating, notes || null);
+    }
+
     res.json({
       success: true,
-      movieId: result.lastInsertRowid,
+      movieId: movieId,
     });
   } catch (error) {
     console.error("Erro ao adicionar filme:", error);
@@ -177,7 +215,7 @@ router.put("/:id", (req, res) => {
 
     const { title, year, posterUrl, status, rating, notes } = req.body;
 
-    // Atualizar filme
+    // Atualizar dados básicos do filme
     db.prepare(
       `
       UPDATE movies 
@@ -185,8 +223,6 @@ router.put("/:id", (req, res) => {
           year = COALESCE(?, year),
           poster_url = COALESCE(?, poster_url),
           status = COALESCE(?, status),
-          rating = ?,
-          notes = ?,
           watched_at = CASE 
             WHEN ? = 'watched' AND status = 'watchlist' THEN datetime('now')
             WHEN ? = 'watchlist' THEN NULL
@@ -199,12 +235,38 @@ router.put("/:id", (req, res) => {
       year || null,
       posterUrl || null,
       status || null,
-      rating !== undefined ? rating : movie.rating,
-      notes !== undefined ? notes : movie.notes,
       status,
       status,
       movieId
     );
+
+    // Se houver rating, atualizar ou inserir na tabela movie_ratings
+    if (rating !== undefined && status === "watched") {
+      const existingRating = db
+        .prepare(
+          "SELECT id FROM movie_ratings WHERE movie_id = ? AND user_id = ?"
+        )
+        .get(movieId, userId);
+
+      if (existingRating) {
+        // Atualizar rating existente
+        db.prepare(
+          `
+          UPDATE movie_ratings 
+          SET rating = ?, notes = ?, updated_at = datetime('now')
+          WHERE movie_id = ? AND user_id = ?
+        `
+        ).run(rating, notes || null, movieId, userId);
+      } else {
+        // Inserir novo rating
+        db.prepare(
+          `
+          INSERT INTO movie_ratings (movie_id, user_id, rating, notes)
+          VALUES (?, ?, ?, ?)
+        `
+        ).run(movieId, userId, rating, notes || null);
+      }
+    }
 
     res.json({ success: true });
   } catch (error) {

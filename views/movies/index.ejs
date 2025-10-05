@@ -70,6 +70,39 @@
     });
   });
 
+  // Event delegation para avaliações de filmes
+  document.addEventListener("click", async (e) => {
+    const starBtn = e.target.closest(".star-btn");
+    if (!starBtn || starBtn.disabled) return;
+
+    const rating = parseInt(starBtn.dataset.rating);
+    const movieId = starBtn.dataset.movieId;
+
+    if (!rating || !movieId) return;
+
+    try {
+      const response = await fetch(`/movies/${movieId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+
+      if (!response.ok) throw new Error("Erro ao avaliar filme");
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Recarregar a página para mostrar as avaliações atualizadas
+        window.location.reload();
+      } else {
+        throw new Error(data.error || "Erro ao avaliar filme");
+      }
+    } catch (error) {
+      console.error("Erro:", error);
+      window.showToast(error.message || "Erro ao avaliar filme", "error");
+    }
+  });
+
   document.querySelectorAll(".add-movie-trigger").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (window.openAddMovieModal) {

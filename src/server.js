@@ -45,8 +45,8 @@ app.use(
           "https://fonts.googleapis.com",
         ],
         "font-src": ["'self'", "https://fonts.gstatic.com"],
-        // Permite imagens locais e data: para ícones/toasts
-        "img-src": ["'self'", "data:"],
+        // Permite imagens locais, data: para ícones/toasts e TMDB para posters de filmes
+        "img-src": ["'self'", "data:", "https://image.tmdb.org"],
         // Permite vídeos locais (sem data:)
         "media-src": ["'self'"],
       },

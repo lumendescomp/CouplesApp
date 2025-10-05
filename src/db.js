@@ -200,5 +200,23 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_movies_status ON movies(status);
   `);
 
+  // Tabela para avaliações individuais dos filmes
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS movie_ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      movie_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      UNIQUE(movie_id, user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_movie_ratings_movie ON movie_ratings(movie_id);
+    CREATE INDEX IF NOT EXISTS idx_movie_ratings_user ON movie_ratings(user_id);
+  `);
+
   return db;
 }
