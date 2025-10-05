@@ -280,11 +280,18 @@
   });
 
   function openRouletteModal() {
-    // Resetar estado
+    // Resetar estado completamente
     selectedMovies = [...watchlistMovies];
     rouletteSelection.classList.remove('hidden');
     rouletteSpinner.classList.add('hidden');
     document.getElementById('roulette-result').classList.add('hidden');
+    
+    // Garantir que o botão de girar está visível
+    const spinBtn = document.getElementById('spin-btn-selection');
+    if (spinBtn) {
+      spinBtn.classList.remove('hidden');
+      spinBtn.disabled = false;
+    }
     
     // Renderizar lista de filmes
     const moviesList = document.getElementById('roulette-movies-list');
@@ -308,7 +315,20 @@
     rouletteModal.style.opacity = '0';
     rouletteModalContent.style.transform = 'scale(0.9)';
     if (rouletteInterval) clearInterval(rouletteInterval);
-    setTimeout(() => rouletteModal.classList.add('hidden'), 300);
+    
+    // Resetar estado ao fechar
+    setTimeout(() => {
+      rouletteModal.classList.add('hidden');
+      // Resetar visualizações
+      rouletteSelection.classList.remove('hidden');
+      rouletteSpinner.classList.add('hidden');
+      document.getElementById('roulette-result').classList.add('hidden');
+      // Garantir que o botão esteja visível para próxima vez
+      const spinBtn = document.getElementById('spin-btn-selection');
+      if (spinBtn) {
+        spinBtn.classList.remove('hidden');
+      }
+    }, 300);
   }
 
   document.getElementById('close-roulette-btn')?.addEventListener('click', closeRouletteModal);
