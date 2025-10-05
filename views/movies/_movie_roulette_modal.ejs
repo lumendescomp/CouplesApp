@@ -73,11 +73,6 @@
             
             <!-- Frame decorativo -->
             <div class="absolute inset-0 rounded-2xl border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-500/10 to-pink-500/10 shadow-2xl shadow-yellow-500/20 z-10 pointer-events-none">
-              <!-- Luzes piscando -->
-              <div class="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse shadow-lg shadow-yellow-400"></div>
-              <div class="absolute -top-2 -right-2 w-4 h-4 bg-pink-400 rounded-full animate-pulse shadow-lg shadow-pink-400" style="animation-delay: 0.3s"></div>
-              <div class="absolute -bottom-2 -left-2 w-4 h-4 bg-fuchsia-400 rounded-full animate-pulse shadow-lg shadow-fuchsia-400" style="animation-delay: 0.6s"></div>
-              <div class="absolute -bottom-2 -right-2 w-4 h-4 bg-violet-400 rounded-full animate-pulse shadow-lg shadow-violet-400" style="animation-delay: 0.9s"></div>
             </div>
 
             <!-- Janela de visualização -->
@@ -88,10 +83,21 @@
               </div>
             </div>
 
-            <!-- Destaque central (brilho) -->
-            <div class="absolute top-1/2 left-0 right-0 h-48 -translate-y-1/2 pointer-events-none z-10">
-              <div class="absolute inset-0 bg-gradient-to-b from-transparent via-yellow-400/20 to-transparent"></div>
-              <div class="absolute inset-0 border-y-2 border-yellow-400/40"></div>
+            <!-- Indicador de seleção (faixa no centro) -->
+            <div class="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-20">
+              <!-- Setas apontando para o centro -->
+              <div class="absolute left-2 top-1/2 -translate-y-1/2 text-4xl">👉</div>
+              <div class="absolute right-2 top-1/2 -translate-y-1/2 text-4xl">👈</div>
+              
+              <!-- Faixa de destaque -->
+              <div class="absolute inset-x-0 h-36 bg-gradient-to-r from-yellow-400/30 via-yellow-300/40 to-yellow-400/30 border-y-4 border-yellow-400 shadow-lg shadow-yellow-400/50">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent animate-pulse"></div>
+              </div>
+              
+              <!-- Texto de indicação -->
+              <div class="absolute -top-12 left-1/2 -translate-x-1/2 bg-yellow-400 text-violet-900 px-4 py-1 rounded-full font-bold text-sm shadow-lg">
+                ⭐ VENCEDOR ⭐
+              </div>
             </div>
           </div>
 
