@@ -1,4 +1,5 @@
-﻿import express from "express";
+﻿import "dotenv/config";
+import express from "express";
 import path from "path";
 import morgan from "morgan";
 import helmet from "helmet";
