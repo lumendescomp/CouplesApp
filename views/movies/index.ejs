@@ -52,49 +52,51 @@
 <%- include('_add_movie_modal', { tmdbConfigured }) %>
 
 <script>
-const tabButtons = document.querySelectorAll(".tab-button");
-const tabContents = document.querySelectorAll(".tab-content");
+(function() {
+  const tabButtons = document.querySelectorAll(".tab-button");
+  const tabContents = document.querySelectorAll(".tab-content");
 
-tabButtons.forEach((btn, index) => {
-  btn.addEventListener("click", () => {
-    tabButtons.forEach((b) => {
-      b.classList.remove("border-violet-500", "text-violet-100");
-      b.classList.add("border-transparent", "text-violet-500");
+  tabButtons.forEach((btn, index) => {
+    btn.addEventListener("click", () => {
+      tabButtons.forEach((b) => {
+        b.classList.remove("border-violet-500", "text-violet-100");
+        b.classList.add("border-transparent", "text-violet-500");
+      });
+      tabContents.forEach((c) => c.classList.add("hidden"));
+      
+      btn.classList.remove("border-transparent", "text-violet-500");
+      btn.classList.add("border-violet-500", "text-violet-100");
+      tabContents[index].classList.remove("hidden");
     });
-    tabContents.forEach((c) => c.classList.add("hidden"));
-    
-    btn.classList.remove("border-transparent", "text-violet-500");
-    btn.classList.add("border-violet-500", "text-violet-100");
-    tabContents[index].classList.remove("hidden");
   });
-});
 
-document.querySelectorAll(".add-movie-trigger").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    if (window.openAddMovieModal) {
-      window.openAddMovieModal();
-    }
+  document.querySelectorAll(".add-movie-trigger").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (window.openAddMovieModal) {
+        window.openAddMovieModal();
+      }
+    });
   });
-});
 
-window.showToast = function (message, type = "success") {
-  const toast = document.createElement("div");
-  toast.className = `fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 ${type === "error" ? "bg-red-500" : "bg-green-500"}`;
-  toast.textContent = message;
-  toast.style.opacity = "0";
-  toast.style.transform = "translateY(20px)";
-  
-  document.body.appendChild(toast);
-  
-  setTimeout(() => {
-    toast.style.opacity = "1";
-    toast.style.transform = "translateY(0)";
-  }, 10);
-  
-  setTimeout(() => {
+  window.showToast = function (message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 ${type === "error" ? "bg-red-500" : "bg-green-500"}`;
+    toast.textContent = message;
     toast.style.opacity = "0";
     toast.style.transform = "translateY(20px)";
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-};
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = "1";
+      toast.style.transform = "translateY(0)";
+    }, 10);
+    
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(20px)";
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  };
+})();
 </script>

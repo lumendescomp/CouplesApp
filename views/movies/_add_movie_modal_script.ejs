@@ -1,188 +1,241 @@
-(function AddMovieModal() { const CSRF =
-(document.querySelector('meta[name="csrf-token"]') || {}).content || ""; const
-modal = document.getElementById('add-movie-modal'); const modalContent =
-document.getElementById('modal-content'); const searchInput =
-document.getElementById('search-input'); const searchSpinner =
-document.getElementById('search-spinner'); const searchResults =
-document.getElementById('search-results'); const resultsGrid =
-document.getElementById('results-grid'); const manualForm =
-document.getElementById('manual-form'); const manualStatus =
-document.getElementById('manual-status'); const manualRatingContainer =
-document.getElementById('manual-rating-container'); const manualRating =
-document.getElementById('manual-rating'); let searchTimeout = null; let
-selectedRating = 0; // Abrir modal window.openAddMovieModal = function() {
-modal.classList.remove('hidden'); setTimeout(() => { modal.style.opacity = '1';
-modalContent.style.transform = 'scale(1)'; }, 10); searchInput?.focus(); }; //
-Fechar modal function closeModal() { modal.style.opacity = '0';
-modalContent.style.transform = 'scale(0.9)'; setTimeout(() => {
-modal.classList.add('hidden'); resetForm(); }, 300); }
-document.getElementById('close-modal-btn')?.addEventListener('click',
-closeModal);
-document.getElementById('cancel-manual-btn')?.addEventListener('click',
-closeModal); modal?.addEventListener('click', (e) => { if (e.target === modal)
-closeModal(); }); // Busca de filmes (debounce)
-searchInput?.addEventListener('input', (e) => { const query =
-e.target.value.trim(); clearTimeout(searchTimeout); if (!query) {
-searchResults.style.display = 'none'; return; } searchSpinner.style.display =
-'block'; searchTimeout = setTimeout(async () => { await searchMovies(query); },
-500); }); searchInput?.addEventListener('keypress', (e) => { if (e.key ===
-'Enter') { e.preventDefault(); clearTimeout(searchTimeout); const query =
-e.target.value.trim(); if (query) searchMovies(query); } }); // Função de busca
-async function searchMovies(query) { try { const response = await
-fetch('/movies/search', { method: 'POST', headers: { 'Content-Type':
-'application/json', 'X-CSRF-Token': CSRF, }, body: JSON.stringify({ query }),
-}); searchSpinner.style.display = 'none'; if (!response.ok) { throw new
-Error('Erro na busca'); } const data = await response.json();
-displaySearchResults(data.results); } catch (error) { console.error('Erro ao
-buscar filmes:', error); searchSpinner.style.display = 'none'; if
-(window.showToast) { window.showToast('Erro ao buscar filmes', 'error'); } } }
-// Exibir resultados function displaySearchResults(results) {
-resultsGrid.innerHTML = ''; if (results.length === 0) { resultsGrid.innerHTML =
-'
-<p class="col-span-full text-center text-violet-300 py-8">
-  Nenhum filme encontrado
-</p>
-'; searchResults.style.display = 'block'; return; } results.forEach(movie => {
-const card = document.createElement('div'); card.className = 'search-result-card
-cursor-pointer glass rounded-lg border border-violet-700/40 bg-white/5
-overflow-hidden hover:border-fuchsia-400/50 transition-all duration-300 group';
-card.innerHTML = `
-<div class="relative aspect-[2/3] bg-violet-900/20">
-  ${movie.posterThumbnail ? `<img
-    src="${movie.posterThumbnail}"
-    alt="${movie.title}"
-    class="w-full h-full object-cover"
-  />` : `
-  <div class="w-full h-full flex items-center justify-center">
-    <svg
-      class="w-12 h-12 text-violet-600"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
-      />
-    </svg>
-  </div>
-  ` }
-  <div
-    class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-  >
-    <svg
-      class="w-8 h-8 text-white"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 4v16m8-8H4"
-      />
-    </svg>
-  </div>
-</div>
-<div class="p-2">
-  <h4
-    class="text-sm font-medium text-violet-100 line-clamp-2"
-    title="${movie.title}"
-  >
-    ${movie.title}
-  </h4>
-  ${movie.year ? `
-  <p class="text-xs text-violet-300">${movie.year}</p>
-  ` : ''}
-</div>
-`; card.addEventListener('click', () => selectMovie(movie));
-resultsGrid.appendChild(card); }); searchResults.style.display = 'block'; } //
-Selecionar filme da busca function selectMovie(movie) {
-document.getElementById('manual-title').value = movie.title;
-document.getElementById('manual-year').value = movie.year || ''; // Scroll suave
-para o form document.getElementById('manual-form').scrollIntoView({ behavior:
-'smooth', block: 'nearest' }); if (window.showToast) {
-window.showToast(`${movie.title} selecionado!`); } } // Toggle rating container
-manualStatus?.addEventListener('change', (e) => { if (e.target.value ===
-'watched') { manualRatingContainer.style.display = 'block'; } else {
-manualRatingContainer.style.display = 'none'; selectedRating = 0;
-updateManualStars(); } }); // Rating stars (manual form)
-document.querySelectorAll('.manual-star-btn').forEach((btn) => {
-btn.addEventListener('click', () => { selectedRating =
-parseInt(btn.dataset.rating); manualRating.value = selectedRating;
-updateManualStars(); }); }); function updateManualStars() {
-document.querySelectorAll('.manual-star-btn').forEach((btn, index) => { const
-star = btn.querySelector('svg'); if (index < selectedRating) {
-star.classList.remove('text-violet-600'); star.classList.add('text-yellow-400',
-'fill-yellow-400'); star.setAttribute('fill', 'currentColor'); } else {
-star.classList.remove('text-yellow-400', 'fill-yellow-400');
-star.classList.add('text-violet-600'); star.setAttribute('fill', 'none'); } });
-} // Submit manual form manualForm?.addEventListener('submit', async (e) => {
-e.preventDefault(); const title =
-document.getElementById('manual-title').value.trim(); const year =
-document.getElementById('manual-year').value; const status =
-document.getElementById('manual-status').value; const rating = selectedRating ||
-null; const notes = document.getElementById('manual-notes').value.trim(); if
-(!title) { if (window.showToast) window.showToast('Título é obrigatório',
-'error'); return; } try { const response = await fetch('/movies', { method:
-'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF, },
-body: JSON.stringify({ title, year: year ? parseInt(year) : null, status,
-rating, notes: notes || null, }), }); if (!response.ok) { throw new Error('Erro
-ao adicionar filme'); } const data = await response.json(); if
-(window.showToast) { window.showToast(`${title} adicionado com sucesso!`); }
-closeModal(); // Recarregar página para mostrar o novo filme setTimeout(() => {
-window.location.reload(); }, 500); } catch (error) { console.error('Erro ao
-adicionar filme:', error); if (window.showToast) { window.showToast('Erro ao
-adicionar filme', 'error'); } } }); function resetForm() { manualForm?.reset();
-searchInput.value = ''; searchResults.style.display = 'none';
-resultsGrid.innerHTML = ''; selectedRating = 0; updateManualStars();
-manualRatingContainer.style.display = 'none'; } // Movie card actions (rating,
-delete, status toggle) document.addEventListener('click', async (e) => { // Star
-rating on cards if (e.target.closest('.star-btn')) { const btn =
-e.target.closest('.star-btn'); const movieId = btn.dataset.movieId; const rating
-= parseInt(btn.dataset.rating); await updateMovieRating(movieId, rating); } //
-Delete movie if (e.target.closest('.delete-movie-btn')) { const btn =
-e.target.closest('.delete-movie-btn'); const movieId = btn.dataset.movieId; if
-(confirm('Tem certeza que deseja remover este filme?')) { await
-deleteMovie(movieId); } } // Mark as watched if
-(e.target.closest('.mark-as-watched-btn')) { const btn =
-e.target.closest('.mark-as-watched-btn'); const movieId = btn.dataset.movieId;
-await updateMovieStatus(movieId, 'watched'); } // Move to watchlist if
-(e.target.closest('.move-to-watchlist-btn')) { const btn =
-e.target.closest('.move-to-watchlist-btn'); const movieId = btn.dataset.movieId;
-await updateMovieStatus(movieId, 'watchlist'); } }); async function
-updateMovieRating(movieId, rating) { try { const response = await
-fetch(`/movies/${movieId}`, { method: 'PUT', headers: { 'Content-Type':
-'application/json', 'X-CSRF-Token': CSRF, }, body: JSON.stringify({ rating }),
-}); if (!response.ok) throw new Error('Erro ao atualizar rating'); // Update UI
-const card = document.querySelector(`[data-movie-id="${movieId}"]`); if (card) {
-const stars = card.querySelectorAll('.star-btn svg'); stars.forEach((star,
-index) => { if (index < rating) { star.classList.add('text-yellow-400',
-'fill-yellow-400'); star.classList.remove('text-violet-600');
-star.setAttribute('fill', 'currentColor'); } else {
-star.classList.remove('text-yellow-400', 'fill-yellow-400');
-star.classList.add('text-violet-600'); star.setAttribute('fill', 'none'); } });
-} if (window.showToast) window.showToast('Avaliação atualizada!'); } catch
-(error) { console.error('Erro:', error); if (window.showToast)
-window.showToast('Erro ao atualizar avaliação', 'error'); } } async function
-deleteMovie(movieId) { try { const response = await fetch(`/movies/${movieId}`,
-{ method: 'DELETE', headers: { 'X-CSRF-Token': CSRF, }, }); if (!response.ok)
-throw new Error('Erro ao deletar filme'); // Remove card const card =
-document.querySelector(`.movie-card[data-movie-id="${movieId}"]`); if (card) {
-card.style.opacity = '0'; card.style.transform = 'scale(0.9)'; setTimeout(() =>
-card.remove(), 300); } if (window.showToast) window.showToast('Filme
-removido!'); // Update counters setTimeout(() => window.location.reload(), 500);
-} catch (error) { console.error('Erro:', error); if (window.showToast)
-window.showToast('Erro ao remover filme', 'error'); } } async function
-updateMovieStatus(movieId, status) { try { const response = await
-fetch(`/movies/${movieId}`, { method: 'PUT', headers: { 'Content-Type':
-'application/json', 'X-CSRF-Token': CSRF, }, body: JSON.stringify({ status }),
-}); if (!response.ok) throw new Error('Erro ao atualizar status'); if
-(window.showToast) { window.showToast(status === 'watched' ? 'Marcado como
-assistido!' : 'Movido para lista de desejos!'); } // Reload to update tabs
-setTimeout(() => window.location.reload(), 500); } catch (error) {
-console.error('Erro:', error); if (window.showToast) window.showToast('Erro ao
-atualizar status', 'error'); } } })();
+﻿(function AddMovieModal() {
+  console.log('Modal script loaded');
+  const CSRF = (document.querySelector('meta[name=\"csrf-token\"]') || {}).content;
+  const modal = document.getElementById('add-movie-modal');
+  const modalContent = document.getElementById('modal-content');
+  const searchInput = document.getElementById('search-input');
+  const searchSpinner = document.getElementById('search-spinner');
+  const searchResults = document.getElementById('search-results');
+  const resultsGrid = document.getElementById('results-grid');
+  const manualForm = document.getElementById('manual-form');
+  const manualStatus = document.getElementById('manual-status');
+  const manualRatingContainer = document.getElementById('manual-rating-container');
+  const manualRating = document.getElementById('manual-rating');
+  let searchTimeout = null;
+  let selectedRating = 0;
+  window.openAddMovieModal = function() {
+    console.log('openAddMovieModal called');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      modal.style.opacity = '1';
+      modalContent.style.transform = 'scale(1)';
+    }, 10);
+    searchInput?.focus();
+  };
+  function closeModal() {
+    modal.style.opacity = '0';
+    modalContent.style.transform = 'scale(0.9)';
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      resetForm();
+    }, 300);
+  }
+  document.getElementById('close-modal-btn')?.addEventListener('click', closeModal);
+  document.getElementById('cancel-manual-btn')?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  searchInput?.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(searchTimeout);
+    if (!query) {
+      searchResults.style.display = 'none';
+      return;
+    }
+    searchSpinner.style.display = 'block';
+    searchTimeout = setTimeout(async () => {
+      await searchMovies(query);
+    }, 500);
+  });
+  searchInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clearTimeout(searchTimeout);
+      const query = e.target.value.trim();
+      if (query) searchMovies(query);
+    }
+  });
+  async function searchMovies(query) {
+    try {
+      const response = await fetch('/movies/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ query }),
+      });
+      searchSpinner.style.display = 'none';
+      if (!response.ok) throw new Error('Erro na busca');
+      const data = await response.json();
+      displaySearchResults(data.results);
+    } catch (error) {
+      console.error('Erro ao buscar filmes:', error);
+      searchSpinner.style.display = 'none';
+      if (window.showToast) window.showToast('Erro ao buscar filmes', 'error');
+    }
+  }
+  function displaySearchResults(results) {
+    resultsGrid.innerHTML = '';
+    if (results.length === 0) {
+      resultsGrid.innerHTML = '<p class=\"col-span-full text-center text-violet-300 py-8\">Nenhum filme encontrado</p>';
+      searchResults.style.display = 'block';
+      return;
+    }
+    results.forEach(movie => {
+      const card = document.createElement('div');
+      card.className = 'search-result-card cursor-pointer glass rounded-lg border border-violet-700/40 bg-white/5 overflow-hidden hover:border-fuchsia-400/50 transition-all duration-300 group';
+      card.innerHTML = '<div class=\"relative aspect-[2/3] bg-violet-900/20\">' + (movie.posterThumbnail ? '<img src=\"' + movie.posterThumbnail + '\" alt=\"' + movie.title + '\" class=\"w-full h-full object-cover\" />' : '<div class=\"w-full h-full flex items-center justify-center\"><svg class=\"w-12 h-12 text-violet-600\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z\" /></svg></div>') + '<div class=\"absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center\"><svg class=\"w-8 h-8 text-white\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\" /></svg></div></div><div class=\"p-2\"><h4 class=\"text-sm font-medium text-violet-100 line-clamp-2\" title=\"' + movie.title + '\">' + movie.title + '</h4>' + (movie.year ? '<p class=\"text-xs text-violet-300\">' + movie.year + '</p>' : '') + '</div>';
+      card.addEventListener('click', () => selectMovie(movie));
+      resultsGrid.appendChild(card);
+    });
+    searchResults.style.display = 'block';
+  }
+  function selectMovie(movie) {
+    document.getElementById('manual-title').value = movie.title;
+    document.getElementById('manual-year').value = movie.year || '';
+    document.getElementById('manual-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (window.showToast) window.showToast(movie.title + ' selecionado!');
+  }
+  manualStatus?.addEventListener('change', (e) => {
+    if (e.target.value === 'watched') {
+      manualRatingContainer.style.display = 'block';
+    } else {
+      manualRatingContainer.style.display = 'none';
+      selectedRating = 0;
+      updateManualStars();
+    }
+  });
+  document.querySelectorAll('.manual-star-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedRating = parseInt(btn.dataset.rating);
+      manualRating.value = selectedRating;
+      updateManualStars();
+    });
+  });
+  function updateManualStars() {
+    document.querySelectorAll('.manual-star-btn').forEach((btn, index) => {
+      const star = btn.querySelector('svg');
+      if (index < selectedRating) {
+        star.classList.remove('text-violet-600');
+        star.classList.add('text-yellow-400', 'fill-yellow-400');
+        star.setAttribute('fill', 'currentColor');
+      } else {
+        star.classList.remove('text-yellow-400', 'fill-yellow-400');
+        star.classList.add('text-violet-600');
+        star.setAttribute('fill', 'none');
+      }
+    });
+  }
+  manualForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('manual-title').value.trim();
+    const year = document.getElementById('manual-year').value;
+    const status = document.getElementById('manual-status').value;
+    const rating = selectedRating || null;
+    const notes = document.getElementById('manual-notes').value.trim();
+    if (!title) {
+      if (window.showToast) window.showToast('Título é obrigatório', 'error');
+      return;
+    }
+    try {
+      const response = await fetch('/movies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ title, year: year ? parseInt(year) : null, status, rating, notes: notes || null }),
+      });
+      if (!response.ok) throw new Error('Erro ao adicionar filme');
+      if (window.showToast) window.showToast(title + ' adicionado com sucesso!');
+      closeModal();
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.error('Erro ao adicionar filme:', error);
+      if (window.showToast) window.showToast('Erro ao adicionar filme', 'error');
+    }
+  });
+  function resetForm() {
+    manualForm?.reset();
+    searchInput.value = '';
+    searchResults.style.display = 'none';
+    resultsGrid.innerHTML = '';
+    selectedRating = 0;
+    updateManualStars();
+    manualRatingContainer.style.display = 'none';
+  }
+  document.addEventListener('click', async (e) => {
+    if (e.target.closest('.star-btn')) {
+      const btn = e.target.closest('.star-btn');
+      await updateMovieRating(btn.dataset.movieId, parseInt(btn.dataset.rating));
+    }
+    if (e.target.closest('.delete-movie-btn')) {
+      const btn = e.target.closest('.delete-movie-btn');
+      if (confirm('Tem certeza que deseja remover este filme?')) await deleteMovie(btn.dataset.movieId);
+    }
+    if (e.target.closest('.mark-as-watched-btn')) {
+      await updateMovieStatus(e.target.closest('.mark-as-watched-btn').dataset.movieId, 'watched');
+    }
+    if (e.target.closest('.move-to-watchlist-btn')) {
+      await updateMovieStatus(e.target.closest('.move-to-watchlist-btn').dataset.movieId, 'watchlist');
+    }
+  });
+  async function updateMovieRating(movieId, rating) {
+    try {
+      const response = await fetch('/movies/' + movieId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ rating }),
+      });
+      if (!response.ok) throw new Error('Erro ao atualizar rating');
+      const card = document.querySelector('[data-movie-id=\"' + movieId + '\"]');
+      if (card) {
+        card.querySelectorAll('.star-btn svg').forEach((star, index) => {
+          if (index < rating) {
+            star.classList.add('text-yellow-400', 'fill-yellow-400');
+            star.classList.remove('text-violet-600');
+            star.setAttribute('fill', 'currentColor');
+          } else {
+            star.classList.remove('text-yellow-400', 'fill-yellow-400');
+            star.classList.add('text-violet-600');
+            star.setAttribute('fill', 'none');
+          }
+        });
+      }
+      if (window.showToast) window.showToast('Avaliação atualizada!');
+    } catch (error) {
+      console.error('Erro:', error);
+      if (window.showToast) window.showToast('Erro ao atualizar avaliação', 'error');
+    }
+  }
+  async function deleteMovie(movieId) {
+    try {
+      const response = await fetch('/movies/' + movieId, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': CSRF },
+      });
+      if (!response.ok) throw new Error('Erro ao deletar filme');
+      const card = document.querySelector('.movie-card[data-movie-id=\"' + movieId + '\"]');
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => card.remove(), 300);
+      }
+      if (window.showToast) window.showToast('Filme removido!');
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.error('Erro:', error);
+      if (window.showToast) window.showToast('Erro ao remover filme', 'error');
+    }
+  }
+  async function updateMovieStatus(movieId, status) {
+    try {
+      const response = await fetch('/movies/' + movieId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error('Erro ao atualizar status');
+      if (window.showToast) window.showToast(status === 'watched' ? 'Marcado como assistido!' : 'Movido para lista de desejos!');
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      console.error('Erro:', error);
+      if (window.showToast) window.showToast('Erro ao atualizar status', 'error');
+    }
+  }
+})();
