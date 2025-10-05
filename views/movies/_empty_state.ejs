@@ -1,0 +1,50 @@
+<div
+  class="glass rounded-xl border border-violet-700/40 bg-white/5 p-12 text-center"
+>
+  <div
+    class="w-20 h-20 mx-auto mb-4 rounded-full bg-violet-900/30 flex items-center justify-center"
+  >
+    <% if (icon === 'play') { %>
+    <svg
+      class="w-10 h-10 text-violet-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+      />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <% } else { %>
+    <svg
+      class="w-10 h-10 text-violet-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+      />
+    </svg>
+    <% } %>
+  </div>
+  <h3 class="text-lg font-medium text-violet-100 mb-2"><%= title %></h3>
+  <p class="text-violet-300 text-sm mb-6"><%= description %></p>
+  <button
+    class="add-movie-trigger px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:from-violet-700 hover:to-fuchsia-700 transition shadow-lg"
+  >
+    Adicionar filme
+  </button>
+</div>
