@@ -36,6 +36,25 @@
     background: rgba(124, 58, 237, 0.7);
   }
 
+  /* Scrollbar do modal da roleta */
+  #movie-roulette-modal .overflow-y-auto::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  #movie-roulette-modal .overflow-y-auto::-webkit-scrollbar-track {
+    background: rgba(76, 29, 149, 0.2);
+    border-radius: 5px;
+  }
+  
+  #movie-roulette-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: rgba(251, 191, 36, 0.5);
+    border-radius: 5px;
+  }
+  
+  #movie-roulette-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: rgba(251, 191, 36, 0.7);
+  }
+
   /* Scroll suave */
   #add-movie-modal, .scrollbar-thin {
     scroll-behavior: smooth;
@@ -455,29 +474,14 @@
     console.log('   Film 1 (top): partially visible');
     console.log('   Film 2 (middle): CENTERED in yellow box ⭐');
     console.log('   Film 3 (bottom): partially visible');
-    console.log('Waiting for user to click GIRAR button...');
+    console.log('🎲 Starting animation automatically in 0.5s...');
     
-    // Criar e mostrar botão "Girar" grande e centralizado
-    const spinStartBtn = document.createElement('button');
-    spinStartBtn.id = 'spin-start-btn';
-    spinStartBtn.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 px-12 py-6 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-violet-900 font-black text-4xl rounded-2xl shadow-2xl hover:scale-110 transition-all duration-300 animate-pulse border-4 border-yellow-300';
-    spinStartBtn.innerHTML = '🎲 GIRAR! 🎲';
-    spinStartBtn.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
-    
-    const spinnerContainer = document.getElementById('roulette-spinner');
-    spinnerContainer.appendChild(spinStartBtn);
-    
-    // Event listener para iniciar a animação
-    spinStartBtn.addEventListener('click', () => {
+    // Iniciar animação automaticamente após um pequeno delay
+    setTimeout(() => {
       console.log('🎲 SPINNING from:', startPosition, 'to:', finalPosition);
-      spinStartBtn.remove(); // Remove o botão
-      
-      // Iniciar animação
-      setTimeout(() => {
-        const centerOffset = (viewportHeight / 2) - (slotHeight / 2);
-        animateSlotMachine(carousel, startPosition, finalPosition, winner, centerOffset, slotHeight, viewportHeight);
-      }, 100);
-    });
+      const centerOffset = (viewportHeight / 2) - (slotHeight / 2);
+      animateSlotMachine(carousel, startPosition, finalPosition, winner, centerOffset, slotHeight, viewportHeight);
+    }, 500); // 500ms de delay para dar tempo de ver os filmes iniciais
   }
 
   function animateSlotMachine(carousel, startPosition, finalPosition, winner, centerOffset, slotHeight, viewportHeight) {
@@ -542,7 +546,39 @@
           setTimeout(() => {
             carousel.style.transform = `translateY(${finalPosition}px)`;
             console.log('Animation complete, showing result');
+            
+            // Mostrar resultado (mas ainda invisível)
+            const resultDiv = document.getElementById('roulette-result');
             showRouletteResult(winner);
+            resultDiv.style.opacity = '0';
+            resultDiv.style.transition = 'opacity 0.5s ease-in';
+            
+            // Após 500ms: fade out da roleta e fade in do resultado simultaneamente
+            setTimeout(() => {
+              const slotMachineWrapper = document.getElementById('slot-machine-wrapper');
+              
+              // Fade in do resultado
+              resultDiv.style.opacity = '1';
+              
+              // Fade out da roleta
+              if (slotMachineWrapper) {
+                slotMachineWrapper.style.transition = 'opacity 0.5s ease-out, max-height 0.5s ease-out, margin 0.5s ease-out, padding 0.5s ease-out';
+                slotMachineWrapper.style.opacity = '0';
+                
+                // Após o fade, colapsar o espaço
+                setTimeout(() => {
+                  slotMachineWrapper.style.maxHeight = '0';
+                  slotMachineWrapper.style.padding = '0';
+                  slotMachineWrapper.style.marginTop = '0';
+                  slotMachineWrapper.style.marginBottom = '0';
+                  slotMachineWrapper.style.border = 'none';
+                  
+                  setTimeout(() => {
+                    slotMachineWrapper.style.display = 'none';
+                  }, 500);
+                }, 500);
+              }
+            }, 500);
           }, 200);
         }, 150);
       }
@@ -591,10 +627,42 @@
       
       // Adicionar event listener para o novo botão
       document.getElementById('spin-again-btn')?.addEventListener('click', () => {
-        document.getElementById('roulette-result').classList.add('hidden');
-        rouletteSelection.classList.remove('hidden');
-        rouletteSpinner.classList.add('hidden');
-        document.getElementById('spin-btn-selection').classList.remove('hidden');
+        console.log('🔄 Girar novamente com os mesmos filmes:', selectedMovies);
+        
+        // Fade out do resultado
+        const resultDiv = document.getElementById('roulette-result');
+        resultDiv.style.opacity = '0';
+        
+        setTimeout(() => {
+          // Limpar o resultado
+          resultDiv.classList.add('hidden');
+          resultDiv.innerHTML = '';
+          resultDiv.style.opacity = '1';
+          
+          // Mostrar o wrapper da slot machine novamente
+          const slotMachineWrapper = document.getElementById('slot-machine-wrapper');
+          if (slotMachineWrapper) {
+            slotMachineWrapper.style.display = 'block';
+            slotMachineWrapper.style.maxHeight = 'none';
+            slotMachineWrapper.style.padding = '';
+            slotMachineWrapper.style.marginTop = '';
+            slotMachineWrapper.style.marginBottom = '';
+            slotMachineWrapper.style.border = '';
+            
+            // Fade in do wrapper
+            setTimeout(() => {
+              slotMachineWrapper.style.opacity = '1';
+            }, 50);
+          }
+          
+          // Limpar o carrossel
+          const carousel = document.getElementById('roulette-carousel');
+          carousel.innerHTML = '';
+          carousel.style.transform = 'translateY(0px)';
+          
+          // Chamar prepareRoulette novamente com os mesmos filmes selecionados
+          prepareRoulette();
+        }, 500);
       });
       
       // Confetti effect (emoji rain)
@@ -611,7 +679,8 @@
         const confetti = document.createElement('div');
         confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
         confetti.style.position = 'absolute';
-        confetti.style.left = Math.random() * 100 + '%';
+        // Limitar entre 10% e 90% para evitar que saia das bordas
+        confetti.style.left = (Math.random() * 80 + 10) + '%';
         confetti.style.top = '-50px';
         confetti.style.fontSize = Math.random() * 20 + 20 + 'px';
         confetti.style.opacity = '0';
@@ -624,7 +693,8 @@
         setTimeout(() => {
           confetti.style.top = '100%';
           confetti.style.opacity = '1';
-          confetti.style.transform = `rotate(${Math.random() * 360}deg) translateX(${Math.random() * 200 - 100}px)`;
+          // Reduzir translateX para ±50px ao invés de ±100px
+          confetti.style.transform = `rotate(${Math.random() * 360}deg) translateX(${Math.random() * 100 - 50}px)`;
         }, 50);
         
         setTimeout(() => {
