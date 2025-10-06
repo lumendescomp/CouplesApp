@@ -17,6 +17,7 @@ import profileRoutes from "./routes/profile.js";
 import cornerRoutes from "./routes/corner.js";
 import albumRoutes from "./routes/album.js";
 import moviesRoutes from "./routes/movies.js";
+import recipesRoutes from "./routes/recipes.js";
 import { initDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -77,7 +78,7 @@ app.use(
   })
 );
 
-// CSRF: aplicar globalmente, exceto para POST multipart em /profile e /album/upload,
+// CSRF: aplicar globalmente, exceto para POST multipart em /profile, /album/upload e /recipes,
 // onde validaremos após o multer (pois o corpo ainda não foi processado aqui)
 const csrfProtection = csrf();
 app.use((req, res, next) => {
@@ -86,7 +87,9 @@ app.use((req, res, next) => {
   if (
     isMultipart &&
     req.method === "POST" &&
-    (req.path.startsWith("/profile") || req.path.startsWith("/album/upload"))
+    (req.path.startsWith("/profile") || 
+     req.path.startsWith("/album/upload") ||
+     req.path.startsWith("/recipes"))
   ) {
     return next();
   }
@@ -128,6 +131,7 @@ app.use("/profile", ensureAuthed, profileRoutes);
 app.use("/corner", ensureAuthed, cornerRoutes);
 app.use("/album", ensureAuthed, albumRoutes);
 app.use("/movies", ensureAuthed, moviesRoutes);
+app.use("/recipes", ensureAuthed, recipesRoutes);
 
 // 404
 app.use((req, res) => {

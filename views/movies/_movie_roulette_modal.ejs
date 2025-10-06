@@ -1,46 +1,46 @@
 <!-- Modal da Roleta de Filmes -->
 <div
   id="movie-roulette-modal"
-  class="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 hidden flex items-center justify-center p-4 pt-20"
+  class="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 hidden flex items-center justify-center p-2 sm:p-4 pt-16 sm:pt-20"
   style="transition: opacity 0.3s ease"
 >
   <div
-    class="glass rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-950/95 to-fuchsia-950/95 w-full max-w-3xl shadow-2xl flex flex-col"
+    class="glass rounded-xl sm:rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-950/95 to-fuchsia-950/95 w-full max-w-3xl max-h-[90vh] shadow-2xl flex flex-col"
     style="transform: scale(0.9); transition: transform 0.3s ease"
     id="roulette-modal-content"
   >
     <!-- Header -->
-    <div class="flex items-center justify-between p-6 border-b border-violet-700/40 flex-shrink-0">
-      <h2 class="text-2xl font-bold text-violet-100 flex items-center gap-2">
+    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-violet-700/40 flex-shrink-0">
+      <h2 class="text-lg sm:text-2xl font-bold text-violet-100 flex items-center gap-2">
         🎰 Roleta de Filmes
       </h2>
       <button
         id="close-roulette-btn"
         class="p-2 rounded-full hover:bg-white/10 text-violet-100 transition"
       >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
 
     <!-- Content -->
-    <div class="p-6 flex-1 overflow-y-auto">
+    <div class="p-4 sm:p-6 flex-1 overflow-y-auto">
       <!-- Seleção de Filmes -->
-      <div id="roulette-selection" class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-violet-200">Selecione os filmes para a roleta</h3>
-          <div class="flex gap-2">
-            <button id="select-all-btn" class="px-3 py-1 bg-violet-600/50 hover:bg-violet-600 text-white text-sm rounded transition">
+      <div id="roulette-selection" class="mb-4 sm:mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <h3 class="text-base sm:text-lg font-semibold text-violet-200">Selecione os filmes para a roleta</h3>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button id="select-all-btn" class="flex-1 sm:flex-none px-3 py-1 bg-violet-600/50 hover:bg-violet-600 text-white text-xs sm:text-sm rounded transition">
               Selecionar Todos
             </button>
-            <button id="deselect-all-btn" class="px-3 py-1 bg-violet-600/30 hover:bg-violet-600/50 text-white text-sm rounded transition">
+            <button id="deselect-all-btn" class="flex-1 sm:flex-none px-3 py-1 bg-violet-600/30 hover:bg-violet-600/50 text-white text-xs sm:text-sm rounded transition">
               Desmarcar Todos
             </button>
           </div>
         </div>
         
-        <div id="roulette-movies-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin mb-4">
+        <div id="roulette-movies-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto pr-2 scrollbar-thin mb-4">
           <!-- Filmes serão inseridos aqui via JS -->
         </div>
         
@@ -62,17 +62,17 @@
       <!-- Roleta Visual -->
       <div id="roulette-spinner" class="hidden relative overflow-hidden">
         <!-- Container com fundo (será escondido quando roleta parar) -->
-        <div id="slot-machine-wrapper" class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-8 border border-violet-700/30">               
+        <div id="slot-machine-wrapper" class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-4 sm:p-8 border border-violet-700/30">               
 
           <!-- Container da Slot Machine -->
-          <div id="slot-machine-container" class="relative mx-auto" style="width: 280px; height: 432px; perspective: 1000px;">
+          <div id="slot-machine-container" class="relative mx-auto w-full max-w-[280px]" style="height: 432px; perspective: 1000px;">
             
             <!-- Frame decorativo -->
-            <div class="absolute inset-0 rounded-2xl border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-500/10 to-pink-500/10 shadow-2xl shadow-yellow-500/20 z-10 pointer-events-none">
+            <div class="absolute inset-0 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-500/10 to-pink-500/10 shadow-xl sm:shadow-2xl shadow-yellow-500/20 z-10 pointer-events-none">
             </div>
 
             <!-- Janela de visualização -->
-            <div class="absolute inset-0 overflow-hidden rounded-xl bg-violet-950/30">
+            <div class="absolute inset-0 overflow-hidden rounded-lg sm:rounded-xl bg-violet-950/30">
               <!-- Carrossel vertical de filmes -->
               <div id="roulette-carousel" class="relative w-full" style="transform: translateY(0px); transition: transform 0.05s linear;">
                 <!-- Filmes serão inseridos aqui dinamicamente -->
@@ -82,7 +82,7 @@
             <!-- Indicador de seleção (faixa no centro - exatamente 1 filme) -->
             <div class="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-20">              
               <!-- Faixa de destaque - altura exata de 1 slot (144px) -->
-              <div class="absolute inset-x-0 bg-gradient-to-r from-yellow-400/30 via-yellow-300/40 to-yellow-400/30 border-y-4 border-yellow-400 shadow-lg shadow-yellow-400/50" style="height: 144px; top: 50%; transform: translateY(-50%);">
+              <div class="absolute inset-x-0 bg-gradient-to-r from-yellow-400/30 via-yellow-300/40 to-yellow-400/30 border-y-2 sm:border-y-4 border-yellow-400 shadow-lg shadow-yellow-400/50" style="height: 144px; top: 50%; transform: translateY(-50%);">
                 <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent animate-pulse"></div>
               </div>
             </div>
@@ -90,7 +90,7 @@
         </div>
 
         <!-- Resultado Final (fora do container de fundo, posição normal) -->
-        <div id="roulette-result" class="hidden text-center px-4 mt-6">
+        <div id="roulette-result" class="hidden text-center px-2 sm:px-4 mt-4 sm:mt-6">
           <!-- O conteúdo do resultado será inserido aqui via JS -->
           <!-- E o botão será adicionado junto -->
         </div>

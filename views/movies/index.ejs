@@ -97,23 +97,23 @@
       </div>
     </div>
 
-    <div class="flex items-center justify-between border-b border-violet-700/30 mb-6 overflow-x-auto">
-      <div class="flex">
-        <button id="tab-watched" class="tab-button px-6 py-3 font-medium text-violet-300 hover:text-violet-100 transition-colors border-b-2 border-violet-500 whitespace-nowrap">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 border-b border-violet-700/30 mb-6">
+      <div class="flex overflow-x-auto">
+        <button id="tab-watched" class="tab-button px-4 sm:px-6 py-2.5 sm:py-3 font-medium text-violet-300 hover:text-violet-100 transition-colors border-b-2 border-violet-500 whitespace-nowrap text-sm sm:text-base">
           Já assistimos
-          <span class="watched-count ml-2 px-2 py-0.5 bg-violet-600/30 rounded-full text-xs"><%= watchedMovies.length %></span>
+          <span class="watched-count ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-violet-600/30 rounded-full text-xs"><%= watchedMovies.length %></span>
         </button>
-        <button id="tab-watchlist" class="tab-button px-6 py-3 font-medium text-violet-500 hover:text-violet-300 transition-colors border-b-2 border-transparent whitespace-nowrap">
+        <button id="tab-watchlist" class="tab-button px-4 sm:px-6 py-2.5 sm:py-3 font-medium text-violet-500 hover:text-violet-300 transition-colors border-b-2 border-transparent whitespace-nowrap text-sm sm:text-base">
           Queremos assistir
-          <span class="watchlist-count ml-2 px-2 py-0.5 bg-violet-600/20 rounded-full text-xs"><%= watchlistMovies.length %></span>
+          <span class="watchlist-count ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-violet-600/20 rounded-full text-xs"><%= watchlistMovies.length %></span>
         </button>
       </div>
       
       <!-- Roleta com texto descritivo -->
-      <div class="flex items-center gap-3">
-        <span class="text-violet-300 text-sm font-medium">Não sabe o que assistir?</span>
-        <button id="open-roulette-btn" class="px-4 py-2 bg-violet-600/20 hover:bg-violet-600/30 hover:text-violet-100 rounded-lg font-medium transition-all border border-violet-600/40 hover:border-violet-500/60 flex items-center gap-2 whitespace-nowrap bg-gradient-to-r from-violet-600">
-          <span class="hidden sm:inline">Roleta</span>
+      <div class="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 pb-2 sm:pb-0">
+        <span class="text-sm font-medium whitespace-nowrap">Não sabe o que assistir?</span>
+        <button id="open-roulette-btn" class="px-4 py-1 bg-violet-600/20 hover:bg-violet-600/30 text-violet-200 hover:text-violet-100 rounded-lg text-sm font-medium transition-all border border-violet-600/40 hover:border-violet-500/60 flex items-center gap-2 whitespace-nowrap ">
+          <span>Roleta</span>
         </button>
       </div>
     </div>
@@ -122,7 +122,7 @@
       <% if (watchedMovies.length === 0) { %>
         <%- include('_empty_state', { icon: 'play', title: 'Nenhum filme assistido ainda', description: 'Comece adicionando filmes que você já assistiu juntos', buttonText: 'Adicionar primeiro filme' }) %>
       <% } else { %>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
           <% watchedMovies.forEach(movie => { %>
             <%- include('_movie_card', { movie }) %>
           <% }) %>
@@ -134,7 +134,7 @@
       <% if (watchlistMovies.length === 0) { %>
         <%- include('_empty_state', { icon: 'bookmark', title: 'Lista vazia', description: 'Adicione filmes que vocês querem assistir juntos', buttonText: 'Adicionar à lista' }) %>
       <% } else { %>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
           <% watchlistMovies.forEach(movie => { %>
             <%- include('_movie_card', { movie }) %>
           <% }) %>
@@ -446,20 +446,20 @@
     // Renderizar todos os filmes no carrossel
     // IMPORTANTE: SEM MARGIN (my-2 removido) para alinhamento perfeito!
     carousel.innerHTML = allMovies.map(movie => `
-      <div class="movie-slot flex items-center gap-3 p-3 bg-violet-900/80 rounded-lg border-2 border-violet-600/50 backdrop-blur-sm" style="height: 144px; min-height: 144px;">
-        <div class="w-20 h-28 flex-shrink-0 rounded overflow-hidden bg-violet-950/50 border border-violet-700">
+      <div class="movie-slot flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-violet-900/80 rounded-lg border-2 border-violet-600/50 backdrop-blur-sm" style="height: 144px; min-height: 144px;">
+        <div class="w-16 sm:w-20 h-24 sm:h-28 flex-shrink-0 rounded overflow-hidden bg-violet-950/50 border border-violet-700">
           ${movie.poster_url ? 
             `<img src="${movie.poster_url}" alt="${movie.title}" class="w-full h-full object-cover">` :
             `<div class="w-full h-full flex items-center justify-center">
-              <svg class="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-6 h-6 sm:w-8 sm:h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
               </svg>
             </div>`
           }
         </div>
         <div class="flex-1 min-w-0">
-          <h4 class="text-lg font-bold text-white drop-shadow-lg line-clamp-2">${movie.title}</h4>
-          <p class="text-sm text-violet-200 font-medium">${movie.year || ''}</p>
+          <h4 class="text-base sm:text-lg font-bold text-white drop-shadow-lg line-clamp-2">${movie.title}</h4>
+          <p class="text-xs sm:text-sm text-violet-200 font-medium">${movie.year || ''}</p>
         </div>
       </div>
     `).join('');
@@ -630,31 +630,31 @@
     
     setTimeout(() => {
       resultDiv.innerHTML = `
-        <div class="text-7xl mb-4 animate-bounce">🎉</div>
-        <h3 class="text-3xl font-bold text-yellow-400 mb-3 animate-pulse">Filme Escolhido!</h3>
-        <p class="text-violet-300 mb-6">A roleta decidiu que vocês vão assistir:</p>
-        <div class="bg-gradient-to-br from-violet-950/80 to-fuchsia-950/80 rounded-xl p-6 border-2 border-yellow-400/50 shadow-2xl shadow-yellow-500/30 transform hover:scale-105 transition-all">
-          <div class="flex items-center justify-center gap-4 mb-4">
+        <div class="text-5xl sm:text-7xl mb-4 animate-bounce">🎉</div>
+        <h3 class="text-2xl sm:text-3xl font-bold text-yellow-400 mb-3 animate-pulse">Filme Escolhido!</h3>
+        <p class="text-sm sm:text-base text-violet-300 mb-4 sm:mb-6">A roleta decidiu que vocês vão assistir:</p>
+        <div class="bg-gradient-to-br from-violet-950/80 to-fuchsia-950/80 rounded-xl p-4 sm:p-6 border-2 border-yellow-400/50 shadow-2xl shadow-yellow-500/30 transform hover:scale-105 transition-all">
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4">
             ${movie.poster_url ? 
-              `<img src="${movie.poster_url}" alt="${movie.title}" class="w-24 h-36 object-cover rounded-lg shadow-lg">` :
+              `<img src="${movie.poster_url}" alt="${movie.title}" class="w-20 h-30 sm:w-24 sm:h-36 object-cover rounded-lg shadow-lg">` :
               ''
             }
-            <div class="text-left">
-              <h4 class="text-4xl font-bold text-yellow-300 mb-2">${movie.title}</h4>
-              <p class="text-2xl text-violet-200">${movie.year ? `(${movie.year})` : ''}</p>
+            <div class="text-center sm:text-left">
+              <h4 class="text-2xl sm:text-4xl font-bold text-yellow-300 mb-2">${movie.title}</h4>
+              <p class="text-lg sm:text-2xl text-violet-200">${movie.year ? `(${movie.year})` : ''}</p>
             </div>
           </div>
           <div class="flex justify-center gap-2 mt-4">
-            <span class="text-3xl">🍿</span>
-            <span class="text-3xl">🎬</span>
-            <span class="text-3xl">❤️</span>
+            <span class="text-2xl sm:text-3xl">🍿</span>
+            <span class="text-2xl sm:text-3xl">🎬</span>
+            <span class="text-2xl sm:text-3xl">❤️</span>
           </div>
         </div>
         
         <!-- Botão Girar Novamente dentro do resultado -->
         <button
           id="spin-again-btn"
-          class="mt-6 px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:scale-105"
+          class="mt-4 sm:mt-6 px-6 sm:px-8 py-2.5 sm:py-3 bg-violet-600 hover:bg-violet-700 text-white text-sm sm:text-base font-semibold rounded-lg transition-all shadow-lg hover:scale-105"
         >
           🔄 Girar Novamente
         </button>

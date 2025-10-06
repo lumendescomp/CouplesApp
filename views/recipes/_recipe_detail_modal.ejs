@@ -1,0 +1,29 @@
+<!-- Modal Detalhes da Receita -->
+<div
+  id="recipe-detail-modal"
+  class="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 hidden flex items-center justify-center p-4"
+  style="transition: opacity 0.3s ease; opacity: 0;"
+>
+  <div
+    class="glass rounded-xl sm:rounded-2xl border border-violet-700/40 bg-gradient-to-br from-violet-950/95 to-fuchsia-950/95 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-thin shadow-2xl"
+    style="transform: scale(0.9); transition: transform 0.3s ease"
+  >
+    <!-- Header -->
+    <div class="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b border-violet-700/40 glass">
+      <h2 class="text-xl sm:text-2xl font-bold text-violet-100">Detalhes da Receita</h2>
+      <button
+        id="close-recipe-detail-btn"
+        class="p-2 rounded-full hover:bg-white/10 text-violet-100 transition"
+      >
+        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content (será preenchido dinamicamente) -->
+    <div id="recipe-detail-content" class="p-4 sm:p-6">
+      <!-- Conteúdo inserido via JavaScript -->
+    </div>
+  </div>
+</div>
