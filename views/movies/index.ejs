@@ -289,6 +289,7 @@
   const rouletteSpinner = document.getElementById('roulette-spinner');
   let selectedMovies = [];
   let rouletteInterval = null;
+  let animationFrameId = null; // Para cancelar a animação
 
   document.getElementById('open-roulette-btn')?.addEventListener('click', () => {
     if (watchlistMovies.length === 0) {
@@ -333,15 +334,51 @@
   function closeRouletteModal() {
     rouletteModal.style.opacity = '0';
     rouletteModalContent.style.transform = 'scale(0.9)';
+    
+    // Cancelar animação em andamento
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+      console.log('🛑 Animação cancelada ao fechar modal');
+    }
+    
     if (rouletteInterval) clearInterval(rouletteInterval);
     
     // Resetar estado ao fechar
     setTimeout(() => {
       rouletteModal.classList.add('hidden');
+      
       // Resetar visualizações
       rouletteSelection.classList.remove('hidden');
       rouletteSpinner.classList.add('hidden');
-      document.getElementById('roulette-result').classList.add('hidden');
+      
+      // Limpar resultado
+      const resultDiv = document.getElementById('roulette-result');
+      resultDiv.classList.add('hidden');
+      resultDiv.innerHTML = '';
+      resultDiv.style.opacity = '1'; // Resetar opacity
+      
+      // Resetar slot machine wrapper (estilos inline)
+      const slotMachineWrapper = document.getElementById('slot-machine-wrapper');
+      if (slotMachineWrapper) {
+        slotMachineWrapper.style.display = 'block';
+        slotMachineWrapper.style.opacity = '1';
+        slotMachineWrapper.style.maxHeight = 'none';
+        slotMachineWrapper.style.padding = '';
+        slotMachineWrapper.style.marginTop = '';
+        slotMachineWrapper.style.marginBottom = '';
+        slotMachineWrapper.style.border = '';
+        slotMachineWrapper.style.transition = '';
+      }
+      
+      // Limpar carrossel
+      const carousel = document.getElementById('roulette-carousel');
+      if (carousel) {
+        carousel.innerHTML = '';
+        carousel.style.transform = 'translateY(0px)';
+        carousel.style.transition = '';
+      }
+      
       // Garantir que o botão esteja visível para próxima vez
       const spinBtn = document.getElementById('spin-btn-selection');
       if (spinBtn) {
@@ -351,6 +388,13 @@
   }
 
   document.getElementById('close-roulette-btn')?.addEventListener('click', closeRouletteModal);
+
+  // Fechar modal ao clicar fora (no backdrop)
+  rouletteModal?.addEventListener('click', (e) => {
+    if (e.target === rouletteModal) {
+      closeRouletteModal();
+    }
+  });
 
   document.getElementById('select-all-btn')?.addEventListener('click', () => {
     document.querySelectorAll('.roulette-checkbox').forEach(cb => cb.checked = true);
@@ -528,8 +572,9 @@
       
       // Continuar ou parar
       if (frame < totalFrames) {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
       } else {
+        animationFrameId = null; // Limpar quando terminar
         // Animação completa
         console.log('🏁 === ANIMATION END ===');
         console.log('Final position:', currentPosition.toFixed(2), 'px');
@@ -584,7 +629,7 @@
       }
     }
 
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
   }
 
   function showRouletteResult(movie) {
