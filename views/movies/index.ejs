@@ -61,11 +61,6 @@
   }
 
   /* Animações da roleta */
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(234, 179, 8, 0.6); }
-  }
-
   #roulette-carousel .movie-slot {
     animation: none;
   }
@@ -99,30 +94,28 @@
           </svg>
           Adicionar Filme
         </button>
-        <button id="open-roulette-btn" class="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-pink-500/50 hover:scale-105">
-          <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          🎰 Roleta
-        </button>
-        <button id="open-game-btn" class="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-amber-500/50 hover:scale-105">
-          <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-          </svg>
-          🎮 Jogo
-        </button>
       </div>
     </div>
 
-    <div class="flex border-b border-violet-700/30 mb-6 overflow-x-auto">
-      <button id="tab-watched" class="tab-button px-6 py-3 font-medium text-violet-300 hover:text-violet-100 transition-colors border-b-2 border-violet-500 whitespace-nowrap">
-        Já assistimos
-        <span class="watched-count ml-2 px-2 py-0.5 bg-violet-600/30 rounded-full text-xs"><%= watchedMovies.length %></span>
-      </button>
-      <button id="tab-watchlist" class="tab-button px-6 py-3 font-medium text-violet-500 hover:text-violet-300 transition-colors border-b-2 border-transparent whitespace-nowrap">
-        Queremos assistir
-        <span class="watchlist-count ml-2 px-2 py-0.5 bg-violet-600/20 rounded-full text-xs"><%= watchlistMovies.length %></span>
-      </button>
+    <div class="flex items-center justify-between border-b border-violet-700/30 mb-6 overflow-x-auto">
+      <div class="flex">
+        <button id="tab-watched" class="tab-button px-6 py-3 font-medium text-violet-300 hover:text-violet-100 transition-colors border-b-2 border-violet-500 whitespace-nowrap">
+          Já assistimos
+          <span class="watched-count ml-2 px-2 py-0.5 bg-violet-600/30 rounded-full text-xs"><%= watchedMovies.length %></span>
+        </button>
+        <button id="tab-watchlist" class="tab-button px-6 py-3 font-medium text-violet-500 hover:text-violet-300 transition-colors border-b-2 border-transparent whitespace-nowrap">
+          Queremos assistir
+          <span class="watchlist-count ml-2 px-2 py-0.5 bg-violet-600/20 rounded-full text-xs"><%= watchlistMovies.length %></span>
+        </button>
+      </div>
+      
+      <!-- Roleta com texto descritivo -->
+      <div class="flex items-center gap-3">
+        <span class="text-violet-300 text-sm font-medium">Não sabe o que assistir?</span>
+        <button id="open-roulette-btn" class="px-4 py-2 bg-violet-600/20 hover:bg-violet-600/30 hover:text-violet-100 rounded-lg font-medium transition-all border border-violet-600/40 hover:border-violet-500/60 flex items-center gap-2 whitespace-nowrap bg-gradient-to-r from-violet-600">
+          <span class="hidden sm:inline">Roleta</span>
+        </button>
+      </div>
     </div>
 
     <div id="content-watched" class="tab-content">
@@ -153,7 +146,6 @@
 
 <%- include('_add_movie_modal', { tmdbConfigured }) %>
 <%- include('_movie_roulette_modal') %>
-<%- include('_rating_game_modal') %>
 
 <script>
 (function() {
@@ -748,172 +740,6 @@
       }, i * 100);
     }
   }
-
-  // ==================== JOGO DE ADIVINHAÇÃO ====================
-  const watchedMovies = <%- JSON.stringify(watchedMovies) %>;
-  const currentUserId = <%= currentUserId %>;
-  const gameModal = document.getElementById('rating-game-modal');
-  const gameModalContent = document.getElementById('game-modal-content');
-  let gameMovies = [];
-  let currentGameIndex = 0;
-  let gameScore = 0;
-  let gameErrors = 0;
-  let gameStreak = 0;
-  let maxStreak = 0;
-
-  document.getElementById('open-game-btn')?.addEventListener('click', () => {
-    // Filtrar filmes que o parceiro avaliou
-    gameMovies = watchedMovies.filter(m => m.hasPartnerRated);
-    
-    if (gameMovies.length === 0) {
-      window.showToast('Seu parceiro ainda não avaliou nenhum filme!', 'error');
-      return;
-    }
-
-    // Embaralhar
-    gameMovies = gameMovies.sort(() => Math.random() - 0.5);
-    startGame();
-  });
-
-  function startGame() {
-    currentGameIndex = 0;
-    gameScore = 0;
-    gameErrors = 0;
-    gameStreak = 0;
-    maxStreak = 0;
-
-    document.getElementById('game-question').classList.remove('hidden');
-    document.getElementById('game-options').classList.remove('hidden');
-    document.getElementById('game-feedback').classList.add('hidden');
-    document.getElementById('game-next-btn').classList.add('hidden');
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('game-restart-btn').classList.add('hidden');
-
-    updateGameDisplay();
-    
-    gameModal.classList.remove('hidden');
-    setTimeout(() => {
-      gameModal.style.opacity = '1';
-      gameModalContent.style.transform = 'scale(1)';
-    }, 10);
-  }
-
-  function updateGameDisplay() {
-    const movie = gameMovies[currentGameIndex];
-    document.getElementById('game-poster').src = movie.poster_url || '';
-    document.getElementById('game-title').textContent = movie.title;
-    document.getElementById('game-year').textContent = movie.year ? `(${movie.year})` : '';
-    document.getElementById('game-score').textContent = gameScore;
-    document.getElementById('game-errors').textContent = gameErrors;
-    document.getElementById('game-streak').textContent = gameStreak;
-
-    // Resetar botões
-    document.querySelectorAll('.game-option-btn').forEach(btn => {
-      btn.disabled = false;
-      btn.classList.remove('bg-green-600', 'bg-red-600', 'border-green-500', 'border-red-500');
-      btn.classList.add('bg-violet-900/30', 'border-violet-700/40');
-    });
-  }
-
-  document.querySelectorAll('.game-option-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const selectedRating = parseInt(this.dataset.rating);
-      const movie = gameMovies[currentGameIndex];
-      const correctRating = movie.partnerRating;
-
-      // Desabilitar todos os botões
-      document.querySelectorAll('.game-option-btn').forEach(b => b.disabled = true);
-
-      const feedback = document.getElementById('game-feedback');
-      const feedbackText = document.getElementById('feedback-text');
-      const feedbackDetail = document.getElementById('feedback-detail');
-
-      if (selectedRating === correctRating) {
-        // ACERTOU
-        gameScore++;
-        gameStreak++;
-        maxStreak = Math.max(maxStreak, gameStreak);
-
-        this.classList.remove('bg-violet-900/30', 'border-violet-700/40');
-        this.classList.add('bg-green-600', 'border-green-500');
-
-        feedback.classList.remove('hidden', 'bg-red-950/50', 'border-red-700/30');
-        feedback.classList.add('bg-green-950/50', 'border-green-700/30');
-        feedbackText.textContent = '🎉 Correto!';
-        feedbackText.className = 'text-lg font-semibold mb-2 text-green-300';
-        feedbackDetail.textContent = `Você realmente conhece o gosto do seu parceiro! +${gameStreak} streak`;
-        feedbackDetail.className = 'text-sm text-green-200';
-      } else {
-        // ERROU
-        gameErrors++;
-        gameStreak = 0;
-
-        this.classList.remove('bg-violet-900/30', 'border-violet-700/40');
-        this.classList.add('bg-red-600', 'border-red-500');
-
-        // Mostrar resposta correta
-        document.querySelectorAll('.game-option-btn').forEach(b => {
-          if (parseInt(b.dataset.rating) === correctRating) {
-            b.classList.remove('bg-violet-900/30', 'border-violet-700/40');
-            b.classList.add('bg-green-600', 'border-green-500');
-          }
-        });
-
-        feedback.classList.remove('hidden', 'bg-green-950/50', 'border-green-700/30');
-        feedback.classList.add('bg-red-950/50', 'border-red-700/30');
-        feedbackText.textContent = '❌ Ops! Errou...';
-        feedbackText.className = 'text-lg font-semibold mb-2 text-red-300';
-        feedbackDetail.textContent = `A resposta correta era ${correctRating} estrelas`;
-        feedbackDetail.className = 'text-sm text-red-200';
-      }
-
-      updateGameDisplay();
-
-      // Mostrar botão de próximo ou fim
-      currentGameIndex++;
-      if (currentGameIndex < gameMovies.length) {
-        document.getElementById('game-next-btn').classList.remove('hidden');
-      } else {
-        endGame();
-      }
-    });
-  });
-
-  document.getElementById('game-next-btn')?.addEventListener('click', () => {
-    document.getElementById('game-feedback').classList.add('hidden');
-    document.getElementById('game-next-btn').classList.add('hidden');
-    document.getElementById('game-question').classList.remove('hidden');
-    document.getElementById('game-options').classList.remove('hidden');
-    updateGameDisplay();
-  });
-
-  function endGame() {
-    document.getElementById('game-question').classList.add('hidden');
-    document.getElementById('game-options').classList.add('hidden');
-    document.getElementById('game-feedback').classList.add('hidden');
-    document.getElementById('game-next-btn').classList.add('hidden');
-    document.getElementById('game-over').classList.remove('hidden');
-    document.getElementById('game-restart-btn').classList.remove('hidden');
-
-    const total = gameScore + gameErrors;
-    const accuracy = total > 0 ? Math.round((gameScore / total) * 100) : 0;
-
-    document.getElementById('final-score').textContent = gameScore;
-    document.getElementById('final-total').textContent = total;
-    document.getElementById('final-accuracy').textContent = accuracy + '%';
-    document.getElementById('final-streak').textContent = maxStreak;
-  }
-
-  document.getElementById('game-restart-btn')?.addEventListener('click', () => {
-    gameMovies = gameMovies.sort(() => Math.random() - 0.5);
-    startGame();
-  });
-
-  document.getElementById('close-game-btn')?.addEventListener('click', () => {
-    gameModal.style.opacity = '0';
-    gameModalContent.style.transform = 'scale(0.9)';
-    setTimeout(() => gameModal.classList.add('hidden'), 300);
-  });
 
 })();
 </script>
