@@ -61,15 +61,10 @@
 
       <!-- Roleta Visual -->
       <div id="roulette-spinner" class="hidden relative" style="min-height: 700px;">
-        <div class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-8 border border-violet-700/30 overflow-visible">
-          
-          <!-- Seta indicadora -->
-          <div class="absolute top-8 left-1/2 -translate-x-1/2 z-20">
-            <div class="text-5xl animate-bounce">👇</div>
-          </div>
+        <div class="relative bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 rounded-xl p-8 border border-violet-700/30 overflow-visible">               
 
           <!-- Container da Slot Machine -->
-          <div class="relative mx-auto" style="width: 280px; height: 480px; perspective: 1000px;">
+          <div class="relative mx-auto" style="width: 280px; height: 432px; perspective: 1000px;">
             
             <!-- Frame decorativo -->
             <div class="absolute inset-0 rounded-2xl border-4 border-yellow-500/60 bg-gradient-to-br from-yellow-500/10 to-pink-500/10 shadow-2xl shadow-yellow-500/20 z-10 pointer-events-none">
@@ -83,14 +78,14 @@
               </div>
             </div>
 
-            <!-- Indicador de seleção (faixa no centro) -->
+            <!-- Indicador de seleção (faixa no centro - exatamente 1 filme) -->
             <div class="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-20">
               <!-- Setas apontando para o centro -->
               <div class="absolute left-2 top-1/2 -translate-y-1/2 text-4xl">👉</div>
               <div class="absolute right-2 top-1/2 -translate-y-1/2 text-4xl">👈</div>
               
-              <!-- Faixa de destaque -->
-              <div class="absolute inset-x-0 h-36 bg-gradient-to-r from-yellow-400/30 via-yellow-300/40 to-yellow-400/30 border-y-4 border-yellow-400 shadow-lg shadow-yellow-400/50">
+              <!-- Faixa de destaque - altura exata de 1 slot (144px) -->
+              <div class="absolute inset-x-0 bg-gradient-to-r from-yellow-400/30 via-yellow-300/40 to-yellow-400/30 border-y-4 border-yellow-400 shadow-lg shadow-yellow-400/50" style="height: 144px; top: 50%; transform: translateY(-50%);">
                 <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent animate-pulse"></div>
               </div>
               
