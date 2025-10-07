@@ -504,7 +504,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                 </svg>
               </button>
-              <input type="range" class="zoom-slider" id="zoom-slider-${recipe.id}" min="100" max="300" value="100" data-recipe-id="${recipe.id}">
+              <input type="range" class="zoom-slider" id="zoom-slider-${recipe.id}" min="100" max="1000" value="100" step="10" data-recipe-id="${recipe.id}">
               <button class="zoom-btn zoom-in-btn" data-recipe-id="${recipe.id}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -678,7 +678,7 @@
       if (zoomInBtn) {
         zoomInBtn.addEventListener('click', () => {
           const slider = document.getElementById(`zoom-slider-${recipeId}`);
-          const newValue = Math.min(300, parseInt(slider.value) + 20);
+          const newValue = Math.min(1000, parseInt(slider.value) + 50);
           slider.value = newValue;
           updateImageZoom(recipeId, newValue);
         });
@@ -687,7 +687,7 @@
       if (zoomOutBtn) {
         zoomOutBtn.addEventListener('click', () => {
           const slider = document.getElementById(`zoom-slider-${recipeId}`);
-          const newValue = Math.max(100, parseInt(slider.value) - 20);
+          const newValue = Math.max(100, parseInt(slider.value) - 50);
           slider.value = newValue;
           updateImageZoom(recipeId, newValue);
         });
