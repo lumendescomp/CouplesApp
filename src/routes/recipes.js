@@ -1,9 +1,28 @@
-const express = require('express');
+import express from 'express';
+import { getDb } from '../db.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router = express.Router();
-const db = require('../db');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+
+// Helper para buscar casal do usuário
+function getUserCouple(userId) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT c.*,
+           u1.display_name as partner1_name,
+           u2.display_name as partner2_name
+    FROM couples c
+    LEFT JOIN users u1 ON c.partner1_id = u1.id
+    LEFT JOIN users u2 ON c.partner2_id = u2.id
+    WHERE c.partner1_id = ? OR c.partner2_id = ?
+  `).get(userId, userId);
+}
 
 // Configurar multer para upload de fotos
 const storage = multer.diskStorage({
@@ -15,7 +34,9 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    const coupleId = req.user?.coupleId || 'unknown';
+    const userId = req.session?.user?.id;
+    const couple = userId ? getUserCouple(userId) : null;
+    const coupleId = couple?.id || 'unknown';
     const timestamp = Date.now();
     const ext = path.extname(file.originalname);
     cb(null, `couple${coupleId}_${timestamp}${ext}`);
@@ -41,27 +62,21 @@ const upload = multer({
 // GET /recipes - Listar todas as receitas do casal
 router.get('/', async (req, res) => {
   try {
-    const coupleId = req.user?.coupleId;
-    if (!coupleId) {
-      return res.status(400).render('errors/generic', {
-        csrfToken: req.csrfToken(),
-        currentUser: req.user,
-        currentPath: req.path,
-        message: 'Você precisa estar em um relacionamento para ver receitas.'
-      });
+    const db = getDb();
+    const userId = req.session?.user?.id;
+    
+    if (!userId) {
+      return res.redirect('/auth/login');
     }
 
-    // Buscar informações do casal
-    const couple = db.prepare(`
-      SELECT 
-        c.*,
-        u1.display_name as partner1_name,
-        u2.display_name as partner2_name
-      FROM couples c
-      LEFT JOIN users u1 ON c.partner1_id = u1.id
-      LEFT JOIN users u2 ON c.partner2_id = u2.id
-      WHERE c.id = ?
-    `).get(coupleId);
+    // Buscar o casal do usuário
+    const couple = getUserCouple(userId);
+
+    if (!couple) {
+      return res.redirect('/invite');
+    }
+
+    const coupleId = couple.id;
 
     // Buscar todas as receitas
     const recipes = db.prepare(`
@@ -76,7 +91,7 @@ router.get('/', async (req, res) => {
 
     // Adicionar informações de rating por usuário
     const recipesWithRatings = recipes.map(recipe => {
-      const isUser1 = req.user.id === couple.partner1_id;
+      const isUser1 = userId === couple.partner1_id;
       return {
         ...recipe,
         currentUserRating: isUser1 ? recipe.user1_rating : recipe.user2_rating,
@@ -85,13 +100,13 @@ router.get('/', async (req, res) => {
         partnerComment: isUser1 ? recipe.user2_comment : recipe.user1_comment,
         hasCurrentUserRated: isUser1 ? recipe.user1_rating !== null : recipe.user2_rating !== null,
         hasPartnerRated: isUser1 ? recipe.user2_rating !== null : recipe.user1_rating !== null,
-        isCreatedByCurrentUser: recipe.created_by_user_id === req.user.id
+        isCreatedByCurrentUser: recipe.created_by_user_id === userId
       };
     });
 
     res.render('recipes/index', {
       csrfToken: req.csrfToken(),
-      currentUser: req.user,
+      currentUser: req.session.user,
       currentPath: req.path,
       recipes: recipesWithRatings,
       couple
@@ -100,9 +115,9 @@ router.get('/', async (req, res) => {
     console.error('Erro ao carregar receitas:', error);
     res.status(500).render('errors/generic', {
       csrfToken: req.csrfToken(),
-      currentUser: req.user,
+      currentUser: req.session.user,
       currentPath: req.path,
-      message: 'Erro ao carregar receitas'
+      error: { message: 'Erro ao carregar receitas' }
     });
   }
 });
@@ -110,8 +125,15 @@ router.get('/', async (req, res) => {
 // POST /recipes - Criar nova receita
 router.post('/', upload.single('photo'), async (req, res) => {
   try {
-    const coupleId = req.user?.coupleId;
-    if (!coupleId) {
+    const db = getDb();
+    const userId = req.session?.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const couple = getUserCouple(userId);
+    if (!couple) {
       return res.status(400).json({ error: 'Você precisa estar em um relacionamento' });
     }
 
@@ -125,7 +147,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
     const result = db.prepare(`
       INSERT INTO recipes (couple_id, title, photo_path, reference_link, created_by_user_id)
       VALUES (?, ?, ?, ?, ?)
-    `).run(coupleId, title.trim(), photoPath, reference_link?.trim() || null, req.user.id);
+    `).run(couple.id, title.trim(), photoPath, reference_link?.trim() || null, userId);
 
     res.json({ success: true, recipeId: result.lastInsertRowid });
   } catch (error) {
@@ -137,11 +159,21 @@ router.post('/', upload.single('photo'), async (req, res) => {
 // PUT /recipes/:id - Atualizar receita (título, foto, link)
 router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
+    const db = getDb();
     const { id } = req.params;
-    const coupleId = req.user?.coupleId;
+    const userId = req.session?.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const couple = getUserCouple(userId);
+    if (!couple) {
+      return res.status(400).json({ error: 'Você precisa estar em um relacionamento' });
+    }
 
     // Verificar se a receita pertence ao casal
-    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, coupleId);
+    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, couple.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Receita não encontrada' });
     }
@@ -177,24 +209,32 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
 // PUT /recipes/:id/rating - Avaliar receita
 router.put('/:id/rating', async (req, res) => {
   try {
+    const db = getDb();
     const { id } = req.params;
     const { rating } = req.body;
-    const coupleId = req.user?.coupleId;
+    const userId = req.session?.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const couple = getUserCouple(userId);
+    if (!couple) {
+      return res.status(400).json({ error: 'Você precisa estar em um relacionamento' });
+    }
 
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Rating deve ser entre 1 e 5' });
     }
 
     // Verificar se a receita pertence ao casal
-    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, coupleId);
+    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, couple.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Receita não encontrada' });
     }
 
-    // Buscar informações do casal para determinar qual coluna atualizar
-    const couple = db.prepare('SELECT * FROM couples WHERE id = ?').get(coupleId);
-    const isUser1 = req.user.id === couple.partner1_id;
-
+    // Determinar qual coluna atualizar
+    const isUser1 = userId === couple.partner1_id;
     const column = isUser1 ? 'user1_rating' : 'user2_rating';
 
     db.prepare(`
@@ -213,20 +253,28 @@ router.put('/:id/rating', async (req, res) => {
 // PUT /recipes/:id/comment - Atualizar comentário
 router.put('/:id/comment', async (req, res) => {
   try {
+    const db = getDb();
     const { id } = req.params;
     const { comment } = req.body;
-    const coupleId = req.user?.coupleId;
+    const userId = req.session?.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const couple = getUserCouple(userId);
+    if (!couple) {
+      return res.status(400).json({ error: 'Você precisa estar em um relacionamento' });
+    }
 
     // Verificar se a receita pertence ao casal
-    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, coupleId);
+    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, couple.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Receita não encontrada' });
     }
 
-    // Buscar informações do casal para determinar qual coluna atualizar
-    const couple = db.prepare('SELECT * FROM couples WHERE id = ?').get(coupleId);
-    const isUser1 = req.user.id === couple.partner1_id;
-
+    // Determinar qual coluna atualizar
+    const isUser1 = userId === couple.partner1_id;
     const column = isUser1 ? 'user1_comment' : 'user2_comment';
 
     db.prepare(`
@@ -245,11 +293,21 @@ router.put('/:id/comment', async (req, res) => {
 // DELETE /recipes/:id - Deletar receita
 router.delete('/:id', async (req, res) => {
   try {
+    const db = getDb();
     const { id } = req.params;
-    const coupleId = req.user?.coupleId;
+    const userId = req.session?.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const couple = getUserCouple(userId);
+    if (!couple) {
+      return res.status(400).json({ error: 'Você precisa estar em um relacionamento' });
+    }
 
     // Verificar se a receita pertence ao casal
-    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, coupleId);
+    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, couple.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Receita não encontrada' });
     }
@@ -271,4 +329,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
