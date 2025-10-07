@@ -7,10 +7,10 @@
           src="<%= recipe.photo_path %>"
           alt="<%= recipe.title %>"
           class="recipe-card-image"
-          style="position: absolute; top: 50%; left: 50%; transform: translate(calc(-50% + <%= recipe.crop_x || 0 %>px), calc(-50% + <%= recipe.crop_y || 0 %>px)) scale(<%= recipe.crop_scale || 1 %>); transform-origin: center center; max-width: none; max-height: 100%;"
+          style="position: absolute; top: 50%; left: 50%; transform-origin: center center; max-width: none; max-height: 100%;"
           data-recipe-id="<%= recipe.id %>"
-          data-crop-x="<%= recipe.crop_x || 0 %>"
-          data-crop-y="<%= recipe.crop_y || 0 %>"
+          data-crop-x-normalized="<%= recipe.crop_x || 0 %>"
+          data-crop-y-normalized="<%= recipe.crop_y || 0 %>"
           data-crop-scale="<%= recipe.crop_scale || 1 %>"
           loading="lazy"
         />

@@ -44,7 +44,8 @@
     offsetX: 0,  // Deslocamento real da imagem em X
     offsetY: 0,  // Deslocamento real da imagem em Y
     scale: 1,
-    originalFile: null
+    originalFile: null,
+    editorImageSize: 300  // Tamanho de referência do editor (será atualizado no onload)
   };%;
     height: 300px;
     overflow: hidden;
@@ -804,24 +805,42 @@
     // Carregar imagem no editor ANTES de mostrar
     editorImage.src = imageSrc;
     
-    // Carregar metadados do crop existentes (ou valores padrão)
-    const cropData = window.currentRecipeCropData || { crop_x: 0, crop_y: 0, crop_scale: 1 };
-    imageEditorState.offsetX = cropData.crop_x;
-    imageEditorState.offsetY = cropData.crop_y;
-    imageEditorState.scale = cropData.crop_scale;
-    
-    // Debug: verificar valores carregados
-    console.log('Valores de crop carregados:', cropData);
-    
-    // Atualizar slider com o valor do crop salvo
-    const zoomValue = Math.round(cropData.crop_scale * 100);
-    document.getElementById(`zoom-slider-${recipeId}`).value = zoomValue;
-
     // Aguardar carregamento da imagem
     editorImage.onload = () => {
       // Mostrar editor, ocultar display (DEPOIS que a imagem carregar)
       display.classList.add('hidden');
       editor.classList.remove('hidden');
+      
+      // Guardar dimensão de referência do editor (para normalização)
+      imageEditorState.editorImageSize = Math.min(editorImage.offsetWidth, editorImage.offsetHeight);
+      
+      // Carregar metadados do crop existentes (valores normalizados)
+      const cropData = window.currentRecipeCropData || { crop_x: 0, crop_y: 0, crop_scale: 1 };
+      
+      // Desnormalizar: converter proporção de volta para pixels do editor
+      imageEditorState.offsetX = cropData.crop_x * imageEditorState.editorImageSize;
+      imageEditorState.offsetY = cropData.crop_y * imageEditorState.editorImageSize;
+      imageEditorState.scale = cropData.crop_scale;
+      
+      // Atualizar slider com o valor do crop salvo
+      const zoomValue = Math.round(cropData.crop_scale * 100);
+      document.getElementById(`zoom-slider-${recipeId}`).value = zoomValue;
+      
+      // Debug: Dimensões do editor e imagem
+      console.log('=== EDITOR - Dimensões ===');
+      console.log('Container:', { width: container.offsetWidth, height: container.offsetHeight });
+      console.log('Imagem natural:', { width: editorImage.naturalWidth, height: editorImage.naturalHeight });
+      console.log('Imagem renderizada:', { width: editorImage.offsetWidth, height: editorImage.offsetHeight });
+      console.log('Tamanho de referência para normalização:', imageEditorState.editorImageSize);
+      console.log('Moldura de crop: 280x210px (área visível)');
+      console.log('Proporção moldura vs imagem:', { 
+        horizontal: 280 / imageEditorState.editorImageSize,
+        vertical: 210 / imageEditorState.editorImageSize 
+      });
+      console.log('Valores desnormalizados:', {
+        normalized: cropData,
+        pixels: { x: imageEditorState.offsetX, y: imageEditorState.offsetY }
+      });
       
       // Aplicar transformação inicial (com os valores salvos)
       updateImageTransform(recipeId);
@@ -913,14 +932,20 @@
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
       
+      // Normalizar valores: salvar como proporção do tamanho da imagem renderizada
+      // Isso garante que funcione em qualquer tamanho de card
+      const normalizedX = imageEditorState.offsetX / imageEditorState.editorImageSize;
+      const normalizedY = imageEditorState.offsetY / imageEditorState.editorImageSize;
+      
       // Debug: verificar valores antes de salvar
-      console.log('Salvando crop com valores:', {
-        crop_x: imageEditorState.offsetX,
-        crop_y: imageEditorState.offsetY,
-        crop_scale: imageEditorState.scale
+      console.log('Salvando crop com valores normalizados:', {
+        offset_pixels: { x: imageEditorState.offsetX, y: imageEditorState.offsetY },
+        editor_size: imageEditorState.editorImageSize,
+        normalized: { x: normalizedX, y: normalizedY },
+        scale: imageEditorState.scale
       });
       
-      // Enviar metadados do crop para o servidor
+      // Enviar metadados do crop para o servidor (valores normalizados)
       const response = await fetch(`/recipes/${recipeId}/crop`, {
         method: 'PUT',
         headers: {
@@ -928,8 +953,8 @@
           'X-CSRF-Token': csrfToken
         },
         body: JSON.stringify({
-          crop_x: imageEditorState.offsetX,
-          crop_y: imageEditorState.offsetY,
+          crop_x: normalizedX,
+          crop_y: normalizedY,
           crop_scale: imageEditorState.scale
         })
       });
@@ -985,10 +1010,44 @@
   document.querySelectorAll('.recipe-card-image').forEach(img => {
     img.addEventListener('load', function() {
       const recipeId = this.dataset.recipeId;
-      const cropX = this.dataset.cropX;
-      const cropY = this.dataset.cropY;
-      const cropScale = this.dataset.cropScale;
-      console.log(`Card ${recipeId} - Crop values:`, { x: parseFloat(cropX), y: parseFloat(cropY), scale: parseFloat(cropScale) });
+      const normalizedX = parseFloat(this.dataset.cropXNormalized || 0);
+      const normalizedY = parseFloat(this.dataset.cropYNormalized || 0);
+      const editorScale = parseFloat(this.dataset.cropScale || 1);
+      
+      // Calcular tamanho renderizado da imagem no card
+      const cardImageSize = Math.min(this.offsetWidth, this.offsetHeight);
+      
+      // CORREÇÃO: Ajustar scale para compensar diferença entre moldura e card
+      // Moldura no editor: 280x210px (referência para o crop)
+      // Card: 264x198px (onde será exibido)
+      // Card é menor que moldura, então precisamos escalar mais
+      const cropFrameWidth = 280;  // Largura da moldura no editor
+      const cardContainer = this.parentElement;
+      const cardWidth = cardContainer.offsetWidth;  // Largura real do card
+      
+      // Fator de correção: card / moldura
+      const scaleCorrection = cropFrameWidth / cardWidth;  // 280/264 = 1.0606
+      
+      // Scale ajustado: aplicar correção ao scale do editor
+      const cardScale = editorScale * scaleCorrection;
+      
+      // Converter valores normalizados para pixels do card
+      const offsetXPixels = normalizedX * cardImageSize;
+      const offsetYPixels = normalizedY * cardImageSize;
+      
+      // Aplicar transform com scale corrigido
+      this.style.transform = `translate(calc(-50% + ${offsetXPixels}px), calc(-50% + ${offsetYPixels}px)) scale(${cardScale})`;
+      
+      console.log('=== CARD - Dimensões ===');
+      console.log(`Card ${recipeId} - Container:`, { width: cardContainer.offsetWidth, height: cardContainer.offsetHeight });
+      console.log(`Card ${recipeId} - Imagem natural:`, { width: this.naturalWidth, height: this.naturalHeight });
+      console.log(`Card ${recipeId} - Imagem renderizada:`, { width: this.offsetWidth, height: this.offsetHeight });
+      console.log(`Card ${recipeId} - Área visível do card:`, { width: cardContainer.offsetWidth, height: cardContainer.offsetHeight });
+      console.log(`Card ${recipeId} - Scale do editor:`, editorScale);
+      console.log(`Card ${recipeId} - Fator de correção:`, scaleCorrection, `(moldura ${cropFrameWidth}px / card ${cardWidth}px)`);
+      console.log(`Card ${recipeId} - Scale corrigido:`, cardScale);
+      console.log(`Card ${recipeId} - Valores normalizados:`, { x: normalizedX, y: normalizedY });
+      console.log(`Card ${recipeId} - Valores em pixels:`, { x: offsetXPixels, y: offsetYPixels });
     });
   });
 })();
