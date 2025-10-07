@@ -142,7 +142,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ error: 'Título é obrigatório' });
     }
 
-    const photoPath = req.file ? `/recipe-photos/${req.file.filename}` : null;
+    const photoPath = req.file ? `/public/recipe-photos/${req.file.filename}` : null;
 
     const result = db.prepare(`
       INSERT INTO recipes (couple_id, title, photo_path, reference_link, created_by_user_id)
@@ -181,7 +181,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     const { title, reference_link } = req.body;
     let photoPath = recipe.photo_path;
 
-    // Se uma nova foto foi enviada
+    // Se uma nova foto foi enviada (SUBSTITUI a foto original)
     if (req.file) {
       // Deletar foto antiga se existir
       if (recipe.photo_path) {
@@ -190,19 +190,66 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
           fs.unlinkSync(oldPath);
         }
       }
-      photoPath = `/recipe-photos/${req.file.filename}`;
+      photoPath = `/public/recipe-photos/${req.file.filename}`;
+      
+      // Reset crop metadata quando foto nova é carregada
+      db.prepare(`
+        UPDATE recipes 
+        SET title = ?, photo_path = ?, reference_link = ?, 
+            crop_x = 0, crop_y = 0, crop_scale = 1,
+            updated_at = datetime('now')
+        WHERE id = ?
+      `).run(title?.trim() || recipe.title, photoPath, reference_link?.trim() || null, id);
+    } else {
+      // Apenas atualizar título e link (mantém foto e crop)
+      db.prepare(`
+        UPDATE recipes 
+        SET title = ?, reference_link = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(title?.trim() || recipe.title, reference_link?.trim() || null, id);
     }
-
-    db.prepare(`
-      UPDATE recipes 
-      SET title = ?, photo_path = ?, reference_link = ?, updated_at = datetime('now')
-      WHERE id = ?
-    `).run(title?.trim() || recipe.title, photoPath, reference_link?.trim() || null, id);
 
     res.json({ success: true });
   } catch (error) {
     console.error('Erro ao atualizar receita:', error);
     res.status(500).json({ error: 'Erro ao atualizar receita' });
+  }
+});
+
+// PUT /recipes/:id/crop - Atualizar metadados do crop (não gera nova imagem)
+router.put('/:id/crop', async (req, res) => {
+  try {
+    const db = getDb();
+    const { id } = req.params;
+    const { crop_x, crop_y, crop_scale } = req.body;
+    const userId = req.session?.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const couple = getUserCouple(userId);
+    if (!couple) {
+      return res.status(400).json({ error: 'Você precisa estar em um relacionamento' });
+    }
+
+    // Verificar se a receita pertence ao casal
+    const recipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND couple_id = ?').get(id, couple.id);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Receita não encontrada' });
+    }
+
+    // Salvar metadados do crop
+    db.prepare(`
+      UPDATE recipes 
+      SET crop_x = ?, crop_y = ?, crop_scale = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(crop_x || 0, crop_y || 0, crop_scale || 1, id);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao salvar crop:', error);
+    res.status(500).json({ error: 'Erro ao salvar crop' });
   }
 });
 

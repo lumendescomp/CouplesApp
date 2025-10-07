@@ -32,6 +32,188 @@
   .recipe-card {
     animation: slideIn 0.3s ease-out;
   }
+
+  /* Image editor styles */
+  .image-editor-container {
+    position: relative;
+      // Estado do editor de imagem
+  const imageEditorState = {
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,  // Deslocamento real da imagem em X
+    offsetY: 0,  // Deslocamento real da imagem em Y
+    scale: 1,
+    originalFile: null
+  };%;
+    height: 300px;
+    overflow: hidden;
+    background: #1a0b2e;
+    border-radius: 8px;
+    cursor: move;
+    touch-action: none;
+  }
+
+  .image-editor-container img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    user-select: none;
+    -webkit-user-drag: none;
+    max-height: 100%;
+    max-width: none;
+    object-fit: contain;
+  }
+
+  /* Overlay de crop - mostra a área que aparecerá no card */
+  .crop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .crop-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 280px;
+    height: 210px; /* Aspect ratio 4:3 */
+    border: 3px solid rgba(124, 58, 237, 0.9);
+    border-radius: 8px;
+    box-shadow: 
+      0 0 0 9999px rgba(0, 0, 0, 0.6),
+      0 0 20px rgba(124, 58, 237, 0.5),
+      inset 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+
+  .crop-frame::before {
+    content: '';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(124, 58, 237, 0.95);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    content: 'Área visível no card';
+  }
+
+  /* Linhas guia de regra dos terços */
+  .crop-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      linear-gradient(to right, transparent 33.33%, rgba(124, 58, 237, 0.3) 33.33%, rgba(124, 58, 237, 0.3) 33.43%, transparent 33.43%, transparent 66.66%, rgba(124, 58, 237, 0.3) 66.66%, rgba(124, 58, 237, 0.3) 66.76%, transparent 66.76%),
+      linear-gradient(to bottom, transparent 33.33%, rgba(124, 58, 237, 0.3) 33.33%, rgba(124, 58, 237, 0.3) 33.43%, transparent 33.43%, transparent 66.66%, rgba(124, 58, 237, 0.3) 66.66%, rgba(124, 58, 237, 0.3) 66.76%, transparent 66.76%);
+  }
+
+  /* Cantos da moldura */
+  .crop-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 3px solid white;
+  }
+
+  .crop-corner.top-left {
+    top: -3px;
+    left: -3px;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+  }
+
+  .crop-corner.top-right {
+    top: -3px;
+    right: -3px;
+    border-left: none;
+    border-bottom: none;
+    border-top-right-radius: 8px;
+  }
+
+  .crop-corner.bottom-left {
+    bottom: -3px;
+    left: -3px;
+    border-right: none;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+  }
+
+  .crop-corner.bottom-right {
+    bottom: -3px;
+    right: -3px;
+    border-left: none;
+    border-top: none;
+    border-bottom-right-radius: 8px;
+  }
+
+  .image-editor-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  .zoom-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    background: rgba(124, 58, 237, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .zoom-btn:hover {
+    background: rgba(124, 58, 237, 0.4);
+    border-color: rgba(124, 58, 237, 0.8);
+  }
+
+  .zoom-slider {
+    flex: 1;
+    max-width: 200px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(124, 58, 237, 0.3);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  .zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgb(124, 58, 237);
+    cursor: pointer;
+  }
+
+  .zoom-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgb(124, 58, 237);
+    cursor: pointer;
+    border: none;
+  }
 </style>
 
 <div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
@@ -63,7 +245,7 @@
         </button>
       </div>
     <% } else { %>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <% recipes.forEach(recipe => { %>
           <%- include('_recipe_card', { recipe }) %>
         <% }) %>
@@ -266,24 +448,89 @@
     
     if (!recipe) return;
 
+    // Salvar dados do crop no estado global para usar no editor
+    window.currentRecipeCropData = {
+      crop_x: recipe.crop_x || 0,
+      crop_y: recipe.crop_y || 0,
+      crop_scale: recipe.crop_scale || 1
+    };
+
     const modal = document.getElementById('recipe-detail-modal');
     const content = document.getElementById('recipe-detail-content');
 
     // Preencher conteúdo
     content.innerHTML = `
       <div class="space-y-4 sm:space-y-6">
-        ${recipe.photo_path ? `
-          <img src="${recipe.photo_path}" alt="${recipe.title}" class="w-full h-48 sm:h-64 object-cover rounded-lg">
-        ` : `
-          <div class="w-full h-48 sm:h-64 bg-violet-900/20 rounded-lg flex items-center justify-center">
-            <svg class="w-16 h-16 sm:w-24 sm:h-24 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+        <!-- Foto clicável para editar -->
+        <div class="relative">
+          <div id="photo-display-${recipe.id}" class="relative group cursor-pointer photo-edit-trigger" data-recipe-id="${recipe.id}">
+            ${recipe.photo_path ? `
+              <img id="detail-photo-${recipe.id}" src="${recipe.photo_path}" alt="${recipe.title}" class="w-full h-48 sm:h-64 object-cover rounded-lg">
+            ` : `
+              <div id="detail-photo-${recipe.id}" class="w-full h-48 sm:h-64 bg-violet-900/20 rounded-lg flex items-center justify-center">
+                <svg class="w-16 h-16 sm:w-24 sm:h-24 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            `}
+            <div class="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div class="text-white text-center">
+                <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-sm font-medium">Clique para editar foto</span>
+              </div>
+            </div>
           </div>
-        `}
+          
+          <!-- Editor de Imagem (oculto inicialmente) -->
+          <div id="photo-editor-${recipe.id}" class="hidden">
+            <div class="image-editor-container" id="editor-container-${recipe.id}">
+              <img id="editor-image-${recipe.id}" src="" alt="Editor">
+              <!-- Overlay de crop -->
+              <div class="crop-overlay">
+                <div class="crop-frame">
+                  <div class="crop-corner top-left"></div>
+                  <div class="crop-corner top-right"></div>
+                  <div class="crop-corner bottom-left"></div>
+                  <div class="crop-corner bottom-right"></div>
+                </div>
+              </div>
+            </div>
+            <div class="image-editor-controls">
+              <button class="zoom-btn zoom-out-btn" data-recipe-id="${recipe.id}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                </svg>
+              </button>
+              <input type="range" class="zoom-slider" id="zoom-slider-${recipe.id}" min="100" max="300" value="100" data-recipe-id="${recipe.id}">
+              <button class="zoom-btn zoom-in-btn" data-recipe-id="${recipe.id}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button class="cancel-edit-btn flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded-lg transition" data-recipe-id="${recipe.id}">
+                Cancelar
+              </button>
+              <button class="save-edit-btn flex-1 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition" data-recipe-id="${recipe.id}">
+                Salvar Posição
+              </button>
+            </div>
+          </div>
+          <input type="file" id="edit-photo-input-${recipe.id}" class="hidden" accept="image/jpeg,image/jpg,image/png,image/webp" data-recipe-id="${recipe.id}">
+        </div>
 
         <div>
-          <h3 class="text-xl sm:text-2xl font-bold text-violet-100 mb-2">${recipe.title}</h3>
+          <!-- Título editável -->
+          <input 
+            type="text" 
+            id="detail-title-${recipe.id}"
+            value="${recipe.title}"
+            class="w-full text-xl sm:text-2xl font-bold text-violet-100 mb-2 bg-violet-900/20 border border-violet-700/30 rounded-lg px-3 py-2 focus:outline-none focus:border-fuchsia-500 title-edit-input"
+            data-recipe-id="${recipe.id}"
+          />
           ${recipe.reference_link ? `
             <a href="${recipe.reference_link}" target="_blank" rel="noopener noreferrer" class="text-sm text-fuchsia-400 hover:text-fuchsia-300 inline-flex items-center gap-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,8 +562,8 @@
               placeholder="Escreva seu comentário..."
             >${recipe.currentUserComment || ''}</textarea>
             <button 
-              onclick="saveComment(${recipe.id}, document.getElementById('current-user-comment').value)"
-              class="mt-2 px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition"
+              class="save-comment-btn mt-2 px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition"
+              data-recipe-id="${recipe.id}"
             >
               Salvar comentário
             </button>
@@ -357,6 +604,106 @@
       modal.style.opacity = '1';
       document.querySelector('#recipe-detail-modal .glass').style.transform = 'scale(1)';
     }, 10);
+
+    // Configurar event listeners após carregar o conteúdo
+    setTimeout(() => {
+      // Listener para clicar na foto (abre editor se foto existe, ou file picker se não existe)
+      const photoTrigger = document.querySelector('.photo-edit-trigger');
+      if (photoTrigger) {
+        photoTrigger.addEventListener('click', () => {
+          const recipeId = photoTrigger.dataset.recipeId;
+          const hasPhoto = recipe.photo_path;
+          
+          if (hasPhoto) {
+            // Se tem foto, abre o editor
+            openPhotoEditor(recipeId, recipe.photo_path);
+          } else {
+            // Se não tem foto, abre file picker
+            document.getElementById(`edit-photo-input-${recipeId}`).click();
+          }
+        });
+      }
+
+      // Listener para mudança de foto (upload nova)
+      const photoInput = document.querySelector(`#edit-photo-input-${recipeId}`);
+      if (photoInput) {
+        photoInput.addEventListener('change', (e) => {
+          const recipeId = e.target.dataset.recipeId;
+          const file = e.target.files[0];
+          if (file) {
+            // Ao selecionar nova foto, abre o editor
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              openPhotoEditor(recipeId, event.target.result, file);
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+
+      // Listener para título (blur = quando sai do campo)
+      const titleInput = document.querySelector('.title-edit-input');
+      if (titleInput) {
+        titleInput.addEventListener('blur', (e) => {
+          const recipeId = e.target.dataset.recipeId;
+          const title = e.target.value;
+          updateRecipeTitle(recipeId, title);
+        });
+      }
+
+      // Listener para botão de salvar comentário
+      const saveCommentBtn = document.querySelector('.save-comment-btn');
+      if (saveCommentBtn) {
+        saveCommentBtn.addEventListener('click', () => {
+          const recipeId = saveCommentBtn.dataset.recipeId;
+          const comment = document.getElementById('current-user-comment').value;
+          saveComment(recipeId, comment);
+        });
+      }
+
+      // Listeners para editor de imagem
+      const zoomSlider = document.getElementById(`zoom-slider-${recipeId}`);
+      const zoomInBtn = document.querySelector('.zoom-in-btn');
+      const zoomOutBtn = document.querySelector('.zoom-out-btn');
+      const cancelBtn = document.querySelector('.cancel-edit-btn');
+      const saveEditBtn = document.querySelector('.save-edit-btn');
+
+      if (zoomSlider) {
+        zoomSlider.addEventListener('input', (e) => {
+          updateImageZoom(recipeId, e.target.value);
+        });
+      }
+
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => {
+          const slider = document.getElementById(`zoom-slider-${recipeId}`);
+          const newValue = Math.min(300, parseInt(slider.value) + 20);
+          slider.value = newValue;
+          updateImageZoom(recipeId, newValue);
+        });
+      }
+
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => {
+          const slider = document.getElementById(`zoom-slider-${recipeId}`);
+          const newValue = Math.max(100, parseInt(slider.value) - 20);
+          slider.value = newValue;
+          updateImageZoom(recipeId, newValue);
+        });
+      }
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+          closePhotoEditor(recipeId);
+        });
+      }
+
+      if (saveEditBtn) {
+        saveEditBtn.addEventListener('click', () => {
+          savePhotoEdit(recipeId);
+        });
+      }
+    }, 50);
   }
 
   function closeRecipeDetail() {
@@ -397,5 +744,252 @@
       window.showToast(error.message || 'Erro ao salvar comentário', 'error');
     }
   };
+
+  // Atualizar título da receita
+  window.updateRecipeTitle = async function(recipeId, title) {
+    if (!title || !title.trim()) {
+      window.showToast('Título não pode estar vazio', 'error');
+      return;
+    }
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      const formData = new FormData();
+      formData.append('title', title.trim());
+
+      const response = await fetch(`/recipes/${recipeId}`, {
+        method: 'PUT',
+        headers: {
+          'X-CSRF-Token': csrfToken
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.showToast('Título atualizado!');
+      } else {
+        throw new Error(data.error || 'Erro ao atualizar título');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      window.showToast(error.message || 'Erro ao atualizar título', 'error');
+    }
+  };
+
+  // Estado do editor de imagem
+  let imageEditorState = {
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    scale: 1,
+    originalFile: null
+  };
+
+  // Abrir editor de foto
+  function openPhotoEditor(recipeId, imageSrc, file = null) {
+    const display = document.getElementById(`photo-display-${recipeId}`);
+    const editor = document.getElementById(`photo-editor-${recipeId}`);
+    const editorImage = document.getElementById(`editor-image-${recipeId}`);
+    const container = document.getElementById(`editor-container-${recipeId}`);
+
+    // Salvar arquivo original se for upload novo
+    if (file) {
+      imageEditorState.originalFile = file;
+    }
+
+    // Carregar imagem no editor ANTES de mostrar
+    editorImage.src = imageSrc;
+    
+    // Carregar metadados do crop existentes (ou valores padrão)
+    const cropData = window.currentRecipeCropData || { crop_x: 0, crop_y: 0, crop_scale: 1 };
+    imageEditorState.offsetX = cropData.crop_x;
+    imageEditorState.offsetY = cropData.crop_y;
+    imageEditorState.scale = cropData.crop_scale;
+    
+    // Debug: verificar valores carregados
+    console.log('Valores de crop carregados:', cropData);
+    
+    // Atualizar slider com o valor do crop salvo
+    const zoomValue = Math.round(cropData.crop_scale * 100);
+    document.getElementById(`zoom-slider-${recipeId}`).value = zoomValue;
+
+    // Aguardar carregamento da imagem
+    editorImage.onload = () => {
+      // Mostrar editor, ocultar display (DEPOIS que a imagem carregar)
+      display.classList.add('hidden');
+      editor.classList.remove('hidden');
+      
+      // Aplicar transformação inicial (com os valores salvos)
+      updateImageTransform(recipeId);
+      setupImageDragging(recipeId, container, editorImage);
+    };
+  }
+
+  // Configurar arrastar imagem
+  function setupImageDragging(recipeId, container, image) {
+    const handleStart = (e) => {
+      imageEditorState.isDragging = true;
+      
+      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+      
+      // Guardar posição inicial do mouse/touch
+      imageEditorState.startX = clientX;
+      imageEditorState.startY = clientY;
+      
+      updateImageTransform(recipeId);
+    };
+
+    const handleMove = (e) => {
+      if (!imageEditorState.isDragging) return;
+      e.preventDefault();
+      
+      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+      
+      // Calcular quanto o mouse/touch se moveu desde o início do drag
+      const deltaX = clientX - imageEditorState.startX;
+      const deltaY = clientY - imageEditorState.startY;
+      
+      // Atualizar a posição inicial para o próximo movimento
+      imageEditorState.startX = clientX;
+      imageEditorState.startY = clientY;
+      
+      // Acumular o deslocamento
+      imageEditorState.offsetX += deltaX;
+      imageEditorState.offsetY += deltaY;
+      
+      updateImageTransform(recipeId);
+    };
+
+    const handleEnd = () => {
+      imageEditorState.isDragging = false;
+      updateImageTransform(recipeId);
+    };
+
+    // Mouse events
+    container.addEventListener('mousedown', handleStart);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+
+    // Touch events
+    container.addEventListener('touchstart', handleStart);
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+  }
+
+  // Atualizar zoom da imagem
+  function updateImageZoom(recipeId, value) {
+    imageEditorState.scale = value / 100;
+    updateImageTransform(recipeId);
+  }
+
+  // Aplicar transformação na imagem
+  function updateImageTransform(recipeId) {
+    const image = document.getElementById(`editor-image-${recipeId}`);
+    // A imagem já está centralizada com top: 50%, left: 50%
+    // O transform adiciona o deslocamento do usuário + escala
+    image.style.transform = `translate(calc(-50% + ${imageEditorState.offsetX}px), calc(-50% + ${imageEditorState.offsetY}px)) scale(${imageEditorState.scale})`;
+    image.style.cursor = imageEditorState.isDragging ? 'grabbing' : 'grab';
+  }
+
+  // Fechar editor
+  function closePhotoEditor(recipeId) {
+    const display = document.getElementById(`photo-display-${recipeId}`);
+    const editor = document.getElementById(`photo-editor-${recipeId}`);
+    
+    display.classList.remove('hidden');
+    editor.classList.add('hidden');
+    
+    imageEditorState.originalFile = null;
+  }
+
+  // Salvar edição (salvar apenas metadados do crop, não gera nova imagem)
+  async function savePhotoEdit(recipeId) {
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      
+      // Debug: verificar valores antes de salvar
+      console.log('Salvando crop com valores:', {
+        crop_x: imageEditorState.offsetX,
+        crop_y: imageEditorState.offsetY,
+        crop_scale: imageEditorState.scale
+      });
+      
+      // Enviar metadados do crop para o servidor
+      const response = await fetch(`/recipes/${recipeId}/crop`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({
+          crop_x: imageEditorState.offsetX,
+          crop_y: imageEditorState.offsetY,
+          crop_scale: imageEditorState.scale
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.showToast('Enquadramento salvo!');
+        setTimeout(() => location.reload(), 500);
+      } else {
+        throw new Error(data.error || 'Erro ao salvar enquadramento');
+      }
+
+      closePhotoEditor(recipeId);
+    } catch (error) {
+      console.error('Erro ao salvar edição:', error);
+      window.showToast(error.message || 'Erro ao salvar enquadramento', 'error');
+    }
+  }
+
+  // Atualizar foto da receita
+  window.updateRecipePhoto = async function(recipeId, file) {
+    if (!file) return;
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await fetch(`/recipes/${recipeId}`, {
+        method: 'PUT',
+        headers: {
+          'X-CSRF-Token': csrfToken
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.showToast('Foto atualizada!');
+        setTimeout(() => location.reload(), 800);
+      } else {
+        throw new Error(data.error || 'Erro ao atualizar foto');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      window.showToast(error.message || 'Erro ao atualizar foto', 'error');
+    }
+  };
+
+  // Debug: Logar valores de crop dos cards quando carregarem
+  document.querySelectorAll('.recipe-card-image').forEach(img => {
+    img.addEventListener('load', function() {
+      const recipeId = this.dataset.recipeId;
+      const cropX = this.dataset.cropX;
+      const cropY = this.dataset.cropY;
+      const cropScale = this.dataset.cropScale;
+      console.log(`Card ${recipeId} - Crop values:`, { x: parseFloat(cropX), y: parseFloat(cropY), scale: parseFloat(cropScale) });
+    });
+  });
 })();
 </script>
