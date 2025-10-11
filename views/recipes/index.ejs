@@ -187,32 +187,6 @@
     }
   });
 
-  // Toast
-  window.showToast = function (message, type = "success") {
-    const toast = document.createElement("div");
-    const bgColor = type === "error" ? "bg-red-500" : 
-                    type === "info" ? "bg-blue-500" : 
-                    "bg-green-500";
-    
-    toast.className = `fixed bottom-4 sm:bottom-6 right-4 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 text-sm sm:text-base ${bgColor}`;
-    toast.textContent = message;
-    toast.style.opacity = "0";
-    toast.style.transform = "translateY(20px)";
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.style.opacity = "1";
-      toast.style.transform = "translateY(0)";
-    }, 10);
-    
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateY(20px)";
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  };
-
   // Delegação de eventos para cards
   document.addEventListener('click', async (e) => {
     // Abrir detalhes

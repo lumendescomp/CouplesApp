@@ -734,28 +734,27 @@
 
         // Mostra resultado
         if (uploadedCount > 0 && failedCount === 0) {
-          if (window.showToast) {
-            // Cria mensagem apropriada baseada no que foi enviado
-            let message = "✅ ";
-            const parts = [];
+          // Cria mensagem apropriada baseada no que foi enviado
+          let message = "✅ ";
+          const parts = [];
 
-            if (photoCount > 0) {
-              parts.push(`${photoCount} foto${photoCount > 1 ? "s" : ""}`);
-            }
-            if (videoCount > 0) {
-              parts.push(`${videoCount} vídeo${videoCount > 1 ? "s" : ""}`);
-            }
-
-            message +=
-              parts.join(" e ") +
-              " adicionado" +
-              (uploadedCount > 1 ? "s" : "") +
-              "!";
-            window.showToast(message);
+          if (photoCount > 0) {
+            parts.push(`${photoCount} foto${photoCount > 1 ? "s" : ""}`);
           }
+          if (videoCount > 0) {
+            parts.push(`${videoCount} vídeo${videoCount > 1 ? "s" : ""}`);
+          }
+
+          message +=
+            parts.join(" e ") +
+            " adicionado" +
+            (uploadedCount > 1 ? "s" : "") +
+            "!";
+          window.showToast(message);
         } else if (failedCount > 0) {
-          alert(
-            `${uploadedCount} mídia(s) adicionada(s), ${failedCount} falhou(aram).`
+          window.showToast(
+            `${uploadedCount} mídia(s) adicionada(s), ${failedCount} falhou(aram).`,
+            "error"
           );
         }
       });
@@ -846,16 +845,13 @@
                 draggedItem && draggedItem.dataset.mediaType === "video";
               const mediaType = isVideo ? "Vídeo" : "Foto";
 
-              if (window.showToast)
-                window.showToast(`${mediaType} adicionado ao slot!`);
+              window.showToast(`${mediaType} adicionado ao slot!`);
             } else {
-              if (window.showToast)
-                window.showToast("Erro ao adicionar mídia", "error");
+              window.showToast("Erro ao adicionar mídia", "error");
             }
           } catch (err) {
             console.error(err);
-            if (window.showToast)
-              window.showToast("Erro ao adicionar mídia", "error");
+            window.showToast("Erro ao adicionar mídia", "error");
           }
         });
       });
@@ -895,7 +891,7 @@
                 // Remove flag para permitir re-inicialização
                 slot.dataset.dropInitialized = "false";
               }
-              if (window.showToast) window.showToast("Mídia removida");
+              window.showToast("Mídia removida");
             }
           } catch (err) {
             console.error(err);
@@ -957,15 +953,11 @@
               // Atualiza botões do carrossel
               updateCarouselButtons();
 
-              if (window.showToast) {
-                window.showToast("Mídia deletada com sucesso!");
-              }
+              window.showToast("Mídia deletada com sucesso!");
             }
           } catch (err) {
             console.error(err);
-            if (window.showToast) {
-              window.showToast("Erro ao deletar mídia", "error");
-            }
+            window.showToast("Erro ao deletar mídia", "error");
           }
         };
       });
@@ -1036,45 +1028,55 @@
 
                 if (element.tagName === "VIDEO") {
                   // Para vídeos: definir src e iniciar reprodução
-                  element.src = src;
                   element.style.opacity = "0";
                   element.addEventListener(
                     "loadeddata",
                     () => {
                       loadingImages.delete(src);
-                      setTimeout(() => {
-                        element.style.opacity = "1";
-                      }, 10);
-                      element.play().catch(() => {
-                        // Ignorar erros de autoplay
-                      });
+                      if (element.isConnected) {
+                        setTimeout(() => {
+                          element.style.opacity = "1";
+                        }, 10);
+                        element.play().catch(() => {
+                          // Ignorar erros de autoplay
+                        });
+                      }
                     },
                     { once: true }
                   );
+                  element.addEventListener(
+                    "error",
+                    () => {
+                      loadingImages.delete(src);
+                      console.log("[Album] Erro ao carregar vídeo:", src);
+                    },
+                    { once: true }
+                  );
+                  element.src = src;
                   element.removeAttribute("data-src");
                   element.classList.remove("lazy-image");
                   observer.unobserve(element);
                 } else {
-                  // Para imagens: aplicar src direto (SEM new Image)
+                  // Para imagens: carregar DIRETAMENTE no elemento (FIX: sem new Image duplicado)
                   element.style.opacity = "0";
 
-                  // Abortar se já saiu da página
+                  const onLoad = () => {
+                    loadingImages.delete(src);
+                    if (element.isConnected) {
+                      setTimeout(() => {
+                        element.style.opacity = "1";
+                      }, 10);
+                    }
+                  };
+
                   const onError = () => {
                     loadingImages.delete(src);
                     console.log("[Album] Erro ao carregar:", src);
                   };
 
-                  element.onerror = onError;
-                  element.onload = () => {
-                    loadingImages.delete(src);
-                    setTimeout(() => {
-                      if (element.isConnected) {
-                        // Só aplicar se ainda estiver no DOM
-                        element.style.opacity = "1";
-                      }
-                    }, 10);
-                  };
-
+                  element.addEventListener("load", onLoad, { once: true });
+                  element.addEventListener("error", onError, { once: true });
+                  
                   element.src = src;
                   element.removeAttribute("data-src");
                   element.classList.remove("lazy-image");
@@ -1113,14 +1115,14 @@
       }
 
       // Pausar e cancelar carregamento de todos os vídeos
-      document.querySelectorAll("video").forEach((video) => {
+      document.querySelectorAll("#photos-carousel video, .album-slot video").forEach((video) => {
         video.pause();
         video.removeAttribute("src");
         video.load();
       });
 
       // Cancelar carregamento de TODAS as imagens com data-src ou que estão carregando
-      document.querySelectorAll("img").forEach((img) => {
+      document.querySelectorAll("#photos-carousel img, .album-slot img").forEach((img) => {
         const dataSrc = img.getAttribute("data-src");
         if (dataSrc) {
           console.log("[Album] Cancelando carregamento de imagem:", dataSrc);
@@ -1128,9 +1130,10 @@
         }
 
         // Abortar carregamento em progresso
-        if (img.dataset.loading === "true") {
+        if (img.dataset.loading === "true" || img.src) {
           console.log("[Album] Abortando carregamento:", img.src);
           img.src = ""; // Força cancelar requisição
+          img.removeAttribute("src");
         }
       });
 
