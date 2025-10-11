@@ -107,7 +107,16 @@
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script>
 (function() {
-  const socket = io();
+  // Prevenir re-execução (Memory Leak Fix #2, #4)
+  if (window._chatInitialized) {
+    console.log('[Chat] Já inicializado, pulando...');
+    return;
+  }
+  window._chatInitialized = true;
+  console.log('[Chat] Inicializando pela primeira vez');
+  
+  // Usar Socket.IO global (Memory Leak Fix #1)
+  const socket = window.getGlobalSocket ? window.getGlobalSocket() : io();
   const coupleId = <%= couple.id %>;
   const userId = <%= currentUser.id %>;
   const messagesContainer = document.getElementById('chat-messages');
@@ -121,6 +130,7 @@
 
   // Conectar à sala do casal
   socket.emit('join-couple', coupleId);
+  console.log('[Chat] Entrou na sala couple-' + coupleId);
 
   // Scroll para o final
   function scrollToBottom(smooth = false) {
@@ -263,8 +273,15 @@
     }
   });
 
-  // Receber nova mensagem
-  socket.on('new-message', (msg) => {
+  // Remover listener antigo de mensagens (Memory Leak Fix #5)
+  if (window._chatMessageHandler) {
+    socket.off('new-message', window._chatMessageHandler);
+  }
+  
+  // Criar e armazenar novo handler
+  window._chatMessageHandler = function(msg) {
+    console.log('[Chat] Nova mensagem recebida:', msg);
+    
     // Remover empty state se existir
     const emptyState = messagesContainer.querySelector('.flex.items-center.justify-center');
     if (emptyState) {
@@ -292,7 +309,10 @@
     } else {
       scrollToBottom(true);
     }
-  });
+  };
+  
+  // Adicionar listener
+  socket.on('new-message', window._chatMessageHandler);
 
   // Criar bubble de mensagem
   function createMessageBubble(msg, isOwn) {

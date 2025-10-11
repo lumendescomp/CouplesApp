@@ -89,6 +89,23 @@
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <% if (currentUser) { %>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      // Socket.IO Global Instance - Previne múltiplas conexões (Memory Leak Fix)
+      window._globalSocket = null;
+      window.getGlobalSocket = function() {
+        if (!window._globalSocket || !window._globalSocket.connected) {
+          console.log('[Socket] Criando nova conexão Socket.IO');
+          window._globalSocket = io();
+          window._globalSocket.on('connect', () => {
+            console.log('[Socket] Conectado:', window._globalSocket.id);
+          });
+          window._globalSocket.on('disconnect', () => {
+            console.log('[Socket] Desconectado');
+          });
+        }
+        return window._globalSocket;
+      };
+    </script>
     <% } %>
     <script
       defer
@@ -168,6 +185,12 @@
         const currentPath = window.location.pathname || "";
         
         console.log("[Layout] htmx:beforeSwap - currentPath:", currentPath, "| targetURL:", targetURL);
+        
+        // Cleanup de toast timer (Memory Leak Fix #8)
+        if (window.__hsToastTimer) {
+          clearTimeout(window.__hsToastTimer);
+          window.__hsToastTimer = null;
+        }
         
         // Se estava em /album e está indo para outra rota
         if (currentPath.includes("/album") && !targetURL.includes("/album")) {
@@ -655,6 +678,15 @@
       const loader = document.getElementById('chat-modal-loader');
       const inner = document.getElementById('chat-modal-inner');
       let chatLoaded = false;
+      let chatInitialized = false;
+      
+      // Armazenar timers para cleanup
+      const scrollTimers = [];
+      
+      function clearScrollTimers() {
+        scrollTimers.forEach(id => clearTimeout(id));
+        scrollTimers.length = 0;
+      }
 
       function openModal() {
         modal.classList.remove('hidden');
@@ -662,6 +694,7 @@
         loader.classList.remove('hidden');
         inner.classList.add('hidden');
         modal.focus();
+        
         if (!chatLoaded) {
           fetch('/chat', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(r => r.text())
@@ -670,17 +703,25 @@
               loader.classList.add('hidden');
               inner.classList.remove('hidden');
               chatLoaded = true;
-              // Executa scripts do chat carregados dinamicamente
-              Array.from(inner.querySelectorAll('script')).forEach(oldScript => {
-                const newScript = document.createElement('script');
-                if (oldScript.src) {
-                  newScript.src = oldScript.src;
-                } else {
-                  newScript.textContent = oldScript.textContent;
-                }
-                document.body.appendChild(newScript);
-                document.body.removeChild(newScript);
-              });
+              
+              // Executar scripts apenas uma vez (Memory Leak Fix #2)
+              if (!chatInitialized) {
+                chatInitialized = true;
+                console.log('[Modal] Inicializando scripts do chat pela primeira vez');
+                
+                Array.from(inner.querySelectorAll('script')).forEach(oldScript => {
+                  const newScript = document.createElement('script');
+                  if (oldScript.src) {
+                    newScript.src = oldScript.src;
+                  } else {
+                    newScript.textContent = oldScript.textContent;
+                  }
+                  document.body.appendChild(newScript);
+                  document.body.removeChild(newScript);
+                });
+              } else {
+                console.log('[Modal] Chat já inicializado, pulando execução de scripts');
+              }
               
               // Função para forçar scroll ao final
               function forceScrollToBottom() {
@@ -715,11 +756,12 @@
                 forceScrollToBottom();
               }
               
-              // Múltiplos fallbacks para garantir o scroll
-              setTimeout(forceScrollToBottom, 50);
-              setTimeout(forceScrollToBottom, 150);
-              setTimeout(forceScrollToBottom, 300);
-              setTimeout(forceScrollToBottom, 600);
+              // Múltiplos fallbacks para garantir o scroll (com cleanup)
+              clearScrollTimers();
+              scrollTimers.push(setTimeout(forceScrollToBottom, 50));
+              scrollTimers.push(setTimeout(forceScrollToBottom, 150));
+              scrollTimers.push(setTimeout(forceScrollToBottom, 300));
+              scrollTimers.push(setTimeout(forceScrollToBottom, 600));
               
               // Foca no input do chat se existir
               const input = inner.querySelector('input[id="message-input"]');
@@ -746,6 +788,9 @@
       }
 
       function closeModal() {
+        // Limpar timers pendentes (Memory Leak Fix #3)
+        clearScrollTimers();
+        
         modal.classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
         // Foca de volta no botão
@@ -767,11 +812,10 @@
     
     <script>
       // Script para atualizar badge de notificações do chat
-      // Aguarda o Socket.IO estar disponível
       (function initChatBadge() {
         // Verifica se Socket.IO está disponível
-        if (typeof io === 'undefined') {
-          console.log('[Badge] Aguardando Socket.IO...');
+        if (typeof window.getGlobalSocket !== 'function') {
+          console.log('[Badge] Aguardando Socket.IO global...');
           setTimeout(initChatBadge, 100);
           return;
         }
@@ -797,19 +841,17 @@
           }
         }
         
-        // Conectar ao Socket.IO
-        console.log('[Badge] Conectando ao Socket.IO...');
-        const socket = io();
+        // Usar Socket.IO global (Memory Leak Fix #1)
+        const socket = window.getGlobalSocket();
+        console.log('[Badge] Usando Socket.IO global:', socket.id);
         
-        socket.on('connect', () => {
-          console.log('[Badge] Socket.IO conectado!', socket.id);
-        });
+        // Remover listener antigo se existir (Memory Leak Fix #5)
+        if (window._badgeMessageHandler) {
+          socket.off('new-message-notification', window._badgeMessageHandler);
+        }
         
-        socket.on('disconnect', () => {
-          console.log('[Badge] Socket.IO desconectado');
-        });
-        
-        socket.on('new-message-notification', (data) => {
+        // Criar e armazenar novo handler
+        window._badgeMessageHandler = function(data) {
           console.log('[Badge] Nova mensagem recebida:', data);
           console.log('[Badge] É para mim?', data.recipientId === currentUserId);
           console.log('[Badge] Estou no chat?', window.location.pathname.includes('/chat'));
@@ -825,7 +867,9 @@
               chatBtn.classList.remove('animate-bounce');
             }, 1000);
           }
-        });
+        };
+        
+        socket.on('new-message-notification', window._badgeMessageHandler);
         
         // Limpar badge ao clicar no botão do chat
         chatBtn.addEventListener('click', () => {

@@ -1005,50 +1005,5 @@
       window.showToast(error.message || 'Erro ao atualizar foto', 'error');
     }
   };
-
-  // Debug: Logar valores de crop dos cards quando carregarem
-  document.querySelectorAll('.recipe-card-image').forEach(img => {
-    img.addEventListener('load', function() {
-      const recipeId = this.dataset.recipeId;
-      const normalizedX = parseFloat(this.dataset.cropXNormalized || 0);
-      const normalizedY = parseFloat(this.dataset.cropYNormalized || 0);
-      const editorScale = parseFloat(this.dataset.cropScale || 1);
-      
-      // Calcular tamanho renderizado da imagem no card
-      const cardImageSize = Math.min(this.offsetWidth, this.offsetHeight);
-      
-      // CORREÇÃO: Ajustar scale para compensar diferença entre moldura e card
-      // Moldura no editor: 280x210px (referência para o crop)
-      // Card: 264x198px (onde será exibido)
-      // Card é menor que moldura, então precisamos escalar mais
-      const cropFrameWidth = 280;  // Largura da moldura no editor
-      const cardContainer = this.parentElement;
-      const cardWidth = cardContainer.offsetWidth;  // Largura real do card
-      
-      // Fator de correção: card / moldura
-      const scaleCorrection = cropFrameWidth / cardWidth;  // 280/264 = 1.0606
-      
-      // Scale ajustado: aplicar correção ao scale do editor
-      const cardScale = editorScale * scaleCorrection;
-      
-      // Converter valores normalizados para pixels do card
-      const offsetXPixels = normalizedX * cardImageSize;
-      const offsetYPixels = normalizedY * cardImageSize;
-      
-      // Aplicar transform com scale corrigido
-      this.style.transform = `translate(calc(-50% + ${offsetXPixels}px), calc(-50% + ${offsetYPixels}px)) scale(${cardScale})`;
-      
-      console.log('=== CARD - Dimensões ===');
-      console.log(`Card ${recipeId} - Container:`, { width: cardContainer.offsetWidth, height: cardContainer.offsetHeight });
-      console.log(`Card ${recipeId} - Imagem natural:`, { width: this.naturalWidth, height: this.naturalHeight });
-      console.log(`Card ${recipeId} - Imagem renderizada:`, { width: this.offsetWidth, height: this.offsetHeight });
-      console.log(`Card ${recipeId} - Área visível do card:`, { width: cardContainer.offsetWidth, height: cardContainer.offsetHeight });
-      console.log(`Card ${recipeId} - Scale do editor:`, editorScale);
-      console.log(`Card ${recipeId} - Fator de correção:`, scaleCorrection, `(moldura ${cropFrameWidth}px / card ${cardWidth}px)`);
-      console.log(`Card ${recipeId} - Scale corrigido:`, cardScale);
-      console.log(`Card ${recipeId} - Valores normalizados:`, { x: normalizedX, y: normalizedY });
-      console.log(`Card ${recipeId} - Valores em pixels:`, { x: offsetXPixels, y: offsetYPixels });
-    });
-  });
 })();
 </script>
