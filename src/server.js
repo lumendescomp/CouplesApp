@@ -9,6 +9,8 @@ import csrf from "csurf";
 import { fileURLToPath } from "url";
 import { ensureAuthed } from "./middleware/auth.js";
 import expressLayouts from "express-ejs-layouts";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import authRoutes from "./routes/auth.js";
 import inviteRoutes from "./routes/invite.js";
 import joinRoutes from "./routes/join.js";
@@ -18,12 +20,16 @@ import cornerRoutes from "./routes/corner.js";
 import albumRoutes from "./routes/album.js";
 import moviesRoutes from "./routes/movies.js";
 import recipesRoutes from "./routes/recipes.js";
-import { initDb } from "./db.js";
+import giftListRoutes from "./routes/gift-list.js";
+import chatRoutes from "./routes/chat.js";
+import { initDb, getDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 const SQLiteStore = SQLiteStoreFactory(session);
 
 // Basic security headers
@@ -38,8 +44,9 @@ app.use(
           "'unsafe-eval'", // Necessário para PIXI.js
           "https://cdn.tailwindcss.com",
           "https://unpkg.com",
+          "https://cdn.socket.io",
         ],
-        "connect-src": ["'self'", "https://unpkg.com"],
+        "connect-src": ["'self'", "https://unpkg.com", "ws://localhost:*", "wss://localhost:*"],
         "style-src": [
           "'self'",
           "'unsafe-inline'",
@@ -78,7 +85,7 @@ app.use(
   })
 );
 
-// CSRF: aplicar globalmente, exceto para POST multipart em /profile, /album/upload e /recipes,
+// CSRF: aplicar globalmente, exceto para POST multipart em /profile, /album/upload, /recipes e /gift-list,
 // onde validaremos após o multer (pois o corpo ainda não foi processado aqui)
 const csrfProtection = csrf();
 app.use((req, res, next) => {
@@ -86,10 +93,11 @@ app.use((req, res, next) => {
   const isMultipart = ct.startsWith("multipart/form-data");
   if (
     isMultipart &&
-    req.method === "POST" &&
+    (req.method === "POST" || req.method === "PUT") &&
     (req.path.startsWith("/profile") || 
      req.path.startsWith("/album/upload") ||
-     req.path.startsWith("/recipes"))
+     req.path.startsWith("/recipes") ||
+     req.path.startsWith("/gift-list"))
   ) {
     return next();
   }
@@ -132,6 +140,51 @@ app.use("/corner", ensureAuthed, cornerRoutes);
 app.use("/album", ensureAuthed, albumRoutes);
 app.use("/movies", ensureAuthed, moviesRoutes);
 app.use("/recipes", ensureAuthed, recipesRoutes);
+app.use("/gift-list", ensureAuthed, giftListRoutes);
+app.use("/chat", ensureAuthed, chatRoutes);
+
+// Socket.IO para chat em tempo real
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Entrar na sala do casal
+  socket.on('join-couple', (coupleId) => {
+    socket.join(`couple-${coupleId}`);
+    console.log(`Socket ${socket.id} joined couple-${coupleId}`);
+  });
+
+  // Enviar mensagem
+  socket.on('send-message', async (data) => {
+    try {
+      const { coupleId, userId, message } = data;
+      
+      // Salvar no banco
+      const db = getDb();
+      const result = db.prepare(`
+        INSERT INTO chat_messages (couple_id, sender_user_id, message)
+        VALUES (?, ?, ?)
+      `).run(coupleId, userId, message);
+
+      // Buscar mensagem completa com nome do usuário
+      const newMessage = db.prepare(`
+        SELECT cm.*, u.username as sender_name
+        FROM chat_messages cm
+        JOIN users u ON cm.sender_user_id = u.id
+        WHERE cm.id = ?
+      `).get(result.lastInsertRowid);
+
+      // Broadcast para todos na sala do casal
+      io.to(`couple-${coupleId}`).emit('new-message', newMessage);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      socket.emit('error', { message: 'Erro ao enviar mensagem' });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // 404
 app.use((req, res) => {
@@ -153,6 +206,6 @@ app.use((err, req, res, next) => {
 // Start
 const PORT = process.env.PORT || 3000;
 await initDb();
-app.listen(PORT, () =>
+httpServer.listen(PORT, () =>
   console.log(`Server listening on http://localhost:${PORT}`)
 );

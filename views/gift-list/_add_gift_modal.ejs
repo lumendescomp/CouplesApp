@@ -1,0 +1,107 @@
+<!-- Modal para adicionar presente -->
+<div id="add-gift-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="glass rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-violet-700/40">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-semibold text-violet-100">Adicionar Presente</h3>
+        <button class="close-modal-btn text-violet-300 hover:text-violet-100 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="add-gift-form" class="space-y-4">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" id="gift-recipient-id" name="recipient_user_id">
+
+        <!-- Nome do presente -->
+        <div>
+          <label class="block text-sm font-medium text-violet-200 mb-2">
+            Nome do presente *
+          </label>
+          <input
+            type="text"
+            name="name"
+            required
+            placeholder="Ex: Fone de ouvido Bluetooth"
+            class="w-full px-4 py-3 rounded-lg bg-white/5 border border-violet-700/40 text-violet-100 placeholder-violet-400/50 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/50 focus:border-transparent transition"
+          />
+        </div>
+
+        <!-- Link do produto -->
+        <div>
+          <label class="block text-sm font-medium text-violet-200 mb-2">
+            Link do produto
+          </label>
+          <input
+            type="url"
+            name="link"
+            placeholder="https://www.exemplo.com/produto"
+            class="w-full px-4 py-3 rounded-lg bg-white/5 border border-violet-700/40 text-violet-100 placeholder-violet-400/50 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/50 focus:border-transparent transition"
+          />
+        </div>
+
+        <!-- Valor do presente -->
+        <div>
+          <label class="block text-sm font-medium text-violet-200 mb-2">
+            Valor (R$)
+          </label>
+          <input
+            type="number"
+            name="price"
+            step="0.01"
+            min="0"
+            placeholder="0,00"
+            class="w-full px-4 py-3 rounded-lg bg-white/5 border border-violet-700/40 text-violet-100 placeholder-violet-400/50 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/50 focus:border-transparent transition"
+          />
+        </div>
+
+        <!-- Foto do presente -->
+        <div>
+          <label class="block text-sm font-medium text-violet-200 mb-2">
+            Foto do presente
+          </label>
+          <div class="flex items-center gap-3">
+            <label class="flex-1 cursor-pointer">
+              <div class="px-4 py-3 rounded-lg bg-white/5 border border-violet-700/40 hover:border-fuchsia-400/50 text-violet-300 hover:text-violet-100 transition flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-sm">Escolher foto</span>
+              </div>
+              <input
+                type="file"
+                id="gift-photo-input"
+                name="photo"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                class="hidden"
+              />
+            </label>
+          </div>
+          
+          <!-- Preview da foto -->
+          <div id="gift-photo-preview" class="hidden mt-3">
+            <img src="" alt="Preview" class="w-full h-48 object-cover rounded-lg border border-violet-700/40">
+          </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex gap-3 pt-4">
+          <button
+            type="button"
+            class="close-modal-btn flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition"
+          >
+            Adicionar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

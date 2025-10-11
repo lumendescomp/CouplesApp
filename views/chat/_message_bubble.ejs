@@ -1,0 +1,17 @@
+<%
+  const isOwn = msg.sender_user_id === currentUser.id;
+  const date = new Date(msg.created_at);
+  const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+%>
+
+<div class="flex <%= isOwn ? 'justify-end' : 'justify-start' %>">
+  <div class="max-w-[70%]">
+    <div class="<%= isOwn ? 'bg-violet-600/80' : 'bg-white/5' %> rounded-2xl px-4 py-3 border <%= isOwn ? 'border-violet-500/40' : 'border-violet-700/40' %>">
+      <% if (!isOwn) { %>
+        <p class="text-xs text-fuchsia-400 font-medium mb-1"><%= msg.sender_name %></p>
+      <% } %>
+      <p class="text-violet-100 break-words"><%= msg.message %></p>
+    </div>
+    <p class="text-xs text-violet-400/60 mt-1 <%= isOwn ? 'text-right' : 'text-left' %>"><%= timeStr %></p>
+  </div>
+</div>

@@ -1,0 +1,285 @@
+<!-- Header -->
+<div class="mb-8 text-center">
+  <h1 class="text-3xl sm:text-4xl font-bold mb-3">
+    <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 text-transparent bg-clip-text">
+      🎁 Nossa Lista de Presente
+    </span>
+  </h1>
+  <p class="text-violet-300/80 text-sm sm:text-base">
+    Adicionem os presentes que vocês desejam ganhar um do outro
+  </p>
+</div>
+
+    <!-- Duas colunas para os presentes -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Coluna do Parceiro 1 -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-violet-200 flex items-center gap-2">
+            <span class="text-2xl">💝</span>
+            <%= couple.partner1_name %>
+          </h2>
+          <button 
+            class="add-gift-btn px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition flex items-center gap-2"
+            data-recipient-id="<%= couple.partner1_id %>"
+            data-recipient-name="<%= couple.partner1_name %>"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Adicionar
+          </button>
+        </div>
+
+        <div class="space-y-3">
+          <% if (partner1Gifts.length === 0) { %>
+            <div class="glass rounded-lg p-8 text-center">
+              <svg class="w-16 h-16 mx-auto mb-3 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+              </svg>
+              <p class="text-violet-300/70 text-sm">Nenhum presente na lista ainda</p>
+            </div>
+          <% } else { %>
+            <% partner1Gifts.forEach(gift => { %>
+              <%- include('_gift_item', { gift, currentUser, couple }) %>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Coluna do Parceiro 2 -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-violet-200 flex items-center gap-2">
+            <span class="text-2xl">💝</span>
+            <%= couple.partner2_name %>
+          </h2>
+          <button 
+            class="add-gift-btn px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg transition flex items-center gap-2"
+            data-recipient-id="<%= couple.partner2_id %>"
+            data-recipient-name="<%= couple.partner2_name %>"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Adicionar
+          </button>
+        </div>
+
+        <div class="space-y-3">
+          <% if (partner2Gifts.length === 0) { %>
+            <div class="glass rounded-lg p-8 text-center">
+              <svg class="w-16 h-16 mx-auto mb-3 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+              </svg>
+              <p class="text-violet-300/70 text-sm">Nenhum presente na lista ainda</p>
+            </div>
+          <% } else { %>
+            <% partner2Gifts.forEach(gift => { %>
+              <%- include('_gift_item', { gift, currentUser, couple }) %>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal para adicionar/editar presente -->
+<%- include('_add_gift_modal', { csrfToken, couple }) %>
+<%- include('_edit_gift_modal', { csrfToken }) %>
+
+<script>
+(function() {
+  // Abrir modal para adicionar presente
+  document.querySelectorAll('.add-gift-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const recipientId = this.dataset.recipientId;
+      const recipientName = this.dataset.recipientName;
+      
+      const modal = document.getElementById('add-gift-modal');
+      const title = modal.querySelector('h3');
+      const form = document.getElementById('add-gift-form');
+      const recipientInput = document.getElementById('gift-recipient-id');
+      
+      title.textContent = `Adicionar presente para ${recipientName}`;
+      recipientInput.value = recipientId;
+      form.reset();
+      document.getElementById('gift-photo-preview').classList.add('hidden');
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+  });
+
+  // Fechar modal
+  document.querySelectorAll('.close-modal-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const modal = this.closest('.modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    });
+  });
+
+  document.querySelectorAll('.close-edit-modal-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const modal = document.getElementById('edit-gift-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    });
+  });
+
+  // Preview da foto
+  document.getElementById('gift-photo-input')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('gift-photo-preview');
+        const img = preview.querySelector('img');
+        img.src = e.target.result;
+        preview.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Submeter formulário
+  document.getElementById('add-gift-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+      const response = await fetch('/gift-list', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        window.showToast('Presente adicionado com sucesso!');
+        setTimeout(() => location.reload(), 500);
+      } else {
+        throw new Error(data.error || 'Erro ao adicionar presente');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      window.showToast(error.message || 'Erro ao adicionar presente', 'error');
+    }
+  });
+
+  // Abrir modal de edição
+  document.querySelectorAll('.edit-gift-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const modal = document.getElementById('edit-gift-modal');
+      
+      // Preencher campos do formulário com os valores atuais
+      document.getElementById('edit-gift-id').value = this.dataset.giftId;
+      document.getElementById('edit-gift-name').value = this.dataset.giftName;
+      document.getElementById('edit-gift-link').value = this.dataset.giftLink || '';
+      document.getElementById('edit-gift-price').value = this.dataset.giftPrice || '';
+      
+      // Mostrar foto atual se existir
+      const currentPhotoDiv = document.getElementById('edit-current-photo-preview');
+      const currentPhotoImg = currentPhotoDiv?.querySelector('img');
+      if (this.dataset.giftPhoto && currentPhotoImg) {
+        currentPhotoImg.src = this.dataset.giftPhoto;
+        currentPhotoDiv.classList.remove('hidden');
+      } else if (currentPhotoDiv) {
+        currentPhotoDiv.classList.add('hidden');
+      }
+      
+      // Limpar preview de nova foto
+      const newPhotoPreview = document.getElementById('edit-gift-photo-preview');
+      if (newPhotoPreview) {
+        newPhotoPreview.classList.add('hidden');
+      }
+      const photoInput = document.getElementById('edit-gift-photo-input');
+      if (photoInput) {
+        photoInput.value = '';
+      }
+      
+      // Mostrar modal
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+  });
+
+  // Preview de nova foto no modal de edição
+  document.getElementById('edit-gift-photo-input')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('edit-gift-photo-preview');
+        const img = preview?.querySelector('img');
+        if (img) {
+          img.src = e.target.result;
+          preview.classList.remove('hidden');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Submeter formulário de edição
+  document.getElementById('edit-gift-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const giftId = formData.get('gift_id');
+    
+    try {
+      const response = await fetch(`/gift-list/${giftId}`, {
+        method: 'PUT',
+        body: formData
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        window.showToast('Presente atualizado com sucesso!');
+        setTimeout(() => location.reload(), 500);
+      } else {
+        throw new Error(data.error || 'Erro ao atualizar presente');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      window.showToast(error.message || 'Erro ao atualizar presente', 'error');
+    }
+  });
+
+  // Deletar presente
+  document.querySelectorAll('.delete-gift-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      if (!confirm('Tem certeza que deseja remover este presente?')) return;
+      
+      const giftId = this.dataset.giftId;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      
+      try {
+        const response = await fetch(`/gift-list/${giftId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          window.showToast('Presente removido!');
+          setTimeout(() => location.reload(), 500);
+        } else {
+          throw new Error(data.error || 'Erro ao remover presente');
+        }
+      } catch (error) {
+        console.error('Erro:', error);
+        window.showToast(error.message || 'Erro ao remover presente', 'error');
+      }
+    });
+  });
+})();
+</script>
