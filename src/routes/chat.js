@@ -36,7 +36,15 @@ const upload = multer({
   }
 });
 
-// Helper para pegar o casal do usuário
+// Variável para armazenar a instância do Socket.IO
+let io = null;
+
+// Função para configurar o Socket.IO
+export function setSocketIO(socketIO) {
+  io = socketIO;
+}
+
+// Helper para buscar o casal do usuário
 function getUserCouple(userId) {
   const db = getDb();
   const couple = db.prepare(`
@@ -217,6 +225,25 @@ router.post('/photo', upload.single('photo'), (req, res) => {
       JOIN users u ON cm.sender_user_id = u.id
       WHERE cm.id = ?
     `).get(result.lastInsertRowid);
+
+    // Emitir via Socket.IO para atualização em tempo real
+    if (io) {
+      io.to(`couple-${couple.id}`).emit('new-message', newMessage);
+      
+      // Emitir notificação para o parceiro
+      const coupleData = db.prepare(`
+        SELECT partner1_id, partner2_id FROM couples WHERE id = ?
+      `).get(couple.id);
+      
+      const partnerId = coupleData.partner1_id === userId ? coupleData.partner2_id : coupleData.partner1_id;
+      
+      io.emit('new-message-notification', {
+        coupleId: couple.id,
+        senderId: userId,
+        recipientId: partnerId,
+        message: newMessage
+      });
+    }
 
     res.json({ success: true, message: newMessage });
   } catch (error) {

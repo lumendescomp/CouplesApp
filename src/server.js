@@ -21,7 +21,7 @@ import albumRoutes from "./routes/album.js";
 import moviesRoutes from "./routes/movies.js";
 import recipesRoutes from "./routes/recipes.js";
 import giftListRoutes from "./routes/gift-list.js";
-import chatRoutes from "./routes/chat.js";
+import chatRoutes, { setSocketIO } from "./routes/chat.js";
 import { initDb, getDb } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -143,6 +143,9 @@ app.use("/movies", ensureAuthed, moviesRoutes);
 app.use("/recipes", ensureAuthed, recipesRoutes);
 app.use("/gift-list", ensureAuthed, giftListRoutes);
 app.use("/chat", ensureAuthed, chatRoutes);
+
+// Configurar Socket.IO nas rotas do chat
+setSocketIO(io);
 
 // Socket.IO para chat em tempo real
 io.on('connection', (socket) => {

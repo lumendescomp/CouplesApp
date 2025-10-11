@@ -123,10 +123,53 @@
   socket.emit('join-couple', coupleId);
 
   // Scroll para o final
-  function scrollToBottom() {
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  function scrollToBottom(smooth = false) {
+    messagesContainer.scrollTo({
+      top: messagesContainer.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto'
+    });
   }
+  
+  // Scroll imediato ao carregar
   scrollToBottom();
+  
+  // Adicionar listeners para todas as imagens no chat
+  const chatImages = messagesContainer.querySelectorAll('img');
+  let loadedImages = 0;
+  const totalImages = chatImages.length;
+  
+  if (totalImages > 0) {
+    chatImages.forEach(img => {
+      if (img.complete) {
+        loadedImages++;
+        if (loadedImages === totalImages) {
+          scrollToBottom();
+        }
+      } else {
+        img.addEventListener('load', () => {
+          loadedImages++;
+          if (loadedImages === totalImages) {
+            scrollToBottom();
+          }
+        });
+      }
+    });
+  }
+  
+  // Scroll após imagens carregarem (fallback)
+  window.addEventListener('load', () => {
+    scrollToBottom();
+  });
+  
+  // Scroll após um pequeno delay para garantir que tudo foi renderizado
+  setTimeout(() => {
+    scrollToBottom();
+  }, 100);
+  
+  // Mais um scroll depois de 500ms para garantir
+  setTimeout(() => {
+    scrollToBottom();
+  }, 500);
 
   // Botão de foto
   photoBtn.addEventListener('click', () => {
@@ -172,12 +215,30 @@
 
         const data = await response.json();
         if (data.success) {
-          // Emitir via socket para atualização em tempo real
-          socket.emit('send-photo', {
-            coupleId,
-            messageId: data.message.id
-          });
+          // Adicionar a mensagem no chat imediatamente
+          const isOwn = data.message.sender_user_id === userId;
+          const messageHtml = createMessageBubble(data.message, isOwn);
           
+          // Remover empty state se existir
+          const emptyState = messagesContainer.querySelector('.flex.items-center.justify-center');
+          if (emptyState) {
+            emptyState.remove();
+          }
+          
+          messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+          
+          // Aguardar imagem carregar e fazer scroll
+          const lastImage = messagesContainer.querySelector('img[src="' + data.message.photo_path + '"]');
+          if (lastImage) {
+            lastImage.addEventListener('load', () => {
+              scrollToBottom(true);
+            });
+            if (lastImage.complete) {
+              scrollToBottom(true);
+            }
+          }
+          
+          // Limpar formulário
           messageInput.value = '';
           selectedFile = null;
           photoInput.value = '';
@@ -214,7 +275,23 @@
     const isOwn = msg.sender_user_id === userId;
     const messageHtml = createMessageBubble(msg, isOwn);
     messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
-    scrollToBottom();
+    
+    // Se a mensagem contém foto, esperar carregar antes de fazer scroll
+    if (msg.message_type === 'photo' && msg.photo_path) {
+      const images = messagesContainer.querySelectorAll('img[src="' + msg.photo_path + '"]');
+      if (images.length > 0) {
+        const lastImage = images[images.length - 1];
+        lastImage.addEventListener('load', () => {
+          scrollToBottom(true);
+        });
+        // Fallback caso a imagem já esteja carregada
+        if (lastImage.complete) {
+          scrollToBottom(true);
+        }
+      }
+    } else {
+      scrollToBottom(true);
+    }
   });
 
   // Criar bubble de mensagem
