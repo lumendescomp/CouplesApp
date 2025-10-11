@@ -36,185 +36,33 @@
   /* Image editor styles */
   .image-editor-container {
     position: relative;
-      // Estado do editor de imagem
-  const imageEditorState = {
-    isDragging: false,
-    startX: 0,
-    startY: 0,
-    offsetX: 0,  // Deslocamento real da imagem em X
-    offsetY: 0,  // Deslocamento real da imagem em Y
-    scale: 1,
-    originalFile: null,
-    editorImageSize: 300  // Tamanho de referência do editor (será atualizado no onload)
-  };%;
+    width: 100%;
+    max-width: 500px;
     height: 300px;
     overflow: hidden;
     background: #1a0b2e;
     border-radius: 8px;
-    cursor: move;
+    cursor: grab;
     touch-action: none;
+    margin: 0 auto;
+    user-select: none;
+  }
+
+  .image-editor-container:active {
+    cursor: grabbing;
   }
 
   .image-editor-container img {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform-origin: center center;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     user-select: none;
     -webkit-user-drag: none;
-    max-height: 100%;
-    max-width: none;
-    object-fit: contain;
-  }
-
-  /* Overlay de crop - mostra a área que aparecerá no card */
-  .crop-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     pointer-events: none;
-    z-index: 10;
+    will-change: object-position;
   }
 
-  .crop-frame {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 385px;
-    height: 280px; /* Aspect ratio 4:3 */
-    border: 3px solid rgba(124, 58, 237, 0.9);
-    border-radius: 8px;
-    box-shadow: 
-      0 0 0 9999px rgba(0, 0, 0, 0.6),
-      0 0 20px rgba(124, 58, 237, 0.5),
-      inset 0 0 20px rgba(124, 58, 237, 0.3);
-  }
 
-  .crop-frame::before {
-    content: '';
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(124, 58, 237, 0.95);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-    content: 'Área visível no card';
-  }
-
-  /* Linhas guia de regra dos terços */
-  .crop-frame::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: 
-      linear-gradient(to right, transparent 33.33%, rgba(124, 58, 237, 0.3) 33.33%, rgba(124, 58, 237, 0.3) 33.43%, transparent 33.43%, transparent 66.66%, rgba(124, 58, 237, 0.3) 66.66%, rgba(124, 58, 237, 0.3) 66.76%, transparent 66.76%),
-      linear-gradient(to bottom, transparent 33.33%, rgba(124, 58, 237, 0.3) 33.33%, rgba(124, 58, 237, 0.3) 33.43%, transparent 33.43%, transparent 66.66%, rgba(124, 58, 237, 0.3) 66.66%, rgba(124, 58, 237, 0.3) 66.76%, transparent 66.76%);
-  }
-
-  /* Cantos da moldura */
-  .crop-corner {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border: 3px solid white;
-  }
-
-  .crop-corner.top-left {
-    top: -3px;
-    left: -3px;
-    border-right: none;
-    border-bottom: none;
-    border-top-left-radius: 8px;
-  }
-
-  .crop-corner.top-right {
-    top: -3px;
-    right: -3px;
-    border-left: none;
-    border-bottom: none;
-    border-top-right-radius: 8px;
-  }
-
-  .crop-corner.bottom-left {
-    bottom: -3px;
-    left: -3px;
-    border-right: none;
-    border-top: none;
-    border-bottom-left-radius: 8px;
-  }
-
-  .crop-corner.bottom-right {
-    bottom: -3px;
-    right: -3px;
-    border-left: none;
-    border-top: none;
-    border-bottom-right-radius: 8px;
-  }
-
-  .image-editor-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    justify-content: center;
-    margin-top: 12px;
-  }
-
-  .zoom-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: 1px solid rgba(124, 58, 237, 0.5);
-    background: rgba(124, 58, 237, 0.2);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .zoom-btn:hover {
-    background: rgba(124, 58, 237, 0.4);
-    border-color: rgba(124, 58, 237, 0.8);
-  }
-
-  .zoom-slider {
-    flex: 1;
-    max-width: 200px;
-    height: 4px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: rgba(124, 58, 237, 0.3);
-    border-radius: 2px;
-    outline: none;
-  }
-
-  .zoom-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgb(124, 58, 237);
-    cursor: pointer;
-  }
-
-  .zoom-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgb(124, 58, 237);
-    cursor: pointer;
-    border: none;
-  }
 </style>
 
 <div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
@@ -451,9 +299,8 @@
 
     // Salvar dados do crop no estado global para usar no editor
     window.currentRecipeCropData = {
-      crop_x: recipe.crop_x || 0,
-      crop_y: recipe.crop_y || 0,
-      crop_scale: recipe.crop_scale || 1
+      crop_x: recipe.crop_x || 50,
+      crop_y: recipe.crop_y || 50
     };
 
     const modal = document.getElementById('recipe-detail-modal');
@@ -486,30 +333,14 @@
           
           <!-- Editor de Imagem (oculto inicialmente) -->
           <div id="photo-editor-${recipe.id}" class="hidden">
+            <div class="text-center text-sm text-violet-300 mb-2 flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              <span>Arraste a imagem para posicionar</span>
+            </div>
             <div class="image-editor-container" id="editor-container-${recipe.id}">
               <img id="editor-image-${recipe.id}" src="" alt="Editor">
-              <!-- Overlay de crop -->
-              <div class="crop-overlay">
-                <div class="crop-frame">
-                  <div class="crop-corner top-left"></div>
-                  <div class="crop-corner top-right"></div>
-                  <div class="crop-corner bottom-left"></div>
-                  <div class="crop-corner bottom-right"></div>
-                </div>
-              </div>
-            </div>
-            <div class="image-editor-controls">
-              <button class="zoom-btn zoom-out-btn" data-recipe-id="${recipe.id}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                </svg>
-              </button>
-              <input type="range" class="zoom-slider" id="zoom-slider-${recipe.id}" min="100" max="1000" value="100" step="10" data-recipe-id="${recipe.id}">
-              <button class="zoom-btn zoom-in-btn" data-recipe-id="${recipe.id}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
             </div>
             <div class="flex gap-2 mt-3">
               <button class="cancel-edit-btn flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded-lg transition" data-recipe-id="${recipe.id}">
@@ -662,36 +493,9 @@
         });
       }
 
-      // Listeners para editor de imagem
-      const zoomSlider = document.getElementById(`zoom-slider-${recipeId}`);
-      const zoomInBtn = document.querySelector('.zoom-in-btn');
-      const zoomOutBtn = document.querySelector('.zoom-out-btn');
+      // Listeners para botões do editor de imagem
       const cancelBtn = document.querySelector('.cancel-edit-btn');
       const saveEditBtn = document.querySelector('.save-edit-btn');
-
-      if (zoomSlider) {
-        zoomSlider.addEventListener('input', (e) => {
-          updateImageZoom(recipeId, e.target.value);
-        });
-      }
-
-      if (zoomInBtn) {
-        zoomInBtn.addEventListener('click', () => {
-          const slider = document.getElementById(`zoom-slider-${recipeId}`);
-          const newValue = Math.min(1000, parseInt(slider.value) + 50);
-          slider.value = newValue;
-          updateImageZoom(recipeId, newValue);
-        });
-      }
-
-      if (zoomOutBtn) {
-        zoomOutBtn.addEventListener('click', () => {
-          const slider = document.getElementById(`zoom-slider-${recipeId}`);
-          const newValue = Math.max(100, parseInt(slider.value) - 50);
-          slider.value = newValue;
-          updateImageZoom(recipeId, newValue);
-        });
-      }
 
       if (cancelBtn) {
         cancelBtn.addEventListener('click', () => {
@@ -784,10 +588,15 @@
     isDragging: false,
     startX: 0,
     startY: 0,
-    currentX: 0,
-    currentY: 0,
-    scale: 1,
-    originalFile: null
+    posX: 50,  // Posição em % (0-100)
+    posY: 50,  // Posição em % (0-100)
+    originalFile: null,
+    // Guardar handlers para poder remover depois
+    handlers: null,
+    currentRecipeId: null,
+    // RAF para otimização
+    rafId: null,
+    pendingUpdate: false
   };
 
   // Abrir editor de foto
@@ -802,117 +611,178 @@
       imageEditorState.originalFile = file;
     }
 
-    // Carregar imagem no editor ANTES de mostrar
-    editorImage.src = imageSrc;
+    // Se a imagem é cropada (_cropped), tentar carregar a original (_original)
+    let imageToLoad = imageSrc;
+    if (imageSrc.includes('_cropped')) {
+      const originalSrc = imageSrc.replace('_cropped', '_original');
+      imageToLoad = originalSrc;
+    }
+
+    // Carregar imagem no editor
+    editorImage.src = imageToLoad;
     
     // Aguardar carregamento da imagem
     editorImage.onload = () => {
-      // Mostrar editor, ocultar display (DEPOIS que a imagem carregar)
+      // Mostrar editor, ocultar display
       display.classList.add('hidden');
       editor.classList.remove('hidden');
       
-      // Guardar dimensão de referência do editor (para normalização)
-      imageEditorState.editorImageSize = Math.min(editorImage.offsetWidth, editorImage.offsetHeight);
+      // Carregar posição salva do crop (valores já em %)
+      const cropData = window.currentRecipeCropData || { crop_x: 50, crop_y: 50 };
+      imageEditorState.posX = cropData.crop_x || 50;
+      imageEditorState.posY = cropData.crop_y || 50;
       
-      // Carregar metadados do crop existentes (valores normalizados)
-      const cropData = window.currentRecipeCropData || { crop_x: 0, crop_y: 0, crop_scale: 1 };
-      
-      // Desnormalizar: converter proporção de volta para pixels do editor
-      imageEditorState.offsetX = cropData.crop_x * imageEditorState.editorImageSize;
-      imageEditorState.offsetY = cropData.crop_y * imageEditorState.editorImageSize;
-      imageEditorState.scale = cropData.crop_scale;
-      
-      // Atualizar slider com o valor do crop salvo
-      const zoomValue = Math.round(cropData.crop_scale * 100);
-      document.getElementById(`zoom-slider-${recipeId}`).value = zoomValue;
-      
-      // Debug: Dimensões do editor e imagem
-      console.log('=== EDITOR - Dimensões ===');
-      console.log('Container:', { width: container.offsetWidth, height: container.offsetHeight });
-      console.log('Imagem natural:', { width: editorImage.naturalWidth, height: editorImage.naturalHeight });
-      console.log('Imagem renderizada:', { width: editorImage.offsetWidth, height: editorImage.offsetHeight });
-      console.log('Tamanho de referência para normalização:', imageEditorState.editorImageSize);
-      console.log('Moldura de crop: 280x210px (área visível)');
-      console.log('Proporção moldura vs imagem:', { 
-        horizontal: 280 / imageEditorState.editorImageSize,
-        vertical: 210 / imageEditorState.editorImageSize 
-      });
-      console.log('Valores desnormalizados:', {
-        normalized: cropData,
-        pixels: { x: imageEditorState.offsetX, y: imageEditorState.offsetY }
-      });
-      
-      // Aplicar transformação inicial (com os valores salvos)
-      updateImageTransform(recipeId);
+      // Aplicar posição inicial
+      updateImagePosition(recipeId);
       setupImageDragging(recipeId, container, editorImage);
+    };
+    
+    // Fallback caso a original não exista
+    editorImage.onerror = () => {
+      if (imageToLoad !== imageSrc) {
+        console.warn('Imagem original não encontrada, usando atual');
+        editorImage.src = imageSrc;
+      }
     };
   }
 
   // Configurar arrastar imagem
   function setupImageDragging(recipeId, container, image) {
-    const handleStart = (e) => {
+    // Remover listeners antigos se existirem
+    if (imageEditorState.handlers) {
+      document.removeEventListener('mousemove', imageEditorState.handlers.handleMouseMove);
+      document.removeEventListener('mouseup', imageEditorState.handlers.handleMouseUp);
+      document.removeEventListener('touchmove', imageEditorState.handlers.handleTouchMove);
+      document.removeEventListener('touchend', imageEditorState.handlers.handleTouchEnd);
+      container.removeEventListener('mousedown', imageEditorState.handlers.handleMouseDown);
+      container.removeEventListener('touchstart', imageEditorState.handlers.handleTouchStart);
+      
+      // Cancelar RAF pendente
+      if (imageEditorState.rafId) {
+        cancelAnimationFrame(imageEditorState.rafId);
+        imageEditorState.rafId = null;
+      }
+    }
+
+    imageEditorState.currentRecipeId = recipeId;
+    
+    // Cache de dimensões do container (evita reflow a cada frame)
+    let containerWidth = container.offsetWidth;
+    let containerHeight = container.offsetHeight;
+
+    const handleStart = (clientX, clientY) => {
       imageEditorState.isDragging = true;
-      
-      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-      
-      // Guardar posição inicial do mouse/touch
       imageEditorState.startX = clientX;
       imageEditorState.startY = clientY;
+      image.style.cursor = 'grabbing';
       
-      updateImageTransform(recipeId);
+      // Atualizar cache de dimensões ao iniciar arrasto
+      containerWidth = container.offsetWidth;
+      containerHeight = container.offsetHeight;
     };
 
-    const handleMove = (e) => {
+    const handleMove = (clientX, clientY) => {
       if (!imageEditorState.isDragging) return;
-      e.preventDefault();
       
-      const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-      const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-      
-      // Calcular quanto o mouse/touch se moveu desde o início do drag
+      // Calcular movimento em pixels desde o último ponto
       const deltaX = clientX - imageEditorState.startX;
       const deltaY = clientY - imageEditorState.startY;
       
-      // Atualizar a posição inicial para o próximo movimento
+      // Calcular quanto % representam os pixels de movimento (usa cache)
+      const deltaXPercent = (deltaX / containerWidth) * 100;
+      const deltaYPercent = (deltaY / containerHeight) * 100;
+      
+      // Atualizar posição
+      imageEditorState.posX = Math.max(0, Math.min(100, imageEditorState.posX + deltaXPercent));
+      imageEditorState.posY = Math.max(0, Math.min(100, imageEditorState.posY + deltaYPercent));
+      
+      // Atualizar posição inicial para o próximo frame
       imageEditorState.startX = clientX;
       imageEditorState.startY = clientY;
       
-      // Acumular o deslocamento
-      imageEditorState.offsetX += deltaX;
-      imageEditorState.offsetY += deltaY;
-      
-      updateImageTransform(recipeId);
+      // Agendar atualização visual apenas se não há uma pendente
+      if (!imageEditorState.pendingUpdate) {
+        imageEditorState.pendingUpdate = true;
+        imageEditorState.rafId = requestAnimationFrame(() => {
+          updateImagePosition(recipeId);
+          imageEditorState.pendingUpdate = false;
+        });
+      }
     };
 
     const handleEnd = () => {
       imageEditorState.isDragging = false;
-      updateImageTransform(recipeId);
+      image.style.cursor = 'grab';
+      
+      // Forçar atualização final se houver RAF pendente
+      if (imageEditorState.rafId) {
+        cancelAnimationFrame(imageEditorState.rafId);
+        updateImagePosition(recipeId);
+        imageEditorState.rafId = null;
+        imageEditorState.pendingUpdate = false;
+      }
+    };
+
+    // Criar handlers que serão guardados para remoção posterior
+    const handleMouseDown = (e) => {
+      e.preventDefault();
+      handleStart(e.clientX, e.clientY);
+    };
+
+    const handleMouseMove = (e) => {
+      if (imageEditorState.isDragging) {
+        e.preventDefault();
+        handleMove(e.clientX, e.clientY);
+      }
+    };
+
+    const handleMouseUp = () => {
+      handleEnd();
+    };
+
+    const handleTouchStart = (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleStart(touch.clientX, touch.clientY);
+    };
+
+    const handleTouchMove = (e) => {
+      if (imageEditorState.isDragging) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      handleEnd();
+    };
+
+    // Guardar handlers para remoção posterior
+    imageEditorState.handlers = {
+      handleMouseDown,
+      handleMouseMove,
+      handleMouseUp,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd
     };
 
     // Mouse events
-    container.addEventListener('mousedown', handleStart);
-    document.addEventListener('mousemove', handleMove);
-    document.addEventListener('mouseup', handleEnd);
+    container.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 
     // Touch events
-    container.addEventListener('touchstart', handleStart);
-    document.addEventListener('touchmove', handleMove, { passive: false });
-    document.addEventListener('touchend', handleEnd);
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
   }
 
-  // Atualizar zoom da imagem
-  function updateImageZoom(recipeId, value) {
-    imageEditorState.scale = value / 100;
-    updateImageTransform(recipeId);
-  }
-
-  // Aplicar transformação na imagem
-  function updateImageTransform(recipeId) {
+  // Atualizar posição da imagem
+  function updateImagePosition(recipeId) {
     const image = document.getElementById(`editor-image-${recipeId}`);
-    // A imagem já está centralizada com top: 50%, left: 50%
-    // O transform adiciona o deslocamento do usuário + escala
-    image.style.transform = `translate(calc(-50% + ${imageEditorState.offsetX}px), calc(-50% + ${imageEditorState.offsetY}px)) scale(${imageEditorState.scale})`;
+    image.style.objectPosition = `${imageEditorState.posX}% ${imageEditorState.posY}%`;
     image.style.cursor = imageEditorState.isDragging ? 'grabbing' : 'grab';
   }
 
@@ -920,32 +790,44 @@
   function closePhotoEditor(recipeId) {
     const display = document.getElementById(`photo-display-${recipeId}`);
     const editor = document.getElementById(`photo-editor-${recipeId}`);
+    const container = document.getElementById(`editor-container-${recipeId}`);
+    
+    // Cancelar RAF pendente
+    if (imageEditorState.rafId) {
+      cancelAnimationFrame(imageEditorState.rafId);
+      imageEditorState.rafId = null;
+    }
+    
+    // Remover event listeners
+    if (imageEditorState.handlers) {
+      document.removeEventListener('mousemove', imageEditorState.handlers.handleMouseMove);
+      document.removeEventListener('mouseup', imageEditorState.handlers.handleMouseUp);
+      document.removeEventListener('touchmove', imageEditorState.handlers.handleTouchMove);
+      document.removeEventListener('touchend', imageEditorState.handlers.handleTouchEnd);
+      
+      if (container) {
+        container.removeEventListener('mousedown', imageEditorState.handlers.handleMouseDown);
+        container.removeEventListener('touchstart', imageEditorState.handlers.handleTouchStart);
+      }
+      
+      imageEditorState.handlers = null;
+    }
     
     display.classList.remove('hidden');
     editor.classList.add('hidden');
     
     imageEditorState.originalFile = null;
+    imageEditorState.isDragging = false;
+    imageEditorState.currentRecipeId = null;
+    imageEditorState.pendingUpdate = false;
   }
 
-  // Salvar edição (salvar apenas metadados do crop, não gera nova imagem)
+  // Salvar edição (salvar posição como porcentagem)
   async function savePhotoEdit(recipeId) {
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
       
-      // Normalizar valores: salvar como proporção do tamanho da imagem renderizada
-      // Isso garante que funcione em qualquer tamanho de card
-      const normalizedX = imageEditorState.offsetX / imageEditorState.editorImageSize;
-      const normalizedY = imageEditorState.offsetY / imageEditorState.editorImageSize;
-      
-      // Debug: verificar valores antes de salvar
-      console.log('Salvando crop com valores normalizados:', {
-        offset_pixels: { x: imageEditorState.offsetX, y: imageEditorState.offsetY },
-        editor_size: imageEditorState.editorImageSize,
-        normalized: { x: normalizedX, y: normalizedY },
-        scale: imageEditorState.scale
-      });
-      
-      // Enviar metadados do crop para o servidor (valores normalizados)
+      // Enviar posições em porcentagem (0-100) - servidor irá processar com Sharp!
       const response = await fetch(`/recipes/${recipeId}/crop`, {
         method: 'PUT',
         headers: {
@@ -953,9 +835,8 @@
           'X-CSRF-Token': csrfToken
         },
         body: JSON.stringify({
-          crop_x: normalizedX,
-          crop_y: normalizedY,
-          crop_scale: imageEditorState.scale
+          crop_x: imageEditorState.posX,
+          crop_y: imageEditorState.posY
         })
       });
 

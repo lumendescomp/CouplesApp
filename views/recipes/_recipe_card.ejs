@@ -2,14 +2,12 @@
   <!-- Foto -->
   <div class="relative aspect-[4/3] bg-violet-900/20 overflow-hidden">
     <% if (recipe.photo_path) { %>
-      <div class="w-full h-full relative overflow-hidden">
-        <img
-          src="<%= recipe.photo_path %>"
-          alt="<%= recipe.title %>"
-          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full object-cover"
-          loading="lazy"
-        />
-      </div>
+      <img
+        src="<%= recipe.photo_path %>"
+        alt="<%= recipe.title %>"
+        class="w-full h-full object-cover"
+        loading="lazy"
+      />
     <% } else { %>
       <div class="w-full h-full flex items-center justify-center">
         <svg class="w-12 h-12 sm:w-16 sm:h-16 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

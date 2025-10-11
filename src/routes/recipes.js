@@ -4,6 +4,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,11 +193,11 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       }
       photoPath = `/public/recipe-photos/${req.file.filename}`;
       
-      // Reset crop metadata quando foto nova é carregada
+      // Reset crop metadata quando foto nova é carregada (centralizar imagem)
       db.prepare(`
         UPDATE recipes 
         SET title = ?, photo_path = ?, reference_link = ?, 
-            crop_x = 0, crop_y = 0, crop_scale = 1,
+            crop_x = 50, crop_y = 50,
             updated_at = datetime('now')
         WHERE id = ?
       `).run(title?.trim() || recipe.title, photoPath, reference_link?.trim() || null, id);
@@ -216,12 +217,12 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
   }
 });
 
-// PUT /recipes/:id/crop - Atualizar metadados do crop (não gera nova imagem)
+// PUT /recipes/:id/crop - Processar crop da imagem (gera nova imagem cropada)
 router.put('/:id/crop', async (req, res) => {
   try {
     const db = getDb();
     const { id } = req.params;
-    const { crop_x, crop_y, crop_scale } = req.body;
+    const { crop_x, crop_y } = req.body;
     const userId = req.session?.user?.id;
 
     if (!userId) {
@@ -239,17 +240,114 @@ router.put('/:id/crop', async (req, res) => {
       return res.status(404).json({ error: 'Receita não encontrada' });
     }
 
-    // Salvar metadados do crop
+    if (!recipe.photo_path) {
+      return res.status(400).json({ error: 'Receita não tem foto' });
+    }
+
+    // Determinar qual é a foto ORIGINAL
+    // photo_path vem como "/public/recipe-photos/couple1_XXX.jpg"
+    // Remover "/public" do início para evitar duplicação
+    const photoPathClean = recipe.photo_path.replace(/^\/public\//, '');
+    const currentPhotoPath = path.join(__dirname, '../../public', photoPathClean);
+    const ext = path.extname(recipe.photo_path);
+    const dir = path.dirname(currentPhotoPath);
+    const baseName = path.basename(recipe.photo_path, ext);
+    
+    // Nome da foto original (com sufixo _original)
+    const originalFileName = baseName.replace('_cropped', '') + '_original' + ext;
+    const originalPath = path.join(dir, originalFileName);
+    
+    // Se não existe arquivo "_original", a foto atual É a original
+    let sourcePhotoPath;
+    if (fs.existsSync(originalPath)) {
+      sourcePhotoPath = originalPath;
+    } else {
+      // Primeira vez cropando - salvar cópia da original
+      fs.copyFileSync(currentPhotoPath, originalPath);
+      sourcePhotoPath = originalPath;
+    }
+    
+    if (!fs.existsSync(sourcePhotoPath)) {
+      return res.status(404).json({ error: 'Arquivo de foto não encontrado' });
+    }
+
+    // Definir tamanho do card (aspect ratio 4:3) - mesmo tamanho do card no frontend
+    const CARD_WIDTH = 385;
+    const CARD_HEIGHT = 280;
+
+    // Ler metadados da imagem original
+    const metadata = await sharp(sourcePhotoPath).metadata();
+    const imgWidth = metadata.width;
+    const imgHeight = metadata.height;
+
+    // Calcular a área visível da imagem baseado em object-position
+    // Simulando o comportamento de object-fit: cover com object-position
+    const containerRatio = CARD_WIDTH / CARD_HEIGHT; // 4:3 ≈ 1.375
+    const imageRatio = imgWidth / imgHeight;
+    
+    let visibleWidth, visibleHeight;
+    
+    if (imageRatio > containerRatio) {
+      // Imagem mais larga - height preenche 100%, width é cortada
+      visibleHeight = imgHeight;
+      visibleWidth = imgHeight * containerRatio;
+    } else {
+      // Imagem mais alta - width preenche 100%, height é cortada
+      visibleWidth = imgWidth;
+      visibleHeight = imgWidth / containerRatio;
+    }
+    
+    // Calcular offset baseado em crop_x e crop_y (porcentagem 0-100)
+    // crop_x/y funcionam como object-position: 0% = esquerda/topo, 100% = direita/fundo
+    const maxOffsetX = Math.max(0, imgWidth - visibleWidth);
+    const maxOffsetY = Math.max(0, imgHeight - visibleHeight);
+    
+    const offsetX = Math.round((crop_x / 100) * maxOffsetX);
+    const offsetY = Math.round((crop_y / 100) * maxOffsetY);
+    
+    console.log('📸 Processando crop:', {
+      original: { width: imgWidth, height: imgHeight, ratio: imageRatio.toFixed(2) },
+      visible: { width: Math.round(visibleWidth), height: Math.round(visibleHeight) },
+      position: { x: crop_x + '%', y: crop_y + '%' },
+      offset: { x: offsetX, y: offsetY },
+      output: { width: CARD_WIDTH, height: CARD_HEIGHT }
+    });
+
+    // Nome do arquivo cropado (sobrescreve o anterior se existir)
+    const croppedFileName = baseName.replace('_cropped', '').replace('_original', '') + '_cropped' + ext;
+    const croppedPath = path.join(dir, croppedFileName);
+    const croppedRelativePath = `/public/recipe-photos/${croppedFileName}`;
+
+    // Processar imagem com Sharp:
+    // 1. Extrair a área visível da imagem original
+    // 2. Redimensionar para o tamanho exato do card
+    await sharp(sourcePhotoPath)
+      .extract({
+        left: Math.max(0, Math.min(Math.round(offsetX), imgWidth - Math.round(visibleWidth))),
+        top: Math.max(0, Math.min(Math.round(offsetY), imgHeight - Math.round(visibleHeight))),
+        width: Math.min(Math.round(visibleWidth), imgWidth),
+        height: Math.min(Math.round(visibleHeight), imgHeight)
+      })
+      .resize(CARD_WIDTH, CARD_HEIGHT, {
+        fit: 'cover',
+        position: 'centre'
+      })
+      .jpeg({ quality: 92 })
+      .toFile(croppedPath);
+
+    console.log('✅ Imagem cropada salva:', croppedRelativePath);
+
+    // Atualizar banco de dados com caminho da imagem cropada
     db.prepare(`
       UPDATE recipes 
-      SET crop_x = ?, crop_y = ?, crop_scale = ?, updated_at = datetime('now')
+      SET photo_path = ?, crop_x = ?, crop_y = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(crop_x || 0, crop_y || 0, crop_scale || 1, id);
+    `).run(croppedRelativePath, crop_x || 50, crop_y || 50, id);
 
-    res.json({ success: true });
+    res.json({ success: true, photo_path: croppedRelativePath });
   } catch (error) {
-    console.error('Erro ao salvar crop:', error);
-    res.status(500).json({ error: 'Erro ao salvar crop' });
+    console.error('❌ Erro ao processar crop:', error);
+    res.status(500).json({ error: 'Erro ao processar crop: ' + error.message });
   }
 });
 

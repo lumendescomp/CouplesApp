@@ -240,5 +240,21 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_recipes_created_at ON recipes(created_at DESC);
   `);
 
+  // Migração condicional: adiciona colunas crop_x e crop_y se ausentes
+  try {
+    const recipeCols = db.prepare("PRAGMA table_info(recipes)").all();
+    const recipeNames = new Set(recipeCols.map((c) => c.name));
+    if (!recipeNames.has("crop_x")) {
+      db.exec("ALTER TABLE recipes ADD COLUMN crop_x REAL DEFAULT 50");
+    }
+    if (!recipeNames.has("crop_y")) {
+      db.exec("ALTER TABLE recipes ADD COLUMN crop_y REAL DEFAULT 50");
+    }
+    // Remover colunas antigas se existirem (SQLite não suporta DROP COLUMN diretamente)
+    // Essas colunas serão removidas pela migration 007_cleanup_recipe_crop.sql
+  } catch (e) {
+    console.warn("Migration (recipes crop) note:", e.message);
+  }
+
   return db;
 }
