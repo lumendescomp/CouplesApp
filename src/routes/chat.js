@@ -88,6 +88,16 @@ router.get('/', (req, res) => {
     // Inverter para ordem cronológica
     messages.reverse();
 
+    // Se for AJAX, renderiza só o conteúdo do chat (sem layout)
+    if (req.get('X-Requested-With') === 'XMLHttpRequest') {
+      return res.render('chat/index', {
+        couple,
+        messages,
+        currentUser: req.session.user,
+        layout: false
+      });
+    }
+    // Caso contrário, renderiza normalmente (com layout)
     res.render('chat/index', {
       couple,
       messages,

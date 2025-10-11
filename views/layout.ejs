@@ -608,8 +608,8 @@
 
     <!-- Botão flutuante de chat -->
     <% if (currentUser) { %>
-    <a
-      href="/chat"
+    <button
+      type="button"
       id="chat-float-btn"
       class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 group"
       title="Abrir chat"
@@ -624,7 +624,146 @@
       >
         0
       </span>
-    </a>
+    </button>
+
+    <!-- Modal do Chat -->
+    <div id="chat-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300 hidden" tabindex="-1" aria-modal="true" role="dialog">
+      <div id="chat-modal-content" class="relative w-full max-w-2xl h-[80vh] sm:rounded-2xl glass border border-violet-700/40 shadow-2xl flex flex-col overflow-hidden animate-fade-in-up">
+        <!-- Loader -->
+        <div id="chat-modal-loader" class="flex-1 flex items-center justify-center">
+          <svg class="w-10 h-10 text-fuchsia-400 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+        </div>
+        <!-- Conteúdo do chat será injetado aqui -->
+        <div id="chat-modal-inner" class="flex-1 hidden"></div>
+        <!-- Botão fechar -->
+        <button id="chat-modal-close" type="button" class="absolute top-3 right-3 p-2 rounded-full bg-black/30 hover:bg-black/60 text-white transition z-10" title="Fechar chat">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <script>
+    // Modal Chat Logic
+    (function() {
+      const chatBtn = document.getElementById('chat-float-btn');
+      const modal = document.getElementById('chat-modal');
+      const modalContent = document.getElementById('chat-modal-content');
+      const closeBtn = document.getElementById('chat-modal-close');
+      const loader = document.getElementById('chat-modal-loader');
+      const inner = document.getElementById('chat-modal-inner');
+      let chatLoaded = false;
+
+      function openModal() {
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        loader.classList.remove('hidden');
+        inner.classList.add('hidden');
+        modal.focus();
+        if (!chatLoaded) {
+          fetch('/chat', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.text())
+            .then(html => {
+              inner.innerHTML = html;
+              loader.classList.add('hidden');
+              inner.classList.remove('hidden');
+              chatLoaded = true;
+              // Executa scripts do chat carregados dinamicamente
+              Array.from(inner.querySelectorAll('script')).forEach(oldScript => {
+                const newScript = document.createElement('script');
+                if (oldScript.src) {
+                  newScript.src = oldScript.src;
+                } else {
+                  newScript.textContent = oldScript.textContent;
+                }
+                document.body.appendChild(newScript);
+                document.body.removeChild(newScript);
+              });
+              
+              // Função para forçar scroll ao final
+              function forceScrollToBottom() {
+                const chatMessages = inner.querySelector('#chat-messages');
+                if (chatMessages) {
+                  chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+              }
+              
+              // Aguardar todas as imagens carregarem antes de fazer scroll
+              const images = inner.querySelectorAll('#chat-messages img');
+              if (images.length > 0) {
+                let loadedCount = 0;
+                const totalImages = images.length;
+                
+                images.forEach(img => {
+                  if (img.complete) {
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                      forceScrollToBottom();
+                    }
+                  } else {
+                    img.addEventListener('load', () => {
+                      loadedCount++;
+                      if (loadedCount === totalImages) {
+                        forceScrollToBottom();
+                      }
+                    });
+                  }
+                });
+              } else {
+                forceScrollToBottom();
+              }
+              
+              // Múltiplos fallbacks para garantir o scroll
+              setTimeout(forceScrollToBottom, 50);
+              setTimeout(forceScrollToBottom, 150);
+              setTimeout(forceScrollToBottom, 300);
+              setTimeout(forceScrollToBottom, 600);
+              
+              // Foca no input do chat se existir
+              const input = inner.querySelector('input[id="message-input"]');
+              if (input) {
+                setTimeout(() => input.focus(), 100);
+              }
+            });
+        } else {
+          loader.classList.add('hidden');
+          inner.classList.remove('hidden');
+          // Força scroll para o final quando o chat já estava carregado
+          setTimeout(() => {
+            const chatMessages = inner.querySelector('#chat-messages');
+            if (chatMessages) {
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+          }, 50);
+          // Foca no input do chat se existir
+          const input = inner.querySelector('input[id="message-input"]');
+          if (input) {
+            setTimeout(() => input.focus(), 100);
+          }
+        }
+      }
+
+      function closeModal() {
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        // Foca de volta no botão
+        chatBtn.focus();
+      }
+
+      chatBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('mousedown', function(e) {
+        if (e.target === modal) closeModal();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (!modal.classList.contains('hidden')) {
+          if (e.key === 'Escape') closeModal();
+        }
+      });
+    })();
+    </script>
     
     <script>
       // Script para atualizar badge de notificações do chat

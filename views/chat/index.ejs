@@ -21,7 +21,7 @@
 
 <div class="flex flex-col h-[calc(100vh-8rem)] max-w-4xl mx-auto">
   <!-- Header -->
-  <div class="mb-4 text-center">
+  <div class="my-4 text-center">
     <h1 class="text-3xl font-bold">
       <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 text-transparent bg-clip-text">
         💬 Chat do Casal
@@ -52,7 +52,7 @@
 
   <!-- Input de mensagem -->
   <div class="glass rounded-b-2xl border border-violet-700/40 border-t-0 p-4">
-    <form id="chat-form" class="flex gap-3">
+    <form id="chat-form" class="flex gap-3 my-4">
       <input
         type="file"
         id="photo-input"
@@ -74,7 +74,7 @@
         id="message-input"
         placeholder="Digite sua mensagem..."
         autocomplete="off"
-        class="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-violet-700/40 text-violet-100 placeholder-violet-400/50 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/50 focus:border-transparent transition"
+  class="flex-1 px-4 py-3 rounded-lg bg-[rgb(0,0,0,0.5)] border border-violet-700/40 text-violet-100 placeholder-violet-400/50 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/50 focus:border-transparent transition"
       />
       <button
         type="submit"
@@ -312,7 +312,7 @@
     return `
       <div class="flex ${isOwn ? 'justify-end' : 'justify-start'}">
         <div class="max-w-[70%]">
-          <div class="${isOwn ? 'bg-violet-600/80' : 'bg-white/5'} rounded-2xl px-4 py-3 border ${isOwn ? 'border-violet-500/40' : 'border-violet-700/40'}">
+          <div class="${isOwn ? 'bg-violet-600/80' : 'bg-[rgb(0,0,0,0.5)]'} rounded-2xl px-4 py-3 border ${isOwn ? 'border-violet-500/40' : 'border-violet-700/40'}">
             ${!isOwn ? `<p class="text-xs text-fuchsia-400 font-medium mb-1">${msg.sender_name}</p>` : ''}
             ${content}
           </div>
