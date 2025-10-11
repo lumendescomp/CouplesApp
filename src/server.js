@@ -46,7 +46,7 @@ app.use(
           "https://unpkg.com",
           "https://cdn.socket.io",
         ],
-        "connect-src": ["'self'", "https://unpkg.com", "ws://localhost:*", "wss://localhost:*"],
+        "connect-src": ["'self'", "https://unpkg.com", "https://cdn.socket.io", "ws://localhost:*", "wss://localhost:*"],
         "style-src": [
           "'self'",
           "'unsafe-inline'",
@@ -97,7 +97,8 @@ app.use((req, res, next) => {
     (req.path.startsWith("/profile") || 
      req.path.startsWith("/album/upload") ||
      req.path.startsWith("/recipes") ||
-     req.path.startsWith("/gift-list"))
+     req.path.startsWith("/gift-list") ||
+     req.path.startsWith("/chat/photo"))
   ) {
     return next();
   }
@@ -161,13 +162,13 @@ io.on('connection', (socket) => {
       // Salvar no banco
       const db = getDb();
       const result = db.prepare(`
-        INSERT INTO chat_messages (couple_id, sender_user_id, message)
-        VALUES (?, ?, ?)
+        INSERT INTO chat_messages (couple_id, sender_user_id, message, message_type)
+        VALUES (?, ?, ?, 'text')
       `).run(coupleId, userId, message);
 
       // Buscar mensagem completa com nome do usuário
       const newMessage = db.prepare(`
-        SELECT cm.*, u.username as sender_name
+        SELECT cm.*, u.display_name as sender_name
         FROM chat_messages cm
         JOIN users u ON cm.sender_user_id = u.id
         WHERE cm.id = ?
@@ -175,6 +176,23 @@ io.on('connection', (socket) => {
 
       // Broadcast para todos na sala do casal
       io.to(`couple-${coupleId}`).emit('new-message', newMessage);
+      
+      // Emitir notificação para o parceiro (não para quem enviou)
+      const couple = db.prepare(`
+        SELECT partner1_id, partner2_id FROM couples WHERE id = ?
+      `).get(coupleId);
+      
+      const partnerId = couple.partner1_id === userId ? couple.partner2_id : couple.partner1_id;
+      
+      console.log(`[Chat] Emitindo notificação: sender=${userId}, recipient=${partnerId}, coupleId=${coupleId}`);
+      
+      // Broadcast notificação para todas as conexões do parceiro
+      io.emit('new-message-notification', {
+        coupleId,
+        senderId: userId,
+        recipientId: partnerId,
+        message: newMessage
+      });
     } catch (error) {
       console.error('Error sending message:', error);
       socket.emit('error', { message: 'Erro ao enviar mensagem' });

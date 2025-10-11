@@ -3,6 +3,7 @@
   <pre
     class="bg-gray-50 border border-violet-200 text-violet-900 p-3 rounded text-sm"
   >
-<%= error?.message || error %></pre
+<%= typeof message !== 'undefined' ? message : (typeof error !== 'undefined' ? (error?.message || error) : 'Erro desconhecido') %></pre
   >
 </div>
+

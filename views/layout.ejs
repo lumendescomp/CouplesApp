@@ -87,6 +87,9 @@
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <% if (currentUser) { %>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <% } %>
     <script
       defer
       src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
@@ -607,15 +610,97 @@
     <% if (currentUser) { %>
     <a
       href="/chat"
+      id="chat-float-btn"
       class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 group"
       title="Abrir chat"
     >
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
       </svg>
-      <!-- Badge de notificação (pode ser implementado depois) -->
-      <!-- <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span> -->
+      <!-- Badge de notificação -->
+      <span 
+        id="chat-badge" 
+        class="hidden absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg animate-pulse"
+      >
+        0
+      </span>
     </a>
+    
+    <script>
+      // Script para atualizar badge de notificações do chat
+      // Aguarda o Socket.IO estar disponível
+      (function initChatBadge() {
+        // Verifica se Socket.IO está disponível
+        if (typeof io === 'undefined') {
+          console.log('[Badge] Aguardando Socket.IO...');
+          setTimeout(initChatBadge, 100);
+          return;
+        }
+        
+        console.log('[Badge] Inicializando badge de notificações');
+        
+        const badge = document.getElementById('chat-badge');
+        const chatBtn = document.getElementById('chat-float-btn');
+        const currentUserId = <%= currentUser.id %>;
+        let unreadCount = 0;
+        
+        console.log('[Badge] Usuário atual:', currentUserId);
+        
+        // Função para atualizar badge
+        function updateBadge(count) {
+          console.log('[Badge] Atualizando badge:', count);
+          unreadCount = count;
+          if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.classList.remove('hidden');
+          } else {
+            badge.classList.add('hidden');
+          }
+        }
+        
+        // Conectar ao Socket.IO
+        console.log('[Badge] Conectando ao Socket.IO...');
+        const socket = io();
+        
+        socket.on('connect', () => {
+          console.log('[Badge] Socket.IO conectado!', socket.id);
+        });
+        
+        socket.on('disconnect', () => {
+          console.log('[Badge] Socket.IO desconectado');
+        });
+        
+        socket.on('new-message-notification', (data) => {
+          console.log('[Badge] Nova mensagem recebida:', data);
+          console.log('[Badge] É para mim?', data.recipientId === currentUserId);
+          console.log('[Badge] Estou no chat?', window.location.pathname.includes('/chat'));
+          
+          // Apenas mostrar notificação se for para o usuário atual e não estiver na página do chat
+          if (data.recipientId === currentUserId && !window.location.pathname.includes('/chat')) {
+            console.log('[Badge] Mostrando notificação!');
+            updateBadge(unreadCount + 1);
+            
+            // Fazer o botão "pulsar"
+            chatBtn.classList.add('animate-bounce');
+            setTimeout(() => {
+              chatBtn.classList.remove('animate-bounce');
+            }, 1000);
+          }
+        });
+        
+        // Limpar badge ao clicar no botão do chat
+        chatBtn.addEventListener('click', () => {
+          console.log('[Badge] Limpando badge ao clicar');
+          updateBadge(0);
+        });
+        
+        // Limpar badge quando entrar na página do chat
+        if (window.location.pathname.includes('/chat')) {
+          console.log('[Badge] Na página do chat, limpando badge');
+          updateBadge(0);
+        }
+      })();
+    </script>
     <% } %>
 
     <!-- Toast -->

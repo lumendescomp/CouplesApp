@@ -10,7 +10,20 @@
       <% if (!isOwn) { %>
         <p class="text-xs text-fuchsia-400 font-medium mb-1"><%= msg.sender_name %></p>
       <% } %>
-      <p class="text-violet-100 break-words"><%= msg.message %></p>
+      
+      <% if (msg.message_type === 'photo' && msg.photo_path) { %>
+        <img 
+          src="<%= msg.photo_path %>" 
+          alt="Foto" 
+          class="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition mb-2"
+          onclick="window.open('<%= msg.photo_path %>', '_blank')"
+          loading="lazy"
+        >
+      <% } %>
+      
+      <% if (msg.message && msg.message.trim()) { %>
+        <p class="text-violet-100 break-words"><%= msg.message %></p>
+      <% } %>
     </div>
     <p class="text-xs text-violet-400/60 mt-1 <%= isOwn ? 'text-right' : 'text-left' %>"><%= timeStr %></p>
   </div>
