@@ -190,7 +190,11 @@
   // Toast
   window.showToast = function (message, type = "success") {
     const toast = document.createElement("div");
-    toast.className = `fixed bottom-4 sm:bottom-6 right-4 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 text-sm sm:text-base ${type === "error" ? "bg-red-500" : "bg-green-500"}`;
+    const bgColor = type === "error" ? "bg-red-500" : 
+                    type === "info" ? "bg-blue-500" : 
+                    "bg-green-500";
+    
+    toast.className = `fixed bottom-4 sm:bottom-6 right-4 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 text-sm sm:text-base ${bgColor}`;
     toast.textContent = message;
     toast.style.opacity = "0";
     toast.style.transform = "translateY(20px)";
@@ -256,13 +260,51 @@
 
       if (data.success) {
         window.showToast(`Avaliação de ${rating} 😋 salva!`);
-        setTimeout(() => location.reload(), 500);
+        
+        // Atualizar UI sem reload
+        updateRecipeRatingUI(recipeId, rating);
       } else {
         throw new Error(data.error || 'Erro ao avaliar');
       }
     } catch (error) {
       console.error('Erro:', error);
       window.showToast(error.message || 'Erro ao avaliar receita', 'error');
+    }
+  }
+
+  // Atualizar UI da avaliação sem reload
+  function updateRecipeRatingUI(recipeId, rating) {
+    // Atualizar no card
+    const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+    if (card) {
+      const ratingBtns = card.querySelectorAll('.rating-btn');
+      ratingBtns.forEach((btn, index) => {
+        const star = btn.querySelector('span');
+        if (star) {
+          star.className = (index + 1) <= rating ? 'text-lg sm:text-xl opacity-100' : 'text-lg sm:text-xl opacity-30';
+        }
+      });
+      
+      // Atualizar texto de "Clique para avaliar" -> "Clique para alterar"
+      const helpText = card.querySelector('.rating-btn + .text-\\[10px\\]');
+      if (helpText) {
+        helpText.textContent = 'Clique para alterar';
+      }
+    }
+    
+    // Atualizar no modal de detalhes se estiver aberto
+    const modal = document.getElementById('recipe-detail-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+      const modalRatingBtns = modal.querySelectorAll('.rating-btn');
+      modalRatingBtns.forEach((btn, index) => {
+        const btnRecipeId = btn.getAttribute('data-recipe-id');
+        if (btnRecipeId == recipeId) {
+          const star = btn.querySelector('span');
+          if (star) {
+            star.className = (index + 1) <= rating ? 'text-xl sm:text-2xl opacity-100' : 'text-xl sm:text-2xl opacity-30';
+          }
+        }
+      });
     }
   }
 
@@ -540,7 +582,7 @@
 
       if (data.success) {
         window.showToast('Comentário salvo!');
-        setTimeout(() => location.reload(), 500);
+        // Não precisa atualizar UI, o textarea já tem o valor
       } else {
         throw new Error(data.error || 'Erro ao salvar comentário');
       }
@@ -574,6 +616,16 @@
 
       if (data.success) {
         window.showToast('Título atualizado!');
+        
+        // Atualizar título no card
+        const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+        if (card) {
+          const cardTitle = card.querySelector('h3');
+          if (cardTitle) {
+            cardTitle.textContent = title.trim();
+            cardTitle.setAttribute('title', title.trim());
+          }
+        }
       } else {
         throw new Error(data.error || 'Erro ao atualizar título');
       }
@@ -827,6 +879,9 @@
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
       
+      // Mostrar loading
+      window.showToast('Processando imagem...', 'info');
+      
       // Enviar posições em porcentagem (0-100) - servidor irá processar com Sharp!
       const response = await fetch(`/recipes/${recipeId}/crop`, {
         method: 'PUT',
@@ -843,16 +898,48 @@
       const data = await response.json();
 
       if (data.success) {
-        window.showToast('Enquadramento salvo!');
-        setTimeout(() => location.reload(), 500);
+        window.showToast('Imagem atualizada!');
+        
+        // Fechar editor
+        closePhotoEditor(recipeId);
+        
+        // Atualizar imagem no card E no modal sem reload!
+        if (data.photo_path) {
+          updateRecipePhotoUI(recipeId, data.photo_path);
+        }
       } else {
         throw new Error(data.error || 'Erro ao salvar enquadramento');
       }
-
-      closePhotoEditor(recipeId);
     } catch (error) {
       console.error('Erro ao salvar edição:', error);
       window.showToast(error.message || 'Erro ao salvar enquadramento', 'error');
+    }
+  }
+
+  // Atualizar UI da foto sem reload
+  function updateRecipePhotoUI(recipeId, newPhotoPath) {
+    // Adicionar timestamp para forçar reload da imagem (cache bust)
+    const photoUrlWithCache = newPhotoPath + '?t=' + Date.now();
+    
+    // Atualizar no card
+    const card = document.querySelector(`[data-recipe-id="${recipeId}"]`);
+    if (card) {
+      const cardImg = card.querySelector('img[alt]');
+      if (cardImg) {
+        cardImg.src = photoUrlWithCache;
+      }
+    }
+    
+    // Atualizar no modal de detalhes
+    const detailPhoto = document.getElementById(`detail-photo-${recipeId}`);
+    if (detailPhoto && detailPhoto.tagName === 'IMG') {
+      detailPhoto.src = photoUrlWithCache;
+    }
+    
+    // Atualizar estado global para próxima edição
+    if (window.currentRecipeCropData) {
+      window.currentRecipeCropData.crop_x = imageEditorState.posX;
+      window.currentRecipeCropData.crop_y = imageEditorState.posY;
     }
   }
 
