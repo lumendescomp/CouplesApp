@@ -444,11 +444,40 @@
 </style>
 
 <script>
+  /**
+   * ========================================================================
+   * ÁLBUM DE FOTOS - SCRIPT PRINCIPAL
+   * ========================================================================
+   * 
+   * Este script gerencia todas as interações da página de álbum:
+   * - Upload de fotos/vídeos
+   * - Carrossel com scroll manual e botões
+   * - Drag & Drop da biblioteca para slots do coração
+   * - Remoção de fotos da biblioteca e slots
+   * - Carregamento lazy de imagens
+   * - Modais de confirmação
+   * 
+   * Chamado automaticamente quando a página /album é carregada.
+   */
+
   (function AlbumPage() {
+    // Token CSRF para proteção contra ataques CSRF
     const CSRF =
       (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
 
-    // ===== MODAL DE CONFIRMAÇÃO DA BIBLIOTECA =====
+    /**
+     * ========================================================================
+     * MODAL DE CONFIRMAÇÃO - BIBLIOTECA
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - Ao clicar no botão de deletar uma foto da biblioteca
+     * 
+     * O QUE FAZ:
+     * - Exibe um modal estilizado pedindo confirmação
+     * - Retorna uma Promise que resolve com true (confirmou) ou false (cancelou)
+     * - Pode ser fechado clicando em "Cancelar", "X", fora do modal ou ESC
+     */
     function showConfirmLibrary(message) {
       return new Promise((resolve) => {
         const modal = document.getElementById("confirm-modal-library");
@@ -456,34 +485,46 @@
         const okBtn = document.getElementById("confirm-ok-library");
         const cancelBtn = document.getElementById("confirm-cancel-library");
 
+        // Define a mensagem do modal
         messageEl.textContent = message;
+        
+        // Remove a classe 'hidden' para mostrar o modal
         modal.classList.remove("hidden");
 
-        // Animação de entrada
+        // Animação de entrada (fade in + scale)
         setTimeout(() => {
           modal.style.opacity = "1";
           modal.querySelector("div > div").style.transform = "scale(1)";
         }, 10);
 
+        /**
+         * Função interna para fechar o modal com animação
+         * @param {boolean} result - true se confirmou, false se cancelou
+         */
         function close(result) {
-          // Animação de saída
+          // Animação de saída (fade out + scale down)
           modal.style.opacity = "0";
           modal.querySelector("div > div").style.transform = "scale(0.9)";
+          
+          // Aguarda animação terminar antes de esconder
           setTimeout(() => {
             modal.classList.add("hidden");
-            resolve(result);
+            resolve(result); // Resolve a Promise com o resultado
           }, 300);
         }
 
+        // Botão OK: fecha e retorna true
         okBtn.onclick = () => close(true);
+        
+        // Botão Cancelar: fecha e retorna false
         cancelBtn.onclick = () => close(false);
 
-        // Fechar ao clicar fora
+        // Clicar fora do modal: fecha e retorna false
         modal.onclick = (e) => {
           if (e.target === modal) close(false);
         };
 
-        // Fechar com ESC
+        // Tecla ESC: fecha e retorna false
         const escHandler = (e) => {
           if (e.key === "Escape") {
             close(false);
@@ -494,7 +535,19 @@
       });
     }
 
-    // ===== MODAL DE CONFIRMAÇÃO DOS SLOTS =====
+    /**
+     * ========================================================================
+     * MODAL DE CONFIRMAÇÃO - SLOTS
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - Ao clicar no botão de remover uma foto de um slot do coração
+     * 
+     * O QUE FAZ:
+     * - Exibe um modal estilizado pedindo confirmação
+     * - Retorna uma Promise que resolve com true (confirmou) ou false (cancelou)
+     * - Idêntico ao modal da biblioteca, mas com IDs diferentes
+     */
     function showConfirmSlots(message) {
       return new Promise((resolve) => {
         const modal = document.getElementById("confirm-modal-slots");
@@ -505,14 +558,12 @@
         messageEl.textContent = message;
         modal.classList.remove("hidden");
 
-        // Animação de entrada
         setTimeout(() => {
           modal.style.opacity = "1";
           modal.querySelector("div > div").style.transform = "scale(1)";
         }, 10);
 
         function close(result) {
-          // Animação de saída
           modal.style.opacity = "0";
           modal.querySelector("div > div").style.transform = "scale(0.9)";
           setTimeout(() => {
@@ -524,12 +575,10 @@
         okBtn.onclick = () => close(true);
         cancelBtn.onclick = () => close(false);
 
-        // Fechar ao clicar fora
         modal.onclick = (e) => {
           if (e.target === modal) close(false);
         };
 
-        // Fechar com ESC
         const escHandler = (e) => {
           if (e.key === "Escape") {
             close(false);
@@ -540,82 +589,146 @@
       });
     }
 
-    // Controles do carrossel
+    /**
+     * ========================================================================
+     * CONTROLES DO CARROSSEL
+     * ========================================================================
+     */
+
     const carousel = document.getElementById("photos-carousel");
     const prevBtn = document.getElementById("carousel-prev");
     const nextBtn = document.getElementById("carousel-next");
 
+    /**
+     * Atualiza o estado (enabled/disabled) dos botões do carrossel
+     * 
+     * QUANDO É CHAMADO:
+     * - No carregamento inicial da página
+     * - Sempre que o usuário scrolla o carrossel
+     * - Após adicionar ou remover fotos
+     * 
+     * O QUE FAZ:
+     * - Desabilita botão esquerdo se estiver no início
+     * - Desabilita botão direito se estiver no final
+     */
     function updateCarouselButtons() {
       if (!carousel || !prevBtn || !nextBtn) return;
 
-      const { scrollLeft, scrollWidth, clientWidth } = carousel;
+      const scrollLeft = carousel.scrollLeft;
+      const scrollWidth = carousel.scrollWidth;
+      const clientWidth = carousel.clientWidth;
 
       // Desabilita botão esquerdo se estiver no início
       prevBtn.disabled = scrollLeft <= 0;
 
-      // Desabilita botão direito se estiver no final
+      // Desabilita botão direito se estiver no final (com margem de 10px)
       nextBtn.disabled = scrollLeft + clientWidth >= scrollWidth - 10;
     }
 
     if (carousel && prevBtn && nextBtn) {
-      // Scroll suave ao clicar nos botões
+      /**
+       * BOTÃO PREV (Voltar):
+       * Scrolla 300px para a esquerda com animação suave
+       */
       prevBtn.addEventListener("click", () => {
         carousel.scrollBy({ left: -300, behavior: "smooth" });
       });
 
+      /**
+       * BOTÃO NEXT (Avançar):
+       * Scrolla 300px para a direita com animação suave
+       */
       nextBtn.addEventListener("click", () => {
         carousel.scrollBy({ left: 300, behavior: "smooth" });
       });
 
-      // Atualiza estado dos botões ao scrollar
+      /**
+       * EVENT LISTENER: scroll
+       * Atualiza estado dos botões sempre que o carrossel scrolla
+       */
       carousel.addEventListener("scroll", updateCarouselButtons);
 
-      // Atualiza no carregamento
+      // Atualiza estado inicial dos botões
       updateCarouselButtons();
 
-      // ===== DRAG TO SCROLL =====
-      let isDragging = false;
-      let startX;
-      let scrollLeftStart;
-      let hasMoved = false; // Flag para detectar se houve movimento
+      /**
+       * ========================================================================
+       * DRAG TO SCROLL - MOUSE
+       * ========================================================================
+       * 
+       * QUANDO É USADO:
+       * - Usuário clica e arrasta dentro do carrossel (mas não em uma foto)
+       * 
+       * O QUE FAZ:
+       * - Permite scrollar o carrossel arrastando com o mouse
+       * - Desabilita seleção de texto durante o arrasto
+       * - Muda cursor para "grabbing"
+       */
 
+      let isDragging = false; // Flag: está arrastando?
+      let startX; // Posição X inicial do mouse
+      let scrollLeftStart; // Posição inicial do scroll
+
+      /**
+       * Mouse pressionado: inicia drag to scroll
+       */
       carousel.addEventListener("mousedown", (e) => {
-        // Ignora se for em um elemento arrastável (foto)
+        // Ignora se clicou em uma foto (para não interferir com drag de foto)
         if (e.target.closest(".photo-library-item")) return;
 
         isDragging = true;
-        hasMoved = false;
         carousel.classList.add("dragging");
         carousel.style.cursor = "grabbing";
-        carousel.style.userSelect = "none";
+        carousel.style.userSelect = "none"; // Desabilita seleção de texto
+        
         startX = e.pageX - carousel.offsetLeft;
         scrollLeftStart = carousel.scrollLeft;
       });
 
+      /**
+       * Mouse sai do carrossel: cancela drag
+       */
       carousel.addEventListener("mouseleave", () => {
         isDragging = false;
         carousel.classList.remove("dragging");
         carousel.style.cursor = "grab";
       });
 
+      /**
+       * Mouse solto: finaliza drag
+       */
       carousel.addEventListener("mouseup", () => {
         isDragging = false;
         carousel.classList.remove("dragging");
         carousel.style.cursor = "grab";
       });
 
+      /**
+       * Mouse movendo: scrolla o carrossel
+       */
       carousel.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
         e.preventDefault();
-        hasMoved = true;
+        
         const x = e.pageX - carousel.offsetLeft;
-        const walk = (x - startX) * 2; // Multiplicador para velocidade do scroll
+        const walk = (x - startX) * 2; // Multiplicador = velocidade do scroll
         carousel.scrollLeft = scrollLeftStart - walk;
       });
 
-      // ===== TOUCH SUPPORT (Mobile) =====
-      let touchStartX;
-      let touchScrollLeft;
+      /**
+       * ========================================================================
+       * DRAG TO SCROLL - TOUCH (Mobile)
+       * ========================================================================
+       * 
+       * QUANDO É USADO:
+       * - Usuário arrasta com o dedo em dispositivos touch
+       * 
+       * O QUE FAZ:
+       * - Mesma funcionalidade do drag com mouse, mas para telas touch
+       */
+
+      let touchStartX; // Posição X inicial do toque
+      let touchScrollLeft; // Posição inicial do scroll
 
       carousel.addEventListener("touchstart", (e) => {
         if (e.target.closest(".photo-library-item")) return;
@@ -635,7 +748,23 @@
       });
     }
 
-    // Auto-submit form quando arquivo for selecionado (usando fetch direto)
+    /**
+     * ========================================================================
+     * UPLOAD DE FOTOS/VÍDEOS
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - Usuário seleciona arquivos no input file
+     * 
+     * O QUE FAZ:
+     * 1. Desabilita botão e mostra "Enviando..."
+     * 2. Faz upload de cada arquivo individualmente via fetch
+     * 3. Adiciona novo item no INÍCIO do carrossel (HTML retornado pelo servidor)
+     * 4. Atualiza contador de fotos
+     * 5. Re-inicializa drag, delete e lazy loading
+     * 6. Mostra toast de sucesso
+     */
+
     const photoInput = document.getElementById("photo-input");
     const uploadLabel = document.getElementById("upload-label");
     const uploadText = document.getElementById("upload-text");
@@ -650,36 +779,34 @@
         let videoCount = 0;
         let photoCount = 0;
 
-        // Desabilita botão e mostra loading
+        // Desabilita botão durante upload
         uploadLabel.style.opacity = "0.6";
         uploadLabel.style.pointerEvents = "none";
         uploadText.textContent = `Enviando... 0/${files.length}`;
 
-        // Upload de cada foto individualmente
+        // Loop: upload de cada arquivo individualmente
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const formData = new FormData();
           formData.append("photo", file);
 
           try {
-            // Fetch direto sem interceptação do HTMX
-            const response = await fetch(
-              window.location.origin + "/album/upload",
-              {
-                method: "POST",
-                body: formData,
-                credentials: "same-origin",
-              }
-            );
+            // Fetch POST para /album/upload
+            const response = await fetch("/album/upload", {
+              method: "POST",
+              body: formData,
+              credentials: "same-origin",
+            });
 
             if (response.ok) {
+              // Servidor retorna HTML do novo item de foto
               const html = await response.text();
 
-              // Insere novo item de foto no início do carrossel
+              // Insere no INÍCIO do carrossel
               const photosCarousel = document.getElementById("photos-carousel");
               photosCarousel.insertAdjacentHTML("afterbegin", html);
 
-              // Conta se é vídeo ou foto baseado no tipo do arquivo
+              // Conta se é vídeo ou foto
               const isVideo = file.type.startsWith("video/");
               if (isVideo) {
                 videoCount++;
@@ -691,10 +818,7 @@
               uploadText.textContent = `Enviando... ${uploadedCount}/${files.length}`;
             } else {
               const errorData = await response.json();
-              console.error(
-                `Erro ao fazer upload de ${file.name}:`,
-                errorData.error
-              );
+              console.error(`Erro ao fazer upload de ${file.name}:`, errorData.error);
               failedCount++;
             }
           } catch (error) {
@@ -708,19 +832,17 @@
         uploadLabel.style.pointerEvents = "auto";
         uploadText.textContent = "Adicionar mídia";
 
-        // Atualiza contador
+        // Se houve sucesso, atualiza a página
         if (uploadedCount > 0) {
+          // Atualiza contador "X/20 fotos"
           const counter = document.querySelector("header .text-sm");
           const currentCount = parseInt(counter.textContent.match(/\d+/)[0]);
           counter.textContent = `${currentCount + uploadedCount}/20 fotos`;
 
-          // Volta o carrossel para o início
-          const carousel = document.getElementById("photos-carousel");
-          if (carousel) {
-            carousel.scrollTo({ left: 0, behavior: "smooth" });
-          }
+          // Volta carrossel para o início (onde estão as novas fotos)
+          carousel.scrollTo({ left: 0, behavior: "smooth" });
 
-          // Re-aplica drag handlers, delete handlers e lazy loading
+          // Re-inicializa funcionalidades nas novas fotos
           initDragDrop();
           initPhotoDelete();
           initLazyLoading();
@@ -729,12 +851,11 @@
           updateCarouselButtons();
         }
 
-        // Reset input
+        // Limpa input para permitir re-upload do mesmo arquivo
         photoInput.value = "";
 
-        // Mostra resultado
+        // Mostra toast de resultado
         if (uploadedCount > 0 && failedCount === 0) {
-          // Cria mensagem apropriada baseada no que foi enviado
           let message = "✅ ";
           const parts = [];
 
@@ -760,32 +881,56 @@
       });
     }
 
-    // Drag & Drop da biblioteca para slots
+    /**
+     * ========================================================================
+     * DRAG & DROP - BIBLIOTECA → SLOTS
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - No carregamento inicial
+     * - Após adicionar novas fotos
+     * - Após HTMX swap (navegação)
+     * 
+     * O QUE FAZ:
+     * 1. Torna fotos da biblioteca arrastáveis (draggable=true)
+     * 2. Torna slots do coração receptivos (dragover, drop)
+     * 3. Ao soltar foto em um slot:
+     *    - Faz POST /album/slot/:number com photo_id
+     *    - Atualiza HTML do slot com resposta do servidor
+     *    - Re-inicializa eventos de remoção
+     */
     function initDragDrop() {
-      // Tornar fotos da biblioteca arrastáveis
+      /**
+       * PARTE 1: Tornar fotos arrastáveis
+       */
       document.querySelectorAll(".photo-library-item").forEach((item) => {
-        // Evita adicionar listeners duplicados
-        if (item.dataset.dragInitialized === "true") return;
-        item.dataset.dragInitialized = "true";
-
         item.draggable = true;
 
+        /**
+         * Início do arrasto:
+         * - Armazena photo-id no dataTransfer
+         * - Deixa foto semi-transparente
+         * - Esconde overlay de delete
+         */
         item.addEventListener("dragstart", (e) => {
           e.dataTransfer.effectAllowed = "copy";
           e.dataTransfer.setData("photo-id", item.dataset.photoId);
           item.style.opacity = "0.5";
 
-          // Esconde o overlay durante o drag (evita conflitos)
           const overlay = item.querySelector(".photo-delete-overlay");
           if (overlay) {
             overlay.style.display = "none";
           }
         });
 
+        /**
+         * Fim do arrasto:
+         * - Restaura opacidade
+         * - Mostra overlay de delete novamente
+         */
         item.addEventListener("dragend", (e) => {
           item.style.opacity = "1";
 
-          // Restaura o overlay após o drag
           const overlay = item.querySelector(".photo-delete-overlay");
           if (overlay) {
             overlay.style.display = "flex";
@@ -793,22 +938,35 @@
         });
       });
 
-      // Tornar slots receptivos
+      /**
+       * PARTE 2: Tornar slots receptivos
+       */
       document.querySelectorAll(".album-slot").forEach((slot) => {
-        // Evita adicionar listeners duplicados
-        if (slot.dataset.dropInitialized === "true") return;
-        slot.dataset.dropInitialized = "true";
-
+        /**
+         * Passando por cima do slot:
+         * - Adiciona classe 'drag-over' (feedback visual)
+         */
         slot.addEventListener("dragover", (e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = "copy";
           slot.classList.add("drag-over");
         });
 
+        /**
+         * Saiu do slot sem soltar:
+         * - Remove classe 'drag-over'
+         */
         slot.addEventListener("dragleave", (e) => {
           slot.classList.remove("drag-over");
         });
 
+        /**
+         * Soltou foto no slot:
+         * 1. Pega photo_id do dataTransfer
+         * 2. POST /album/slot/:number
+         * 3. Atualiza HTML do slot
+         * 4. Re-inicializa botão de remoção
+         */
         slot.addEventListener("drop", async (e) => {
           e.preventDefault();
           slot.classList.remove("drag-over");
@@ -832,17 +990,13 @@
             if (res.ok) {
               const html = await res.text();
               slot.innerHTML = html;
-              // Remove flag para permitir re-inicialização após innerHTML
-              slot.dataset.dropInitialized = "false";
+              
               // Re-inicializar eventos de remoção
               initSlotRemoval();
 
-              // Detecta se é vídeo ou foto baseado no elemento arrastado
-              const draggedItem = document.querySelector(
-                `[data-photo-id="${photoId}"]`
-              );
-              const isVideo =
-                draggedItem && draggedItem.dataset.mediaType === "video";
+              // Mostra toast apropriado
+              const draggedItem = document.querySelector(`[data-photo-id="${photoId}"]`);
+              const isVideo = draggedItem && draggedItem.dataset.mediaType === "video";
               const mediaType = isVideo ? "Vídeo" : "Foto";
 
               window.showToast(`${mediaType} adicionado ao slot!`);
@@ -857,18 +1011,32 @@
       });
     }
 
-    // Remover foto do slot
+    /**
+     * ========================================================================
+     * REMOÇÃO DE SLOT
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - No carregamento inicial
+     * - Após adicionar foto a um slot
+     * - Após HTMX swap
+     * 
+     * O QUE FAZ:
+     * - Adiciona event listener aos botões de remoção dos slots
+     * - Ao clicar:
+     *   1. Mostra modal de confirmação
+     *   2. DELETE /album/slot/:number
+     *   3. Substitui HTML do slot por slot vazio
+     */
     function initSlotRemoval() {
       document.querySelectorAll(".slot-remove-btn").forEach((btn) => {
-        // Evita adicionar listeners duplicados
-        if (btn.dataset.removeInitialized === "true") return;
-        btn.dataset.removeInitialized = "true";
-
         btn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
 
           const slotNumber = btn.dataset.slot;
+          
+          // Pede confirmação
           const confirmed = await showConfirmSlots("Remover mídia deste slot?");
           if (!confirmed) return;
 
@@ -882,14 +1050,11 @@
             });
 
             if (res.ok) {
+              // Servidor retorna HTML do slot vazio
               const html = await res.text();
-              const slot = document.querySelector(
-                `.album-slot[data-slot="${slotNumber}"]`
-              );
+              const slot = document.querySelector(`.album-slot[data-slot="${slotNumber}"]`);
               if (slot) {
                 slot.innerHTML = html;
-                // Remove flag para permitir re-inicialização
-                slot.dataset.dropInitialized = "false";
               }
               window.showToast("Mídia removida");
             }
@@ -900,24 +1065,40 @@
       });
     }
 
-    // Deletar foto da biblioteca
+    /**
+     * ========================================================================
+     * DELETAR FOTO DA BIBLIOTECA
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - No carregamento inicial
+     * - Após adicionar novas fotos
+     * - Após HTMX swap
+     * 
+     * O QUE FAZ:
+     * - Adiciona event listener aos botões de delete das fotos
+     * - Ao clicar:
+     *   1. Mostra modal de confirmação
+     *   2. DELETE /album/photo/:id
+     *   3. Remove item da biblioteca com animação
+     *   4. Limpa slots que continham essa foto
+     *   5. Mantém posição do scroll do carrossel
+     */
     function initPhotoDelete() {
       document.querySelectorAll(".photo-delete-btn").forEach((btn) => {
-        // Evita adicionar listeners duplicados
-        if (btn.dataset.deleteInitialized === "true") return;
-        btn.dataset.deleteInitialized = "true";
-
         btn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
 
           const photoId = btn.dataset.photoId;
+          
+          // Pede confirmação
           const confirmed = await showConfirmLibrary(
             "Deletar esta mídia? Ela será removida de todos os slots."
           );
           if (!confirmed) return;
 
-          // Salva posição do scroll antes de deletar
+          // Salva posição do scroll (para manter após deletar)
           const carousel = document.getElementById("photos-carousel");
           const scrollPosition = carousel ? carousel.scrollLeft : 0;
 
@@ -931,7 +1112,7 @@
             });
 
             if (res.ok) {
-              // Remove item da biblioteca com animação
+              // Remove item com animação fade out + scale down
               const item = btn.closest(".photo-library-item");
               if (item) {
                 item.style.transition = "opacity 0.3s, transform 0.3s";
@@ -940,10 +1121,10 @@
                 setTimeout(() => item.remove(), 300);
               }
 
-              // Limpa slots que tinham essa foto (transforma em vazio)
+              // Limpa slots que tinham essa foto
               clearSlotsWithPhoto(photoId);
 
-              // Restaura posição do scroll após breve delay
+              // Restaura posição do scroll
               setTimeout(() => {
                 if (carousel) {
                   carousel.scrollLeft = scrollPosition;
@@ -963,17 +1144,31 @@
       });
     }
 
-    // Limpa slots que continham uma foto específica
+    /**
+     * ========================================================================
+     * LIMPAR SLOTS COM FOTO DELETADA
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - Após deletar uma foto da biblioteca
+     * 
+     * O QUE FAZ:
+     * - Percorre todos os slots
+     * - Se o slot contém a foto deletada (verifica data-photo-id em img/video)
+     * - Transforma o slot em slot vazio (apenas borda tracejada + número)
+     * 
+     * @param {string} photoId - ID da foto que foi deletada
+     */
     function clearSlotsWithPhoto(photoId) {
       const slots = document.querySelectorAll(".album-slot");
 
       slots.forEach((slot) => {
-        // Verifica se slot tem imagem OU vídeo com data-photo-id correspondente
+        // Verifica se tem img OU video com o photo-id
         const img = slot.querySelector(`img[data-photo-id="${photoId}"]`);
         const video = slot.querySelector(`video[data-photo-id="${photoId}"]`);
 
         if (img || video) {
-          // Transforma slot preenchido em slot vazio
+          // Transforma em slot vazio
           const slotNumber = slot.dataset.slot;
           slot.innerHTML = `
             <div class="w-full h-full rounded-lg border-2 border-dashed border-violet-700/50 bg-violet-900/10 flex items-center justify-center text-violet-300/60 text-xs">
@@ -985,92 +1180,94 @@
       });
     }
 
-    // Armazena o observer globalmente para poder desconectar depois
-    let mediaObserver = null;
-    let loadingImages = new Set(); // Track de imagens sendo carregadas
+    /**
+     * ========================================================================
+     * LAZY LOADING DE IMAGENS/VÍDEOS
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - No carregamento inicial
+     * - Após adicionar novas fotos
+     * - Após HTMX swap
+     * 
+     * O QUE FAZ:
+     * - Usa Intersection Observer para carregar imagens apenas quando visíveis
+     * - Elementos têm atributo data-src (ao invés de src)
+     * - Quando entram na viewport:
+     *   1. Copia data-src para src
+     *   2. Remove data-src
+     *   3. Fade in (opacity 0 → 1)
+     *   4. Para de observar o elemento
+     */
 
-    // Lazy loading de imagens com Intersection Observer
+    // Observer global (para poder desconectar no cleanup)
+    let mediaObserver = null;
+
     function initLazyLoading() {
       console.log("[Album] initLazyLoading chamado");
 
-      // Evitar múltiplos observers
       const container = document.querySelector("#photos-carousel");
       if (!container) {
         console.log("[Album] Container não encontrado");
         return;
       }
 
-      if (container.dataset.lazyInitialized === "true") {
-        console.log("[Album] Lazy loading já inicializado");
-        return;
-      }
-
-      container.dataset.lazyInitialized = "true";
-      console.log("[Album] Marcando container como inicializado");
-
-      // Limpar observer anterior se existir
-      if (mediaObserver) {
-        console.log("[Album] Desconectando observer anterior");
-        mediaObserver.disconnect();
-      }
-
+      // Cria Intersection Observer
       mediaObserver = new IntersectionObserver(
         (entries, observer) => {
           entries.forEach((entry) => {
+            // Elemento está visível?
             if (entry.isIntersecting) {
               const element = entry.target;
               const src = element.getAttribute("data-src");
 
-              if (src && !element.dataset.loading) {
+              if (src) {
                 console.log("[Album] Carregando:", src);
-                element.dataset.loading = "true";
-                loadingImages.add(src);
 
                 if (element.tagName === "VIDEO") {
-                  // Para vídeos: definir src e iniciar reprodução
+                  /**
+                   * VÍDEOS:
+                   * 1. Define src
+                   * 2. Espera 'loadeddata' event
+                   * 3. Fade in
+                   * 4. Inicia reprodução (autoplay)
+                   */
                   element.style.opacity = "0";
-                  element.addEventListener(
-                    "loadeddata",
-                    () => {
-                      loadingImages.delete(src);
-                      if (element.isConnected) {
-                        setTimeout(() => {
-                          element.style.opacity = "1";
-                        }, 10);
-                        element.play().catch(() => {
-                          // Ignorar erros de autoplay
-                        });
-                      }
-                    },
-                    { once: true }
-                  );
-                  element.addEventListener(
-                    "error",
-                    () => {
-                      loadingImages.delete(src);
-                      console.log("[Album] Erro ao carregar vídeo:", src);
-                    },
-                    { once: true }
-                  );
+                  
+                  element.addEventListener("loadeddata", () => {
+                    setTimeout(() => {
+                      element.style.opacity = "1";
+                    }, 10);
+                    element.play().catch(() => {
+                      // Ignora erros de autoplay (políticas do browser)
+                    });
+                  }, { once: true });
+
+                  element.addEventListener("error", () => {
+                    console.log("[Album] Erro ao carregar vídeo:", src);
+                  }, { once: true });
+
                   element.src = src;
                   element.removeAttribute("data-src");
                   element.classList.remove("lazy-image");
                   observer.unobserve(element);
+
                 } else {
-                  // Para imagens: carregar DIRETAMENTE no elemento (FIX: sem new Image duplicado)
+                  /**
+                   * IMAGENS:
+                   * 1. Define src DIRETAMENTE no elemento (sem new Image)
+                   * 2. Espera 'load' event
+                   * 3. Fade in
+                   */
                   element.style.opacity = "0";
 
                   const onLoad = () => {
-                    loadingImages.delete(src);
-                    if (element.isConnected) {
-                      setTimeout(() => {
-                        element.style.opacity = "1";
-                      }, 10);
-                    }
+                    setTimeout(() => {
+                      element.style.opacity = "1";
+                    }, 10);
                   };
 
                   const onError = () => {
-                    loadingImages.delete(src);
                     console.log("[Album] Erro ao carregar:", src);
                   };
 
@@ -1087,41 +1284,58 @@
           });
         },
         {
-          rootMargin: "200px",
-          threshold: 0.01,
+          rootMargin: "200px", // Começa a carregar 200px antes de entrar na tela
+          threshold: 0.01, // Trigger quando 1% do elemento estiver visível
         }
       );
 
-      // Observa todas as imagens e vídeos com lazy loading
+      // Observa todas as imagens e vídeos com classe 'lazy-image'
       const lazyElements = document.querySelectorAll(".lazy-image");
       console.log("[Album] Observando", lazyElements.length, "elementos lazy");
+      
       lazyElements.forEach((element) => {
         mediaObserver.observe(element);
       });
     }
 
-    // Cleanup quando sair da página /album
+    /**
+     * ========================================================================
+     * CLEANUP - LIMPEZA AO SAIR DA PÁGINA
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - Quando o usuário navega para outra página (via HTMX)
+     * - Detectado pelo evento htmx:beforeRequest
+     * 
+     * O QUE FAZ:
+     * 1. Desconecta Intersection Observer
+     * 2. Pausa e cancela carregamento de todos os vídeos
+     * 3. Cancela carregamento de todas as imagens
+     * 4. Limpa flags e tracking
+     * 
+     * POR QUÊ?
+     * - Evita memory leaks
+     * - Cancela requisições HTTP em andamento
+     * - Libera recursos do browser
+     */
     function cleanupAlbum() {
       console.log("[Album] ⚠️ CLEANUP INICIADO");
-      console.log(
-        "[Album] Imagens ainda carregando:",
-        Array.from(loadingImages)
-      );
 
+      // Desconecta observer
       if (mediaObserver) {
         console.log("[Album] Desconectando observer");
         mediaObserver.disconnect();
         mediaObserver = null;
       }
 
-      // Pausar e cancelar carregamento de todos os vídeos
+      // Pausa e limpa todos os vídeos
       document.querySelectorAll("#photos-carousel video, .album-slot video").forEach((video) => {
         video.pause();
         video.removeAttribute("src");
-        video.load();
+        video.load(); // Força cancelar carregamento
       });
 
-      // Cancelar carregamento de TODAS as imagens com data-src ou que estão carregando
+      // Cancela carregamento de todas as imagens
       document.querySelectorAll("#photos-carousel img, .album-slot img").forEach((img) => {
         const dataSrc = img.getAttribute("data-src");
         if (dataSrc) {
@@ -1129,42 +1343,48 @@
           img.removeAttribute("data-src");
         }
 
-        // Abortar carregamento em progresso
-        if (img.dataset.loading === "true" || img.src) {
+        // Aborta carregamento em progresso
+        if (img.src) {
           console.log("[Album] Abortando carregamento:", img.src);
-          img.src = ""; // Força cancelar requisição
+          img.src = ""; // Força cancelar requisição HTTP
           img.removeAttribute("src");
         }
       });
 
-      // Limpar tracking
-      loadingImages.clear();
-
-      // Limpar flag de inicialização
-      const container = document.querySelector("#photos-carousel");
-      if (container) {
-        container.dataset.lazyInitialized = "false";
-      }
-
       console.log("[Album] ✅ CLEANUP CONCLUÍDO");
-    } // Expor cleanup globalmente
-    window.__albumCleanup = cleanupAlbum;
-
-    // Registrar handler de afterSwap apenas uma vez
-    if (!window.__albumAfterSwapRegistered) {
-      window.__albumAfterSwapRegistered = true;
-      document.addEventListener("htmx:afterSwap", (e) => {
-        // Só executar se estiver na página /album
-        if (window.location.pathname.includes("/album")) {
-          console.log("[Album] htmx:afterSwap detectado, reinicializando...");
-          initDragDrop();
-          initPhotoDelete();
-          initLazyLoading();
-        }
-      });
     }
 
-    // Inicializar apenas se estiver na página /album
+    // Expor cleanup globalmente (para ser chamado externamente)
+    window.__albumCleanup = cleanupAlbum;
+
+    /**
+     * ========================================================================
+     * HTMX: RE-INICIALIZAÇÃO APÓS SWAP
+     * ========================================================================
+     * 
+     * QUANDO É CHAMADO:
+     * - Após HTMX fazer swap de conteúdo (navegação entre páginas)
+     * 
+     * O QUE FAZ:
+     * - Se estiver na página /album, re-inicializa todas as funcionalidades
+     * - Necessário porque o HTML foi substituído (elementos novos)
+     */
+    document.addEventListener("htmx:afterSwap", (e) => {
+      if (window.location.pathname.includes("/album")) {
+        console.log("[Album] htmx:afterSwap detectado, reinicializando...");
+        initDragDrop();
+        initPhotoDelete();
+        initLazyLoading();
+      }
+    });
+
+    /**
+     * ========================================================================
+     * INICIALIZAÇÃO
+     * ========================================================================
+     * 
+     * Executa apenas se estiver na página /album
+     */
     if (window.location.pathname.includes("/album")) {
       console.log("[Album] Inicialização inicial na página /album");
       initDragDrop();
@@ -1172,9 +1392,7 @@
       initPhotoDelete();
       initLazyLoading();
     } else {
-      console.log(
-        "[Album] Script carregado mas não está em /album, ignorando inicialização"
-      );
+      console.log("[Album] Script carregado mas não está em /album, ignorando inicialização");
     }
   })();
 </script>
