@@ -90,15 +90,39 @@
     <% if (currentUser) { %>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
-      // Socket.IO Global Instance - Previne múltiplas conexões (Memory Leak Fix)
+      /**
+       * ========================================================================
+       * SOCKET.IO - INSTÂNCIA GLOBAL (SINGLETON)
+       * ========================================================================
+       * 
+       * QUANDO É USADO:
+       * - Pelo chat (/chat)
+       * - Pelo badge de notificações (layout.ejs)
+       * - Por qualquer feature que precise de comunicação real-time
+       * 
+       * O QUE FAZ:
+       * - Cria UMA ÚNICA conexão Socket.IO compartilhada por toda a aplicação
+       * - Previne memory leaks causados por múltiplas conexões
+       * - Retorna a mesma instância em todas as chamadas
+       * - Reconecta automaticamente se a conexão cair
+       * 
+       * COMO USAR:
+       * const socket = window.getGlobalSocket();
+       * socket.on('evento', (data) => { ... });
+       */
       window._globalSocket = null;
       window.getGlobalSocket = function() {
+        // Se não existe socket OU está desconectado, cria novo
         if (!window._globalSocket || !window._globalSocket.connected) {
           console.log('[Socket] Criando nova conexão Socket.IO');
           window._globalSocket = io();
+          
+          // Log de conexão bem-sucedida
           window._globalSocket.on('connect', () => {
             console.log('[Socket] Conectado:', window._globalSocket.id);
           });
+          
+          // Log de desconexão
           window._globalSocket.on('disconnect', () => {
             console.log('[Socket] Desconectado');
           });
@@ -112,10 +136,30 @@
       src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
     <script>
-      // Utilitário global de cópia com fallback
+      /**
+       * ========================================================================
+       * UTILITÁRIO GLOBAL DE CÓPIA - window.copyHelpers
+       * ========================================================================
+       * 
+       * QUANDO É USADO:
+       * - Ao copiar códigos de convite (/invite)
+       * - Ao copiar links de perfil
+       * - Por qualquer botão que precise copiar texto para área de transferência
+       * 
+       * O QUE FAZ:
+       * - Tenta copiar texto usando 2 métodos (fallback duplo):
+       *   1. Método legado (textarea + execCommand) - mais compatível
+       *   2. Clipboard API moderna - mais seguro mas requer HTTPS
+       * - Retorna true se conseguiu copiar, false se falhou
+       * 
+       * POR QUÊ 2 MÉTODOS?
+       * - execCommand é deprecado mas funciona em mais navegadores
+       * - Clipboard API é moderna mas pode falhar em contextos inseguros
+       */
       window.copyHelpers = {
         async copy(text) {
-          // 1) Tenta fallback síncrono primeiro (preserva gesto do usuário)
+          // MÉTODO 1: Fallback legado (textarea invisível + execCommand)
+          // Vantagem: Funciona mesmo sem HTTPS, preserva gesto do usuário
           try {
             const ta = document.createElement("textarea");
             ta.value = text;
@@ -128,35 +172,88 @@
             document.body.removeChild(ta);
             if (ok) return true;
           } catch (_) {}
-          // 2) Tenta Clipboard API (pode exigir contexto seguro)
+          
+          // MÉTODO 2: Clipboard API moderna
+          // Vantagem: Mais seguro, não manipula DOM
           try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
               await navigator.clipboard.writeText(text);
               return true;
             }
           } catch (_) {}
+          
           return false;
         },
       };
 
-      // UI helpers
+      /**
+       * ========================================================================
+       * UI HELPERS - FUNÇÕES AUXILIARES DE INTERFACE
+       * ========================================================================
+       */
+      
+      /**
+       * Mostra elemento temporariamente e esconde após X milissegundos
+       * 
+       * QUANDO É USADO:
+       * - Ao copiar código/link (/invite) - mostra "Copiado!" temporariamente
+       * - Qualquer feedback visual temporário
+       * 
+       * O QUE FAZ:
+       * 1. Remove classe 'hidden' do elemento
+       * 2. Aguarda X milissegundos (padrão: 2000ms = 2s)
+       * 3. Adiciona classe 'hidden' novamente
+       * 
+       * @param {HTMLElement} el - Elemento a ser mostrado/escondido
+       * @param {number} ms - Tempo em milissegundos (padrão: 2000)
+       */
       window.showFor = function (el, ms = 2000) {
         if (!el) return;
         el.classList.remove("hidden");
         setTimeout(() => el.classList.add("hidden"), ms);
       };
+      
+      /**
+       * Copia texto e mostra feedback visual + toast
+       * 
+       * QUANDO É USADO:
+       * - Botões de copiar na página de convites (/invite)
+       * 
+       * O QUE FAZ:
+       * 1. Previne ação padrão do evento
+       * 2. Busca container pai (.invite-row)
+       * 3. Copia texto usando window.copyHelpers
+       * 4. Se sucesso:
+       *    - Mostra elemento de feedback temporariamente
+       *    - Exibe toast de sucesso
+       * 
+       * @param {Event} ev - Evento do clique
+       * @param {string} text - Texto a ser copiado
+       * @param {string} targetClass - Classe do elemento de feedback
+       * @returns {boolean} true se copiou, false se falhou
+       */
       window.copyAndFlash = async function (ev, text, targetClass) {
         ev && ev.preventDefault && ev.preventDefault();
+        
+        // Busca container pai (invite-row)
         const container =
           ev && ev.currentTarget
             ? ev.currentTarget.closest(".invite-row")
             : null;
+        
+        // Busca elemento de feedback dentro do container
         const el = container
           ? container.querySelector("." + targetClass)
           : null;
+        
+        // Tenta copiar
         const ok = await window.copyHelpers.copy(text);
+        
         if (ok) {
+          // Mostra feedback visual temporário
           window.showFor(el);
+          
+          // Mostra toast com mensagem customizada ou padrão
           const toastMsg =
             ev.currentTarget.getAttribute("data-toast") || "Copiado!";
           if (window.showToast) window.showToast(toastMsg);
@@ -164,7 +261,24 @@
         return ok;
       };
 
-      // Anexa o token CSRF em todos os requests do htmx
+      /**
+       * ========================================================================
+       * HTMX - CONFIGURAÇÃO GLOBAL DE CSRF TOKEN
+       * ========================================================================
+       * 
+       * QUANDO É CHAMADO:
+       * - Antes de CADA requisição HTMX (GET, POST, DELETE, PUT, etc)
+       * 
+       * O QUE FAZ:
+       * - Busca token CSRF da meta tag no <head>
+       * - Anexa o token no header 'X-CSRF-Token' da requisição
+       * - Permite que o servidor valide a requisição e previna ataques CSRF
+       * 
+       * POR QUÊ CSRF?
+       * - CSRF = Cross-Site Request Forgery
+       * - Previne que sites maliciosos façam requisições em nome do usuário
+       * - Token único por sessão garante autenticidade
+       */
       document.addEventListener("htmx:configRequest", (evt) => {
         const meta = document.querySelector('meta[name="csrf-token"]');
         if (meta) {
@@ -172,56 +286,137 @@
         }
       });
       
-      // Delegação de eventos para botões de copiar (compatível com CSP)
+      /**
+       * ========================================================================
+       * DELEGAÇÃO DE EVENTOS - BOTÕES DE COPIAR
+       * ========================================================================
+       * 
+       * QUANDO É CHAMADO:
+       * - Ao clicar em QUALQUER botão com atributo [data-copy-text]
+       * 
+       * O QUE FAZ:
+       * 1. Detecta clique em botão de copiar (event delegation)
+       * 2. Busca texto a ser copiado no atributo data-copy-text
+       * 3. Busca elemento de feedback no atributo data-flash-target
+       * 4. Copia texto
+       * 5. Se sucesso:
+       *    - Mostra elemento de feedback temporariamente
+       *    - Exibe toast personalizado (ou "Copiado!" como padrão)
+       * 
+       * POR QUÊ DELEGAÇÃO?
+       * - Funciona mesmo em elementos adicionados dinamicamente (HTMX)
+       * - Um único listener ao invés de N listeners (melhor performance)
+       * - Compatível com Content Security Policy (CSP)
+       * 
+       * EXEMPLO DE USO NO HTML:
+       * <button 
+       *   data-copy-text="ABC123"
+       *   data-flash-target=".feedback"
+       *   data-toast="Código copiado!"
+       * >
+       *   Copiar
+       * </button>
+       */
       document.addEventListener("click", async (ev) => {
+        // Busca botão com data-copy-text (pode ser o elemento clicado ou pai)
         const btn = ev.target.closest("[data-copy-text]");
         if (!btn) return;
+        
         ev.preventDefault();
+        
+        // Pega texto a ser copiado
         const text = btn.getAttribute("data-copy-text");
+        
+        // Busca container e elemento de feedback
         const container = btn.closest(".invite-row");
         const targetSel = btn.getAttribute("data-flash-target");
         const flashEl =
           container && targetSel ? container.querySelector(targetSel) : null;
+        
+        // Copia
         const ok = await window.copyHelpers.copy(text);
+        
         if (ok) {
+          // Mostra feedback visual
           window.showFor(flashEl);
+          
+          // Mostra toast
           const toastMsg = btn.getAttribute("data-toast") || "Copiado!";
           if (window.showToast) window.showToast(toastMsg);
         }
       });
 
-      // Toast global com suporte a tipos (success, error, info)
+      /**
+       * ========================================================================
+       * TOAST GLOBAL - NOTIFICAÇÕES VISUAIS
+       * ========================================================================
+       * 
+       * QUANDO É USADO:
+       * - Feedback de ações (copiar, salvar, deletar, etc)
+       * - Mensagens de sucesso/erro em TODAS as páginas
+       * - Upload de arquivos
+       * - Qualquer ação que precise de feedback visual
+       * 
+       * O QUE FAZ:
+       * 1. Remove toast anterior se existir (apenas 1 por vez)
+       * 2. Cria novo elemento de toast dinamicamente
+       * 3. Define cor baseada no tipo:
+       *    - success (padrão): verde
+       *    - error: vermelho
+       *    - info: azul
+       * 4. Animação de entrada (fade in + slide up)
+       * 5. Aguarda 3 segundos
+       * 6. Animação de saída (fade out + slide down)
+       * 7. Remove do DOM após animação
+       * 
+       * @param {string} message - Mensagem a ser exibida
+       * @param {string} type - Tipo do toast: 'success', 'error', ou 'info'
+       * 
+       * EXEMPLO DE USO:
+       * window.showToast("Foto deletada!", "success");
+       * window.showToast("Erro ao salvar", "error");
+       * window.showToast("Carregando...", "info");
+       */
       window.showToast = function (message, type = "success") {
-        // Remove toast anterior se existir
+        // Remove toast anterior (apenas 1 toast por vez)
         const existingToast = document.querySelector('.hs-toast-custom');
         if (existingToast) {
           existingToast.remove();
         }
 
+        // Cria novo toast
         const toast = document.createElement("div");
         toast.className = 'hs-toast-custom';
         
+        // Define cor baseada no tipo
         const bgColor = type === "error" ? "bg-red-500" : 
                         type === "info" ? "bg-blue-500" : 
                         "bg-green-500";
         
+        // Classes Tailwind + responsividade
         toast.className = `hs-toast-custom fixed bottom-4 sm:bottom-6 right-4 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 z-50 text-sm sm:text-base ${bgColor}`;
         toast.textContent = message;
+        
+        // Estado inicial (invisível, abaixo da posição final)
         toast.style.opacity = "0";
         toast.style.transform = "translateY(20px)";
         
         document.body.appendChild(toast);
         
+        // Animação de entrada (fade in + slide up)
         setTimeout(() => {
           toast.style.opacity = "1";
           toast.style.transform = "translateY(0)";
         }, 10);
         
-        // Cleanup automático (Memory Leak Fix)
-        clearTimeout(window.__hsToastTimer);
+        // Cleanup automático após 3 segundos
+        clearTimeout(window.__hsToastTimer); // Limpa timer anterior (memory leak fix)
         window.__hsToastTimer = setTimeout(() => {
+          // Animação de saída (fade out + slide down)
           toast.style.opacity = "0";
           toast.style.transform = "translateY(20px)";
+          
+          // Remove do DOM após animação
           setTimeout(() => {
             if (toast.parentNode) {
               toast.remove();
@@ -230,13 +425,45 @@
         }, 3000);
       };
 
-      // Atualiza rótulo do input[file] (perfil) sem inline JS
+      /**
+       * ========================================================================
+       * DELEGAÇÃO DE EVENTOS - INPUT FILE (UPLOAD DE ARQUIVOS)
+       * ========================================================================
+       * 
+       * QUANDO É CHAMADO:
+       * - Ao selecionar arquivo em input type="file" com [data-file-input]
+       * 
+       * O QUE FAZ:
+       * 1. Detecta mudança em input file (event delegation)
+       * 2. Busca elemento de display no atributo data-file-display
+       * 3. Atualiza texto do elemento com nome do arquivo selecionado
+       * 4. Se nenhum arquivo: mostra "Nenhum arquivo escolhido"
+       * 
+       * ONDE É USADO:
+       * - Upload de foto de perfil (/profile)
+       * - Upload de fotos do álbum (/album)
+       * - Upload de fotos de receitas (/recipes)
+       * - Qualquer input de upload
+       * 
+       * EXEMPLO DE USO NO HTML:
+       * <input 
+       *   type="file" 
+       *   data-file-input 
+       *   data-file-display="#file-name"
+       * />
+       * <span id="file-name">Nenhum arquivo escolhido</span>
+       */
       document.addEventListener("change", (ev) => {
+        // Busca input file com data-file-input
         const input = ev.target.closest('input[type="file"][data-file-input]');
         if (!input) return;
+        
+        // Busca seletor do elemento de display
         const sel = input.getAttribute("data-file-display");
         const out = sel ? document.querySelector(sel) : null;
         if (!out) return;
+        
+        // Atualiza texto com nome do arquivo ou mensagem padrão
         const name =
           input.files && input.files[0]
             ? input.files[0].name
@@ -244,22 +471,64 @@
         out.textContent = name;
       });
 
-      // Atualização do destaque do link ativo no nav (cliente) para navegações htmx
+      /**
+       * ========================================================================
+       * NAVEGAÇÃO - DESTAQUE DO LINK ATIVO
+       * ========================================================================
+       * 
+       * QUANDO É CHAMADO:
+       * - No carregamento inicial da página (DOMContentLoaded)
+       * - Após navegação HTMX (htmx:afterSwap)
+       * 
+       * O QUE FAZ:
+       * 1. Pega URL atual (window.location.pathname)
+       * 2. Percorre todos os links do nav com [data-nav]
+       * 3. Compara href do link com URL atual
+       * 4. Se for o link ativo:
+       *    - Adiciona classes: bg-white/10, text-fuchsia-200 (destaque visual)
+       *    - Adiciona atributo aria-current="page" (acessibilidade)
+       * 5. Se não for ativo:
+       *    - Remove classes de destaque
+       *    - Remove aria-current
+       * 
+       * LÓGICA DE MATCH:
+       * - Link "/" só é ativo em "/" exato
+       * - Outros links são ativos se:
+       *   - URL = href exato (/corner = /corner)
+       *   - URL começa com href + "/" (/corner/edit começa com /corner/)
+       * 
+       * EXEMPLO:
+       * - URL: /corner → /corner fica destacado
+       * - URL: /corner/edit → /corner fica destacado
+       * - URL: /album → /corner perde destaque, /album ganha destaque
+       */
       function updateActiveNav() {
         try {
           const path = window.location.pathname || "/";
           const links = document.querySelectorAll('nav a[data-nav]');
+          
           links.forEach((a) => {
             const href = a.getAttribute('href') || '';
+            
+            // Verifica se link está ativo
+            // href !== '/' garante que link "/" só match em "/" exato
             const isActive = href !== '/' && (path === href || path.startsWith(href + '/'));
+            
+            // Adiciona/remove classes de destaque
             a.classList.toggle('bg-white/10', isActive);
             a.classList.toggle('text-fuchsia-200', isActive);
+            
+            // Adiciona/remove atributo aria-current (acessibilidade)
             if (isActive) a.setAttribute('aria-current', 'page');
             else a.removeAttribute('aria-current');
           });
         } catch (_) {}
       }
+      
+      // Atualiza no carregamento inicial
       document.addEventListener('DOMContentLoaded', updateActiveNav);
+      
+      // Atualiza após navegação HTMX
       document.addEventListener('htmx:afterSwap', updateActiveNav);
     </script>
   </head>
@@ -636,33 +905,75 @@
     </div>
 
     <script>
-    // Modal Chat Logic
+    /**
+     * ========================================================================
+     * MODAL DE CHAT - LÓGICA DE ABERTURA/FECHAMENTO
+     * ========================================================================
+     * 
+     * QUANDO É USADO:
+     * - Ao clicar no botão flutuante de chat (canto inferior direito)
+     * - Ao fechar o modal (botão X, ESC, ou clicar fora)
+     * 
+     * O QUE FAZ:
+     * - Carrega conteúdo do chat via fetch (/chat) apenas na primeira abertura
+     * - Mantém conteúdo em cache nas aberturas subsequentes (mais rápido)
+     * - Executa scripts do chat apenas uma vez (previne memory leaks)
+     * - Força scroll ao final das mensagens (com múltiplos fallbacks)
+     * - Aguarda imagens carregarem antes do scroll
+     * - Gerencia foco (acessibilidade)
+     * - Limpa timers ao fechar (memory leak fix)
+     */
     (function() {
+      // Referências aos elementos DOM
       const chatBtn = document.getElementById('chat-float-btn');
       const modal = document.getElementById('chat-modal');
       const modalContent = document.getElementById('chat-modal-content');
       const closeBtn = document.getElementById('chat-modal-close');
       const loader = document.getElementById('chat-modal-loader');
       const inner = document.getElementById('chat-modal-inner');
-      let chatLoaded = false;
-      let chatInitialized = false;
       
-      // Armazenar timers para cleanup
+      // Flags de controle
+      let chatLoaded = false; // HTML do chat foi carregado?
+      let chatInitialized = false; // Scripts do chat foram executados?
+      
+      // Array para rastrear timers de scroll (cleanup)
       const scrollTimers = [];
       
+      /**
+       * Limpa todos os timers de scroll pendentes
+       * Chamado ao fechar modal (previne memory leak)
+       */
       function clearScrollTimers() {
         scrollTimers.forEach(id => clearTimeout(id));
         scrollTimers.length = 0;
       }
 
+      /**
+       * Abre o modal do chat
+       * 
+       * FLUXO:
+       * 1. Mostra modal + loader
+       * 2. Se primeira vez:
+       *    - Faz fetch do HTML do chat
+       *    - Injeta HTML no modal
+       *    - Executa scripts (apenas primeira vez)
+       *    - Aguarda imagens carregarem
+       *    - Força scroll ao final (múltiplos fallbacks)
+       *    - Foca no input
+       * 3. Se já carregado:
+       *    - Mostra conteúdo em cache
+       *    - Força scroll ao final
+       *    - Foca no input
+       */
       function openModal() {
         modal.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
+        document.body.classList.add('overflow-hidden'); // Previne scroll do body
         loader.classList.remove('hidden');
         inner.classList.add('hidden');
-        modal.focus();
+        modal.focus(); // Foco no modal (acessibilidade)
         
         if (!chatLoaded) {
+          // PRIMEIRA VEZ: busca conteúdo do servidor
           fetch('/chat', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(r => r.text())
             .then(html => {
@@ -671,11 +982,12 @@
               inner.classList.remove('hidden');
               chatLoaded = true;
               
-              // Executar scripts apenas uma vez (Memory Leak Fix #2)
+              // Executar scripts apenas uma vez (Memory Leak Fix)
               if (!chatInitialized) {
                 chatInitialized = true;
                 console.log('[Modal] Inicializando scripts do chat pela primeira vez');
                 
+                // Copia e executa cada <script> encontrado no HTML
                 Array.from(inner.querySelectorAll('script')).forEach(oldScript => {
                   const newScript = document.createElement('script');
                   if (oldScript.src) {
@@ -690,7 +1002,9 @@
                 console.log('[Modal] Chat já inicializado, pulando execução de scripts');
               }
               
-              // Função para forçar scroll ao final
+              /**
+               * Força scroll ao final do container de mensagens
+               */
               function forceScrollToBottom() {
                 const chatMessages = inner.querySelector('#chat-messages');
                 if (chatMessages) {
@@ -698,7 +1012,7 @@
                 }
               }
               
-              // Aguardar todas as imagens carregarem antes de fazer scroll
+              // Aguarda TODAS as imagens carregarem antes do scroll
               const images = inner.querySelectorAll('#chat-messages img');
               if (images.length > 0) {
                 let loadedCount = 0;
@@ -706,11 +1020,13 @@
                 
                 images.forEach(img => {
                   if (img.complete) {
+                    // Imagem já carregada (cache)
                     loadedCount++;
                     if (loadedCount === totalImages) {
                       forceScrollToBottom();
                     }
                   } else {
+                    // Aguarda carregamento
                     img.addEventListener('load', () => {
                       loadedCount++;
                       if (loadedCount === totalImages) {
@@ -720,33 +1036,37 @@
                   }
                 });
               } else {
+                // Sem imagens, scrolla direto
                 forceScrollToBottom();
               }
               
-              // Múltiplos fallbacks para garantir o scroll (com cleanup)
+              // Múltiplos fallbacks para garantir scroll (rendering async, layouts, etc)
               clearScrollTimers();
               scrollTimers.push(setTimeout(forceScrollToBottom, 50));
               scrollTimers.push(setTimeout(forceScrollToBottom, 150));
               scrollTimers.push(setTimeout(forceScrollToBottom, 300));
               scrollTimers.push(setTimeout(forceScrollToBottom, 600));
               
-              // Foca no input do chat se existir
+              // Foca no input do chat (UX)
               const input = inner.querySelector('input[id="message-input"]');
               if (input) {
                 setTimeout(() => input.focus(), 100);
               }
             });
         } else {
+          // JÁ CARREGADO: mostra conteúdo em cache
           loader.classList.add('hidden');
           inner.classList.remove('hidden');
-          // Força scroll para o final quando o chat já estava carregado
+          
+          // Força scroll ao final
           setTimeout(() => {
             const chatMessages = inner.querySelector('#chat-messages');
             if (chatMessages) {
               chatMessages.scrollTop = chatMessages.scrollHeight;
             }
           }, 50);
-          // Foca no input do chat se existir
+          
+          // Foca no input do chat
           const input = inner.querySelector('input[id="message-input"]');
           if (input) {
             setTimeout(() => input.focus(), 100);
@@ -754,21 +1074,35 @@
         }
       }
 
+      /**
+       * Fecha o modal do chat
+       * 
+       * O QUE FAZ:
+       * - Limpa timers pendentes (memory leak fix)
+       * - Esconde modal
+       * - Restaura scroll do body
+       * - Retorna foco ao botão (acessibilidade)
+       */
       function closeModal() {
-        // Limpar timers pendentes (Memory Leak Fix #3)
-        clearScrollTimers();
+        clearScrollTimers(); // Memory Leak Fix
         
         modal.classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
-        // Foca de volta no botão
+        
+        // Retorna foco ao botão (acessibilidade)
         chatBtn.focus();
       }
 
+      // Event listeners
       chatBtn.addEventListener('click', openModal);
       closeBtn.addEventListener('click', closeModal);
+      
+      // Fechar ao clicar fora do modal (no overlay)
       modal.addEventListener('mousedown', function(e) {
         if (e.target === modal) closeModal();
       });
+      
+      // Fechar com tecla ESC
       document.addEventListener('keydown', function(e) {
         if (!modal.classList.contains('hidden')) {
           if (e.key === 'Escape') closeModal();
@@ -778,29 +1112,72 @@
     </script>
     
     <script>
-      // Script para atualizar badge de notificações do chat
+      /**
+       * ========================================================================
+       * BADGE DE NOTIFICAÇÕES DO CHAT
+       * ========================================================================
+       * 
+       * QUANDO É USADO:
+       * - Quando outra pessoa envia uma mensagem no chat
+       * - Ao clicar no botão do chat (limpa contador)
+       * - Ao entrar na página do chat (limpa contador)
+       * 
+       * O QUE FAZ:
+       * 1. Aguarda Socket.IO global estar disponível
+       * 2. Conecta ao evento 'new-message-notification'
+       * 3. Quando recebe notificação:
+       *    - Verifica se é para o usuário atual
+       *    - Verifica se usuário NÃO está na página do chat
+       *    - Se ambos verdadeiros:
+       *      * Incrementa contador
+       *      * Mostra badge vermelho com número
+       *      * Faz botão "pulsar" (animate-bounce)
+       * 4. Ao clicar no chat: zera contador
+       * 5. Se já está no chat: zera contador
+       * 
+       * PREVENÇÃO DE MEMORY LEAKS:
+       * - Usa Socket.IO global (instância única)
+       * - Remove listener antigo antes de adicionar novo
+       * - Armazena handler em window._badgeMessageHandler
+       */
       (function initChatBadge() {
-        // Verifica se Socket.IO está disponível
+        /**
+         * Aguarda Socket.IO global estar disponível
+         * (pode ser executado antes do script de Socket.IO carregar)
+         */
         if (typeof window.getGlobalSocket !== 'function') {
           console.log('[Badge] Aguardando Socket.IO global...');
-          setTimeout(initChatBadge, 100);
+          setTimeout(initChatBadge, 100); // Retry em 100ms
           return;
         }
         
         console.log('[Badge] Inicializando badge de notificações');
         
+        // Referências DOM
         const badge = document.getElementById('chat-badge');
         const chatBtn = document.getElementById('chat-float-btn');
         const currentUserId = <%= currentUser.id %>;
+        
+        // Contador de mensagens não lidas
         let unreadCount = 0;
         
         console.log('[Badge] Usuário atual:', currentUserId);
         
-        // Função para atualizar badge
+        /**
+         * Atualiza visual do badge
+         * 
+         * @param {number} count - Número de mensagens não lidas
+         * 
+         * O QUE FAZ:
+         * - Se count > 0: mostra badge com número (máximo "99+")
+         * - Se count = 0: esconde badge
+         */
         function updateBadge(count) {
           console.log('[Badge] Atualizando badge:', count);
           unreadCount = count;
+          
           if (count > 0) {
+            // Mostra "99+" se passar de 99
             badge.textContent = count > 99 ? '99+' : count;
             badge.classList.remove('hidden');
           } else {
@@ -808,27 +1185,40 @@
           }
         }
         
-        // Usar Socket.IO global (Memory Leak Fix #1)
+        // Usa Socket.IO global (Memory Leak Fix)
         const socket = window.getGlobalSocket();
         console.log('[Badge] Usando Socket.IO global:', socket.id);
         
-        // Remover listener antigo se existir (Memory Leak Fix #5)
+        // Remove listener antigo se existir (Memory Leak Fix)
         if (window._badgeMessageHandler) {
           socket.off('new-message-notification', window._badgeMessageHandler);
         }
         
-        // Criar e armazenar novo handler
+        /**
+         * Handler de nova mensagem
+         * 
+         * QUANDO É CHAMADO:
+         * - Servidor emite 'new-message-notification' via Socket.IO
+         * 
+         * O QUE FAZ:
+         * 1. Verifica se mensagem é para o usuário atual (recipientId)
+         * 2. Verifica se usuário NÃO está na página do chat
+         * 3. Se ambos verdadeiros:
+         *    - Incrementa contador
+         *    - Atualiza badge
+         *    - Faz botão pulsar por 1 segundo
+         */
         window._badgeMessageHandler = function(data) {
           console.log('[Badge] Nova mensagem recebida:', data);
           console.log('[Badge] É para mim?', data.recipientId === currentUserId);
           console.log('[Badge] Estou no chat?', window.location.pathname.includes('/chat'));
           
-          // Apenas mostrar notificação se for para o usuário atual e não estiver na página do chat
+          // Apenas mostrar se for para mim E não estou no chat
           if (data.recipientId === currentUserId && !window.location.pathname.includes('/chat')) {
             console.log('[Badge] Mostrando notificação!');
             updateBadge(unreadCount + 1);
             
-            // Fazer o botão "pulsar"
+            // Animação de "pulsar" no botão (chama atenção)
             chatBtn.classList.add('animate-bounce');
             setTimeout(() => {
               chatBtn.classList.remove('animate-bounce');
@@ -836,15 +1226,22 @@
           }
         };
         
+        // Registra listener (armazenado em window para poder remover depois)
         socket.on('new-message-notification', window._badgeMessageHandler);
         
-        // Limpar badge ao clicar no botão do chat
+        /**
+         * Limpa badge ao clicar no botão do chat
+         * (usuário viu as mensagens)
+         */
         chatBtn.addEventListener('click', () => {
           console.log('[Badge] Limpando badge ao clicar');
           updateBadge(0);
         });
         
-        // Limpar badge quando entrar na página do chat
+        /**
+         * Limpa badge se já está na página do chat
+         * (usuário já está vendo as mensagens)
+         */
         if (window.location.pathname.includes('/chat')) {
           console.log('[Badge] Na página do chat, limpando badge');
           updateBadge(0);
