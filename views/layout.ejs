@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HeartSync</title>
     <meta name="csrf-token" content="<%= csrfToken %>" />
+    
+    <!-- Google Fonts - Dancing Script -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap" rel="stylesheet">
+    
     <style>
       :root {
         /* Paleta púrpura profunda (sensual) */
@@ -37,20 +43,18 @@
           );
       }
       
-      /* Breakpoint personalizado para 850px */
-      @media (max-width: 850px) {
+      @media (max-width: 920px) {
         .hide-below-850 {
           display: none !important;
         }
       }
       
-      @media (min-width: 851px) {
+      @media (min-width: 921px) {
         .hide-above-850 {
           display: none !important;
         }
       }
       
-      /* Breakpoint personalizado para 400px */
       @media (max-width: 400px) {
         .hide-below-400 {
           display: none !important;
@@ -64,9 +68,8 @@
       }
       
       .brand-script {
-        /* Usa a mesma família sans do site para manter consistência visual */
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
-          Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        /* Fonte Dancing Script para um visual romântico e elegante */
+        font-family: 'Dancing Script', cursive;
         font-weight: 700;
         letter-spacing: 0.2px;
       }
@@ -672,41 +675,41 @@
           <!-- Logo à esquerda -->
           <div class="justify-self-start">
             <a href="/couple" class="flex items-center gap-2 brand-logo">
-              <span class="brand-script text-2xl md:text-3xl text-violet-200"
+              <span class="brand-script text-1xl md:text-2xl text-violet-200"
                 >HeartSync</span
               >
             </a>
           </div>
 
           <!-- Menu central -->
-          <div class="justify-self-center">
+          <div class="justify-self-center self-end">
             <% if (currentUser) { %>
             
             <!-- Menu Desktop (>= md) -->
             <div class="hidden md:flex items-center gap-3 md:gap-6">
               <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/invite') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                class="text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/invite') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/invite') ? 'aria-current="page"' : '' %>
                 href="/invite"
                 >Convites</a
               >
               <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/join') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                class="text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/join') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/join') ? 'aria-current="page"' : '' %>
                 href="/join"
                 >Encontrar meu par</a
               >
               <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition hide-below-850 <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                class="text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition hide-below-850 <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/corner') ? 'aria-current="page"' : '' %>
                 href="/corner"
                 >Nosso cantinho</a
               >
               <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition hide-below-850 <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                class="text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition hide-below-850 <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/album') ? 'aria-current="page"' : '' %>
                 href="/album"
@@ -717,7 +720,7 @@
               <div class="relative" x-data="{ open: false }" @click.away="open = false">
                 <button
                   @click="open = !open"
-                  class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-1"
+                  class="text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-1"
                   :class="{ 'bg-white/10 text-fuchsia-200': open }"
                 >
                   <span>Mais</span>
@@ -733,7 +736,7 @@
                 </button>
                 
                 <!-- Dropdown Menu -->
-                <div
+                <div                  
                   x-show="open"
                   x-transition:enter="transition ease-out duration-200"
                   x-transition:enter-start="opacity-0 scale-95"
@@ -741,15 +744,14 @@
                   x-transition:leave="transition ease-in duration-150"
                   x-transition:leave-start="opacity-100 scale-100"
                   x-transition:leave-end="opacity-0 scale-95"
-                  class="absolute right-0 mt-2 w-48 glass rounded-xl border border-violet-700/40 bg-violet-950/95 shadow-xl z-50"
+                  class="absolute right-0 mt-2 w-48 glass rounded-xl border border-violet-700/40 bg-violet-950/95 shadow-xl z-50 text-nowrap"
                   style="display: none;"
                   @click="open = false"
                 >
                   <div class="py-2">
-                    <!-- Itens visíveis apenas abaixo de 850px -->
                     <a
                       href="/corner"
-                      class="hide-above-850 flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      class="hide-above-850 flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                       data-nav
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -759,7 +761,7 @@
                     </a>
                     <a
                       href="/album"
-                      class="hide-above-850 flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      class="hide-above-850 flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                       data-nav
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -768,12 +770,11 @@
                       <span>Nosso álbum</span>
                     </a>
                     
-                    <!-- Itens visíveis apenas abaixo de 400px -->
                     <div class="hide-above-400">
                       <div class="border-t border-violet-700/30 my-2"></div>
                       <a
                         href="/profile"
-                        class="flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                        class="flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                         data-nav
                       >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -785,7 +786,7 @@
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                         <button
                           type="submit"
-                          class="w-full flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition text-left"
+                          class="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition text-left"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -799,7 +800,7 @@
                     <!-- Itens sempre visíveis -->
                     <a
                       href="/movies"
-                      class="flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/movies') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      class="flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/movies') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                       data-nav
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -809,7 +810,7 @@
                     </a>
                     <a
                       href="/recipes"
-                      class="flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/recipes') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      class="flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/recipes') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                       data-nav
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -819,7 +820,7 @@
                     </a>
                     <a
                       href="/gift-list"
-                      class="flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/gift-list') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      class="flex items-center gap-3 px-4 py-2.5 text-[12px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/gift-list') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                       data-nav
                     >
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -836,11 +837,11 @@
           </div>
 
           <!-- Ações à direita -->
-          <div class="justify-self-end flex items-center gap-2 md:gap-3">
+          <div class="justify-self-end self-end flex items-center gap-2 md:gap-3">
             <% if (currentUser) { %>
             <!-- Botões Perfil/Sair (ocultos em < 400px) -->
             <a
-              class="hide-below-400 text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2 <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+              class="hide-below-400 text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2 <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/profile') ? 'aria-current="page"' : '' %>
                 href="/profile"
@@ -870,7 +871,7 @@
               <form class="hide-below-400 inline" method="post" action="/auth/logout" hx-boost="false">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button
-                  class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2"
+                  class="text-[12px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
