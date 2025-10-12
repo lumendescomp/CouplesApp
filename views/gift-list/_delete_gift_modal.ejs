@@ -1,0 +1,44 @@
+<!-- Modal de confirmação de deleção -->
+<div id="delete-gift-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="glass rounded-2xl max-w-md w-full border border-red-700/40 bg-gradient-to-b from-red-950/20 to-red-900/20">
+    <div class="p-6">
+      <!-- Ícone de alerta -->
+      <div class="flex justify-center mb-4">
+        <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+          <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Título -->
+      <h3 class="text-xl font-semibold text-red-100 text-center mb-2">
+        Remover Presente?
+      </h3>
+
+      <!-- Mensagem -->
+      <p class="text-violet-300 text-center mb-6 text-sm">
+        Tem certeza que deseja remover <span id="delete-gift-name" class="font-semibold text-violet-100"></span>?<br>
+        <span class="text-xs text-violet-400 mt-1 block">Esta ação não pode ser desfeita.</span>
+      </p>
+
+      <!-- Botões -->
+      <div class="flex gap-3">
+        <button
+          type="button"
+          id="cancel-delete-btn"
+          class="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          id="confirm-delete-btn"
+          class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition"
+        >
+          Sim, Remover
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -111,14 +111,19 @@
 <!-- Modais (fora do container para não serem afetados pelo HTMX swap) -->
 <%- include('_add_gift_modal', { csrfToken, couple }) %>
 <%- include('_edit_gift_modal', { csrfToken }) %>
+<%- include('_delete_gift_modal') %>
 
 <script>
 (function() {
   // Modais
   const addModal = document.getElementById('add-gift-modal');
   const editModal = document.getElementById('edit-gift-modal');
+  const deleteModal = document.getElementById('delete-gift-modal');
   const addForm = document.getElementById('add-gift-form');
   const editForm = document.getElementById('edit-gift-form');
+  
+  // Estado para deleção
+  let giftToDelete = null;
 
   // Abrir modal de adicionar
   document.querySelectorAll('.add-gift-btn').forEach(btn => {
@@ -143,6 +148,11 @@
     editModal.classList.add('hidden');
   }
 
+  function closeDeleteModal() {
+    deleteModal.classList.add('hidden');
+    giftToDelete = null;
+  }
+
   document.querySelectorAll('.close-modal-btn').forEach(btn => {
     btn.addEventListener('click', closeAddModal);
   });
@@ -151,12 +161,26 @@
     btn.addEventListener('click', closeEditModal);
   });
 
+  // Botões do modal de deleção
+  document.getElementById('cancel-delete-btn')?.addEventListener('click', closeDeleteModal);
+  
+  document.getElementById('confirm-delete-btn')?.addEventListener('click', async () => {
+    if (giftToDelete) {
+      await deleteGift(giftToDelete.id);
+      closeDeleteModal();
+    }
+  });
+
   addModal?.addEventListener('click', (e) => {
     if (e.target === addModal) closeAddModal();
   });
 
   editModal?.addEventListener('click', (e) => {
     if (e.target === editModal) closeEditModal();
+  });
+
+  deleteModal?.addEventListener('click', (e) => {
+    if (e.target === deleteModal) closeDeleteModal();
   });
 
   // Preview de foto (adicionar)
@@ -280,9 +304,14 @@
     // Deletar presente
     const deleteBtn = e.target.closest('.delete-gift-btn');
     if (deleteBtn) {
-      if (confirm('Tem certeza que deseja remover este presente?')) {
-        await deleteGift(deleteBtn.dataset.giftId);
-      }
+      // Abre modal de confirmação
+      giftToDelete = {
+        id: deleteBtn.dataset.giftId,
+        name: deleteBtn.dataset.giftName
+      };
+      
+      document.getElementById('delete-gift-name').textContent = giftToDelete.name;
+      deleteModal.classList.remove('hidden');
       return;
     }
   });
