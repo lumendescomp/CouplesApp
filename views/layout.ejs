@@ -36,6 +36,33 @@
             #0b0713 100%
           );
       }
+      
+      /* Breakpoint personalizado para 850px */
+      @media (max-width: 850px) {
+        .hide-below-850 {
+          display: none !important;
+        }
+      }
+      
+      @media (min-width: 851px) {
+        .hide-above-850 {
+          display: none !important;
+        }
+      }
+      
+      /* Breakpoint personalizado para 400px */
+      @media (max-width: 400px) {
+        .hide-below-400 {
+          display: none !important;
+        }
+      }
+      
+      @media (min-width: 401px) {
+        .hide-above-400 {
+          display: none !important;
+        }
+      }
+      
       .brand-script {
         /* Usa a mesma família sans do site para manter consistência visual */
         font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
@@ -69,16 +96,7 @@
       .btn-heart:hover {
         filter: brightness(0.98);
       }
-      .heart-divider::before,
-      .heart-divider::after {
-        content: "";
-        flex: 1 1 0%;
-        border-top: 1px dashed #7c3aed; /* violeta 600 */
-        margin: 0 12px;
-      }
-      .heart-icon {
-        color: var(--heart-red);
-      }
+     
       /* Exibe a barra de carregamento quando htmx estiver requisitando */
       #hs-indicator.htmx-request {
         display: block !important;
@@ -652,7 +670,7 @@
   <div class="max-w-5xl mx-auto px-4 py-3">
     <div class="grid grid-cols-[auto_1fr_auto] items-center">
           <!-- Logo à esquerda -->
-          <div class="justify-self-start pb-3">
+          <div class="justify-self-start">
             <a href="/couple" class="flex items-center gap-2 brand-logo">
               <span class="brand-script text-2xl md:text-3xl text-violet-200"
                 >HeartSync</span
@@ -681,14 +699,14 @@
                 >Encontrar meu par</a
               >
               <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition hide-below-850 <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/corner') ? 'aria-current="page"' : '' %>
                 href="/corner"
                 >Nosso cantinho</a
               >
               <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition hide-below-850 <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/album') ? 'aria-current="page"' : '' %>
                 href="/album"
@@ -728,6 +746,57 @@
                   @click="open = false"
                 >
                   <div class="py-2">
+                    <!-- Itens visíveis apenas abaixo de 850px -->
+                    <a
+                      href="/corner"
+                      class="hide-above-850 flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/corner') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      data-nav
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <span>Nosso cantinho</span>
+                    </a>
+                    <a
+                      href="/album"
+                      class="hide-above-850 flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/album') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                      data-nav
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>Nosso álbum</span>
+                    </a>
+                    
+                    <!-- Itens visíveis apenas abaixo de 400px -->
+                    <div class="hide-above-400">
+                      <div class="border-t border-violet-700/30 my-2"></div>
+                      <a
+                        href="/profile"
+                        class="flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+                        data-nav
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span>Perfil</span>
+                      </a>
+                      <form class="w-full" method="post" action="/auth/logout" hx-boost="false">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                        <button
+                          type="submit"
+                          class="w-full flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition text-left"
+                        >
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span>Sair</span>
+                        </button>
+                      </form>
+                      <div class="border-t border-violet-700/30 my-2"></div>
+                    </div>
+                    
+                    <!-- Itens sempre visíveis -->
                     <a
                       href="/movies"
                       class="flex items-center gap-3 px-4 py-2.5 text-[15px] text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 transition <%= currentPath.startsWith('/movies') ? 'bg-white/10 text-fuchsia-200' : '' %>"
@@ -763,28 +832,15 @@
               </div>
             </div>
             
-            <!-- Menu Mobile (< md) - Hambúrguer -->
-            <div class="md:hidden">
-              <button
-                @click="$dispatch('toggle-mobile-menu')"
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition"
-                aria-label="Menu"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-            
             <% } %>
           </div>
 
           <!-- Ações à direita -->
-          <div class="justify-self-end">
-            <div class="flex items-center gap-2 md:gap-3">
-              <% if (currentUser) { %>
-              <a
-                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2 <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
+          <div class="justify-self-end flex items-center gap-2 md:gap-3">
+            <% if (currentUser) { %>
+            <!-- Botões Perfil/Sair (ocultos em < 400px) -->
+            <a
+              class="hide-below-400 text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2 <%= currentPath.startsWith('/profile') ? 'bg-white/10 text-fuchsia-200' : '' %>"
                 data-nav
                 <%= currentPath.startsWith('/profile') ? 'aria-current="page"' : '' %>
                 href="/profile"
@@ -811,7 +867,7 @@
                 </svg>
                 <span>Perfil</span>
               </a>
-              <form class="inline" method="post" action="/auth/logout" hx-boost="false">
+              <form class="hide-below-400 inline" method="post" action="/auth/logout" hx-boost="false">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button
                   class="text-[15px] font-medium leading-none px-3 py-2 rounded-full text-violet-100/90 hover:bg-white/10 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition flex items-center gap-2"
@@ -851,6 +907,18 @@
                 >Criar conta</a
               >
               <% } %>
+            
+            <!-- Menu Mobile (< md) - Hambúrguer (sempre à direita) -->
+            <div class="md:hidden">
+              <button
+                @click="$dispatch('toggle-mobile-menu')"
+                class="text-[15px] font-medium leading-none px-3 py-2 rounded-full bg-white/10 text-violet-100/90 hover:bg-white/15 hover:text-fuchsia-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/50 transition"
+                aria-label="Menu"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
