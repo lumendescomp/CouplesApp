@@ -135,22 +135,35 @@
       document.getElementById('gift-recipient-id').value = recipientId;
       addForm.reset();
       document.getElementById('gift-photo-preview').classList.add('hidden');
+      
       addModal.classList.remove('hidden');
+      setTimeout(() => {
+        addModal.style.opacity = '1';
+        document.getElementById('add-gift-content').style.transform = 'scale(1)';
+      }, 10);
     });
   });
 
   // Fechar modais
   function closeAddModal() {
-    addModal.classList.add('hidden');
+    addModal.style.opacity = '0';
+    document.getElementById('add-gift-content').style.transform = 'scale(0.9)';
+    setTimeout(() => addModal.classList.add('hidden'), 300);
   }
 
   function closeEditModal() {
-    editModal.classList.add('hidden');
+    editModal.style.opacity = '0';
+    document.getElementById('edit-gift-content').style.transform = 'scale(0.9)';
+    setTimeout(() => editModal.classList.add('hidden'), 300);
   }
 
   function closeDeleteModal() {
-    deleteModal.classList.add('hidden');
-    giftToDelete = null;
+    deleteModal.style.opacity = '0';
+    document.getElementById('delete-gift-content').style.transform = 'scale(0.9)';
+    setTimeout(() => {
+      deleteModal.classList.add('hidden');
+      giftToDelete = null;
+    }, 300);
   }
 
   document.querySelectorAll('.close-modal-btn').forEach(btn => {
@@ -182,6 +195,11 @@
   deleteModal?.addEventListener('click', (e) => {
     if (e.target === deleteModal) closeDeleteModal();
   });
+
+  // Adicionar estilo opacity inicial aos modais
+  if (addModal) addModal.style.opacity = '0';
+  if (editModal) editModal.style.opacity = '0';
+  if (deleteModal) deleteModal.style.opacity = '0';
 
   // Preview de foto (adicionar)
   document.getElementById('gift-photo-input')?.addEventListener('change', (e) => {
@@ -298,6 +316,10 @@
       if (photoInput) photoInput.value = '';
       
       editModal.classList.remove('hidden');
+      setTimeout(() => {
+        editModal.style.opacity = '1';
+        document.getElementById('edit-gift-content').style.transform = 'scale(1)';
+      }, 10);
       return;
     }
 
@@ -312,6 +334,10 @@
       
       document.getElementById('delete-gift-name').textContent = giftToDelete.name;
       deleteModal.classList.remove('hidden');
+      setTimeout(() => {
+        deleteModal.style.opacity = '1';
+        document.getElementById('delete-gift-content').style.transform = 'scale(1)';
+      }, 10);
       return;
     }
   });

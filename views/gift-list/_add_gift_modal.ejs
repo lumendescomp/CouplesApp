@@ -1,6 +1,6 @@
 <!-- Modal para adicionar presente -->
-<div id="add-gift-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="glass rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-violet-700/40 scrollbar-thin">
+<div id="add-gift-modal" class="absolute inset-0 z-50 hidden flex items-center justify-center p-4" style="transition: opacity 0.3s ease; opacity: 0; min-height: 100vh;">
+  <div id="add-gift-content" class="glass rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-violet-700/40 bg-gradient-to-br from-violet-950/95 to-fuchsia-950/95 scrollbar-thin shadow-2xl" style="transform: scale(0.9); transition: transform 0.3s ease-out;">
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-xl font-semibold text-violet-100">Adicionar Presente</h3>
