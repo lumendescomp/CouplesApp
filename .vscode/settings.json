@@ -5,6 +5,6 @@
     "editor.formatOnType": false
   },
   "files.associations": {
-    "*.ejs": "ejs"
+    "*.ejs": "html"
   }
 }

@@ -1,14 +1,37 @@
-<!-- Header -->
-<div class="mb-8 text-center">
-  <h1 class="text-3xl sm:text-4xl font-bold mb-3">
-    <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 text-transparent bg-clip-text">
-      🎁 Nossa Lista de Presente
-    </span>
-  </h1>
-  <p class="text-violet-300/80 text-sm sm:text-base">
-    Adicionem os presentes que vocês desejam ganhar um do outro
-  </p>
-</div>
+<style>
+  /* Custom scrollbar para modais */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(76, 29, 149, 0.2);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(124, 58, 237);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(139, 92, 246);
+  }
+</style>
+
+<div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
+  <div class="glass rounded-xl sm:rounded-2xl border border-violet-700/30 bg-white/5 p-4 sm:p-6 md:p-8">
+    <!-- Header -->
+    <div class="mb-8 text-center">
+      <h1 class="text-3xl sm:text-4xl font-bold mb-3">
+        <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 text-transparent bg-clip-text">
+          🎁 Nossa Lista de Presente
+        </span>
+      </h1>
+      <p class="text-violet-300/80 text-sm sm:text-base">
+        Adicionem os presentes que vocês desejam ganhar um do outro
+      </p>
+    </div>
 
     <!-- Duas colunas para os presentes -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -83,71 +106,92 @@
       </div>
     </div>
   </div>
+</div>
 
-<!-- Modal para adicionar/editar presente -->
+<!-- Modais (fora do container para não serem afetados pelo HTMX swap) -->
 <%- include('_add_gift_modal', { csrfToken, couple }) %>
 <%- include('_edit_gift_modal', { csrfToken }) %>
 
 <script>
 (function() {
-  // Abrir modal para adicionar presente
+  // Modais
+  const addModal = document.getElementById('add-gift-modal');
+  const editModal = document.getElementById('edit-gift-modal');
+  const addForm = document.getElementById('add-gift-form');
+  const editForm = document.getElementById('edit-gift-form');
+
+  // Abrir modal de adicionar
   document.querySelectorAll('.add-gift-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const recipientId = this.dataset.recipientId;
-      const recipientName = this.dataset.recipientName;
+    btn.addEventListener('click', () => {
+      const recipientId = btn.dataset.recipientId;
+      const recipientName = btn.dataset.recipientName;
       
-      const modal = document.getElementById('add-gift-modal');
-      const title = modal.querySelector('h3');
-      const form = document.getElementById('add-gift-form');
-      const recipientInput = document.getElementById('gift-recipient-id');
-      
-      title.textContent = `Adicionar presente para ${recipientName}`;
-      recipientInput.value = recipientId;
-      form.reset();
+      addModal.querySelector('h3').textContent = `Adicionar presente para ${recipientName}`;
+      document.getElementById('gift-recipient-id').value = recipientId;
+      addForm.reset();
       document.getElementById('gift-photo-preview').classList.add('hidden');
-      
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      addModal.classList.remove('hidden');
     });
   });
 
-  // Fechar modal
+  // Fechar modais
+  function closeAddModal() {
+    addModal.classList.add('hidden');
+  }
+
+  function closeEditModal() {
+    editModal.classList.add('hidden');
+  }
+
   document.querySelectorAll('.close-modal-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const modal = this.closest('.modal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    });
+    btn.addEventListener('click', closeAddModal);
   });
 
   document.querySelectorAll('.close-edit-modal-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const modal = document.getElementById('edit-gift-modal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    });
+    btn.addEventListener('click', closeEditModal);
   });
 
-  // Preview da foto
-  document.getElementById('gift-photo-input')?.addEventListener('change', function(e) {
+  addModal?.addEventListener('click', (e) => {
+    if (e.target === addModal) closeAddModal();
+  });
+
+  editModal?.addEventListener('click', (e) => {
+    if (e.target === editModal) closeEditModal();
+  });
+
+  // Preview de foto (adicionar)
+  document.getElementById('gift-photo-input')?.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = (e) => {
         const preview = document.getElementById('gift-photo-preview');
-        const img = preview.querySelector('img');
-        img.src = e.target.result;
+        preview.querySelector('img').src = e.target.result;
         preview.classList.remove('hidden');
       };
       reader.readAsDataURL(file);
     }
   });
 
-  // Submeter formulário
-  document.getElementById('add-gift-form')?.addEventListener('submit', async function(e) {
+  // Preview de foto (editar)
+  document.getElementById('edit-gift-photo-input')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById('edit-gift-photo-preview');
+        preview.querySelector('img').src = e.target.result;
+        preview.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Submeter novo presente
+  addForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const formData = new FormData(this);
+    const formData = new FormData(e.target);
     
     try {
       const response = await fetch('/gift-list', {
@@ -159,6 +203,7 @@
       
       if (data.success) {
         window.showToast('Presente adicionado com sucesso!');
+        closeAddModal();
         setTimeout(() => location.reload(), 500);
       } else {
         throw new Error(data.error || 'Erro ao adicionar presente');
@@ -169,65 +214,11 @@
     }
   });
 
-  // Abrir modal de edição
-  document.querySelectorAll('.edit-gift-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const modal = document.getElementById('edit-gift-modal');
-      
-      // Preencher campos do formulário com os valores atuais
-      document.getElementById('edit-gift-id').value = this.dataset.giftId;
-      document.getElementById('edit-gift-name').value = this.dataset.giftName;
-      document.getElementById('edit-gift-link').value = this.dataset.giftLink || '';
-      document.getElementById('edit-gift-price').value = this.dataset.giftPrice || '';
-      
-      // Mostrar foto atual se existir
-      const currentPhotoDiv = document.getElementById('edit-current-photo-preview');
-      const currentPhotoImg = currentPhotoDiv?.querySelector('img');
-      if (this.dataset.giftPhoto && currentPhotoImg) {
-        currentPhotoImg.src = this.dataset.giftPhoto;
-        currentPhotoDiv.classList.remove('hidden');
-      } else if (currentPhotoDiv) {
-        currentPhotoDiv.classList.add('hidden');
-      }
-      
-      // Limpar preview de nova foto
-      const newPhotoPreview = document.getElementById('edit-gift-photo-preview');
-      if (newPhotoPreview) {
-        newPhotoPreview.classList.add('hidden');
-      }
-      const photoInput = document.getElementById('edit-gift-photo-input');
-      if (photoInput) {
-        photoInput.value = '';
-      }
-      
-      // Mostrar modal
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    });
-  });
-
-  // Preview de nova foto no modal de edição
-  document.getElementById('edit-gift-photo-input')?.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const preview = document.getElementById('edit-gift-photo-preview');
-        const img = preview?.querySelector('img');
-        if (img) {
-          img.src = e.target.result;
-          preview.classList.remove('hidden');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // Submeter formulário de edição
-  document.getElementById('edit-gift-form')?.addEventListener('submit', async function(e) {
+  // Submeter edição de presente
+  editForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const formData = new FormData(this);
+    const formData = new FormData(e.target);
     const giftId = formData.get('gift_id');
     
     try {
@@ -240,6 +231,7 @@
       
       if (data.success) {
         window.showToast('Presente atualizado com sucesso!');
+        closeEditModal();
         setTimeout(() => location.reload(), 500);
       } else {
         throw new Error(data.error || 'Erro ao atualizar presente');
@@ -250,36 +242,75 @@
     }
   });
 
-  // Deletar presente
-  document.querySelectorAll('.delete-gift-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      if (!confirm('Tem certeza que deseja remover este presente?')) return;
+  // Delegação de eventos para cards
+  document.addEventListener('click', async (e) => {
+    // Editar presente
+    const editBtn = e.target.closest('.edit-gift-btn');
+    if (editBtn) {
+      const giftData = {
+        id: editBtn.dataset.giftId,
+        name: editBtn.dataset.giftName,
+        link: editBtn.dataset.giftLink,
+        price: editBtn.dataset.giftPrice,
+        photo: editBtn.dataset.giftPhoto
+      };
       
-      const giftId = this.dataset.giftId;
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      document.getElementById('edit-gift-id').value = giftData.id;
+      document.getElementById('edit-gift-name').value = giftData.name;
+      document.getElementById('edit-gift-link').value = giftData.link || '';
+      document.getElementById('edit-gift-price').value = giftData.price || '';
       
-      try {
-        const response = await fetch(`/gift-list/${giftId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          window.showToast('Presente removido!');
-          setTimeout(() => location.reload(), 500);
-        } else {
-          throw new Error(data.error || 'Erro ao remover presente');
-        }
-      } catch (error) {
-        console.error('Erro:', error);
-        window.showToast(error.message || 'Erro ao remover presente', 'error');
+      const currentPhotoDiv = document.getElementById('edit-current-photo-preview');
+      const currentPhotoImg = currentPhotoDiv?.querySelector('img');
+      if (giftData.photo && currentPhotoImg) {
+        currentPhotoImg.src = giftData.photo;
+        currentPhotoDiv.classList.remove('hidden');
+      } else if (currentPhotoDiv) {
+        currentPhotoDiv.classList.add('hidden');
       }
-    });
+      
+      document.getElementById('edit-gift-photo-preview')?.classList.add('hidden');
+      const photoInput = document.getElementById('edit-gift-photo-input');
+      if (photoInput) photoInput.value = '';
+      
+      editModal.classList.remove('hidden');
+      return;
+    }
+
+    // Deletar presente
+    const deleteBtn = e.target.closest('.delete-gift-btn');
+    if (deleteBtn) {
+      if (confirm('Tem certeza que deseja remover este presente?')) {
+        await deleteGift(deleteBtn.dataset.giftId);
+      }
+      return;
+    }
   });
+
+  async function deleteGift(giftId) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    try {
+      const response = await fetch(`/gift-list/${giftId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        window.showToast('Presente removido!');
+        setTimeout(() => location.reload(), 500);
+      } else {
+        throw new Error(data.error || 'Erro ao remover presente');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      window.showToast(error.message || 'Erro ao remover presente', 'error');
+    }
+  }
 })();
 </script>
