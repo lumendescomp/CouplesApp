@@ -138,6 +138,7 @@
   }
 
   document.getElementById('close-add-recipe-btn')?.addEventListener('click', closeAddRecipeModal);
+  document.getElementById('cancel-add-recipe-btn')?.addEventListener('click', closeAddRecipeModal);
   addModal?.addEventListener('click', (e) => {
     if (e.target === addModal) closeAddRecipeModal();
   });
